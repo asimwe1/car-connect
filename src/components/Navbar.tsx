@@ -17,7 +17,21 @@ const Navbar = () => {
     { name: 'Contact', path: '/contact' },
   ];
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) => {
+    // Exact match
+    if (location.pathname === path) return true;
+
+    // Handle list-car tabs (sell / rent)
+    if (path.startsWith('/list-car')) {
+      if (location.pathname === '/list-car') return true;
+      if (location.pathname.startsWith('/list-car')) return true;
+    }
+
+    // Route groups like /buy-cars, /contact
+    if (path !== '/' && location.pathname.startsWith(path)) return true;
+
+    return false;
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-md border-b border-border">
@@ -36,10 +50,12 @@ const Navbar = () => {
               <Link
                 key={link.name}
                 to={link.path}
-                className={`text-sm font-medium transition-colors duration-200 ${
+                className={`relative text-sm font-medium transition-colors duration-200 ${
                   isActive(link.path)
-                    ? 'text-primary border-b-2 border-primary'
+                    ? 'text-primary'
                     : 'text-muted-foreground hover:text-primary'
+                } after:content-[''] after:absolute after:left-0 after:-bottom-2 after:h-0.5 after:bg-primary after:transition-transform after:duration-300 after:origin-left ${
+                  isActive(link.path) ? 'after:w-full after:scale-x-100' : 'after:w-full after:scale-x-0 hover:after:scale-x-100'
                 }`}
               >
                 {link.name}
@@ -98,10 +114,12 @@ const Navbar = () => {
                   key={link.name}
                   to={link.path}
                   onClick={() => setIsOpen(false)}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`relative px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                     isActive(link.path)
-                      ? 'bg-primary/10 text-primary'
+                      ? 'text-primary'
                       : 'text-muted-foreground hover:text-primary hover:bg-accent'
+                  } after:content-[''] after:absolute after:left-3 after:bottom-1 after:h-0.5 after:bg-primary after:transition-transform after:duration-300 after:origin-left ${
+                    isActive(link.path) ? 'after:w-10 after:scale-x-100' : 'after:w-10 after:scale-x-0 group-hover:after:scale-x-100'
                   }`}
                 >
                   {link.name}

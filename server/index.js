@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const mongoose = require('mongoose');
+const admin = require('firebase-admin');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -13,42 +13,35 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
 
-// MongoDB connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/carconnect', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
+// Firebase Admin initialization
+try {
+  if (!admin.apps.length) {
+    admin.initializeApp({
+      // Uses Application Default Credentials via GOOGLE_APPLICATION_CREDENTIALS
+      credential: admin.credential.applicationDefault(),
+    });
+  }
+  console.log('Firebase Admin initialized');
+} catch (err) {
+  console.error('Failed to initialize Firebase Admin:', err.message);
+}
 
-const db = mongoose.connection;
-db.on('error', console.error.bind(console, 'MongoDB connection error:'));
-db.once('open', () => {
-  console.log('Connected to MongoDB');
-});
+const firestore = (() => {
+  try {
+    return admin.firestore();
+  } catch (e) {
+    console.warn('Firestore not available. Falling back to in-memory storage.');
+    return null;
+  }
+})();
 
-// Vehicle Schema
-const vehicleSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  year: { type: Number, required: true },
-  subtitle: { type: String, default: '' },
-  image: { type: String, default: '' },
-  price: { type: Number, required: true },
-  mileage: { type: Number, default: 0 },
-  fuelType: { type: String, default: 'Petrol' },
-  transmission: { type: String, default: 'Automatic' },
-  badge: { type: String, default: '' },
-  make: { type: String, default: '' },
-  location: { type: String, default: '' },
-  seats: { type: Number, default: 5 },
-  condition: { type: String, default: 'Used' },
-}, { timestamps: true });
-
-const Vehicle = mongoose.model('Vehicle', vehicleSchema);
+// Data access: Firestore or in-memory fallback
+const VEHICLES_COLLECTION = 'vehicles';
+const memoryVehicles = new Map();
 
 // Seed data
 const seedVehicles = async () => {
-  const count = await Vehicle.countDocuments();
-  if (count === 0) {
-    const vehicles = [
+  const vehicles = [
       {
         name: 'Ford Transit',
         year: 2021,
@@ -95,9 +88,29 @@ const seedVehicles = async () => {
         transmission: 'Automatic',
         make: 'Toyota',
       },
-    ];
-    await Vehicle.insertMany(vehicles);
-    console.log('Seeded initial vehicles');
+  ];
+
+  if (firestore) {
+    const snapshot = await firestore.collection(VEHICLES_COLLECTION).limit(1).get();
+    if (snapshot.empty) {
+      const batch = firestore.batch();
+      vehicles.forEach((v) => {
+        const ref = firestore.collection(VEHICLES_COLLECTION).doc();
+        batch.set(ref, {
+          ...v,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      });
+      await batch.commit();
+      console.log('Seeded initial vehicles to Firestore');
+    }
+  } else if (memoryVehicles.size === 0) {
+    vehicles.forEach((v) => {
+      const id = Math.random().toString(36).slice(2);
+      memoryVehicles.set(id, { id, ...v, createdAt: Date.now(), updatedAt: Date.now() });
+    });
+    console.log('Seeded initial vehicles to memory');
   }
 };
 
@@ -108,46 +121,44 @@ seedVehicles();
 app.get('/api/vehicles', async (req, res) => {
   try {
     const { search, make, year, sort } = req.query;
-    let query = {};
+    let vehicles = [];
 
-    // Build filter query
+    if (firestore) {
+      let ref = firestore.collection(VEHICLES_COLLECTION);
+      // Client-side filtering since Firestore compound queries vary; demo-safe
+      const snapshot = await ref.get();
+      vehicles = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+    } else {
+      vehicles = Array.from(memoryVehicles.values());
+    }
+
+    // Apply filters
     if (search) {
-      query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { subtitle: { $regex: search, $options: 'i' } },
-        { make: { $regex: search, $options: 'i' } }
-      ];
+      const s = String(search).toLowerCase();
+      vehicles = vehicles.filter((v) =>
+        [v.name, v.subtitle, v.make].some((val) => String(val || '').toLowerCase().includes(s))
+      );
     }
     if (make) {
-      query.make = { $regex: make, $options: 'i' };
+      const m = String(make).toLowerCase();
+      vehicles = vehicles.filter((v) => String(v.make || '').toLowerCase().includes(m));
     }
     if (year) {
-      query.year = parseInt(year);
+      const y = parseInt(String(year));
+      vehicles = vehicles.filter((v) => Number(v.year) === y);
     }
 
-    // Build sort query
-    let sortQuery = { createdAt: -1 }; // Default: newest first
-    if (sort) {
-      switch (sort) {
-        case 'price_low':
-          sortQuery = { price: 1 };
-          break;
-        case 'price_high':
-          sortQuery = { price: -1 };
-          break;
-        case 'year_new':
-          sortQuery = { year: -1 };
-          break;
-        case 'mileage':
-          sortQuery = { mileage: 1 };
-          break;
-        case 'newest':
-        default:
-          sortQuery = { createdAt: -1 };
-      }
-    }
+    // Sorting
+    const sortKey = String(sort || 'newest');
+    const sorters = {
+      price_low: (a, b) => Number(a.price) - Number(b.price),
+      price_high: (a, b) => Number(b.price) - Number(a.price),
+      year_new: (a, b) => Number(b.year) - Number(a.year),
+      mileage: (a, b) => Number(a.mileage || 0) - Number(b.mileage || 0),
+      newest: (a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0),
+    };
+    vehicles.sort(sorters[sortKey] || sorters.newest);
 
-    const vehicles = await Vehicle.find(query).sort(sortQuery);
     res.json(vehicles);
   } catch (error) {
     console.error('Error fetching vehicles:', error);
@@ -158,7 +169,13 @@ app.get('/api/vehicles', async (req, res) => {
 // GET /api/vehicles/:id - Get single vehicle
 app.get('/api/vehicles/:id', async (req, res) => {
   try {
-    const vehicle = await Vehicle.findById(req.params.id);
+    let vehicle;
+    if (firestore) {
+      const doc = await firestore.collection(VEHICLES_COLLECTION).doc(req.params.id).get();
+      vehicle = doc.exists ? { id: doc.id, ...doc.data() } : null;
+    } else {
+      vehicle = memoryVehicles.get(req.params.id) || null;
+    }
     if (!vehicle) {
       return res.status(404).json({ message: 'Vehicle not found' });
     }
@@ -172,9 +189,20 @@ app.get('/api/vehicles/:id', async (req, res) => {
 // POST /api/vehicles - Create new vehicle
 app.post('/api/vehicles', async (req, res) => {
   try {
-    const vehicle = new Vehicle(req.body);
-    await vehicle.save();
-    res.status(201).json(vehicle);
+    if (firestore) {
+      const ref = await firestore.collection(VEHICLES_COLLECTION).add({
+        ...req.body,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      const doc = await ref.get();
+      return res.status(201).json({ id: doc.id, ...doc.data() });
+    } else {
+      const id = Math.random().toString(36).slice(2);
+      const record = { id, ...req.body, createdAt: Date.now(), updatedAt: Date.now() };
+      memoryVehicles.set(id, record);
+      return res.status(201).json(record);
+    }
   } catch (error) {
     console.error('Error creating vehicle:', error);
     res.status(400).json({ message: error.message });
@@ -184,11 +212,24 @@ app.post('/api/vehicles', async (req, res) => {
 // PUT /api/vehicles/:id - Update vehicle
 app.put('/api/vehicles/:id', async (req, res) => {
   try {
-    const vehicle = await Vehicle.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if (!vehicle) {
+    let updated;
+    if (firestore) {
+      const ref = firestore.collection(VEHICLES_COLLECTION).doc(req.params.id);
+      const doc = await ref.get();
+      if (!doc.exists) return res.status(404).json({ message: 'Vehicle not found' });
+      await ref.update({ ...req.body, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+      const after = await ref.get();
+      updated = { id: after.id, ...after.data() };
+    } else {
+      const existing = memoryVehicles.get(req.params.id);
+      if (!existing) return res.status(404).json({ message: 'Vehicle not found' });
+      updated = { ...existing, ...req.body, updatedAt: Date.now() };
+      memoryVehicles.set(req.params.id, updated);
+    }
+    if (!updated) {
       return res.status(404).json({ message: 'Vehicle not found' });
     }
-    res.json(vehicle);
+    res.json(updated);
   } catch (error) {
     console.error('Error updating vehicle:', error);
     res.status(400).json({ message: error.message });
@@ -198,8 +239,18 @@ app.put('/api/vehicles/:id', async (req, res) => {
 // DELETE /api/vehicles/:id - Delete vehicle
 app.delete('/api/vehicles/:id', async (req, res) => {
   try {
-    const vehicle = await Vehicle.findByIdAndDelete(req.params.id);
-    if (!vehicle) {
+    let existed = false;
+    if (firestore) {
+      const ref = firestore.collection(VEHICLES_COLLECTION).doc(req.params.id);
+      const doc = await ref.get();
+      if (!doc.exists) return res.status(404).json({ message: 'Vehicle not found' });
+      await ref.delete();
+      existed = true;
+    } else {
+      existed = memoryVehicles.delete(req.params.id);
+      if (!existed) return res.status(404).json({ message: 'Vehicle not found' });
+    }
+    if (!existed) {
       return res.status(404).json({ message: 'Vehicle not found' });
     }
     res.json({ message: 'Vehicle deleted successfully' });

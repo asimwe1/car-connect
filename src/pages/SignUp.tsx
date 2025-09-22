@@ -131,7 +131,7 @@ const SignUp = () => {
             <div className="space-y-2">
               <Label htmlFor="fullname">Full Name</Label>
               <div className="relative">
-                <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <User className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="fullname"
                   name="fullname"
@@ -139,7 +139,7 @@ const SignUp = () => {
                   placeholder="Enter your full name"
                   value={formData.fullname}
                   onChange={handleInputChange}
-                  className={`search-input pl-9 ${errors.fullname ? 'border-destructive' : ''}`}
+                  className={`search-input pl-8 ${errors.fullname ? 'border-destructive' : ''}`}
                   required
                 />
                 {errors.fullname && (
@@ -151,7 +151,7 @@ const SignUp = () => {
             <div className="space-y-2">
               <Label htmlFor="phone">Phone Number</Label>
               <div className="relative">
-                <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Phone className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="phone"
                   name="phone"
@@ -159,7 +159,7 @@ const SignUp = () => {
                   placeholder="+250 7XX XXX XXX"
                   value={formData.phone}
                   onChange={handleInputChange}
-                  className={`search-input pl-9 ${errors.phone ? 'border-destructive' : ''}`}
+                  className={`search-input pl-8 ${errors.phone ? 'border-destructive' : ''}`}
                   required
                 />
                 {errors.phone && (
@@ -171,7 +171,7 @@ const SignUp = () => {
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <div className="relative">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Lock className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="password"
                   name="password"
@@ -179,7 +179,7 @@ const SignUp = () => {
                   placeholder="Create a password"
                   value={formData.password}
                   onChange={handleInputChange}
-                  className={`search-input pl-9 pr-10 ${errors.password ? 'border-destructive' : ''}`}
+                  className={`search-input pl-8 pr-10 ${errors.password ? 'border-destructive' : ''}`}
                   minLength={8}
                   required
                 />
@@ -196,7 +196,7 @@ const SignUp = () => {
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Confirm Password</Label>
               <div className="relative">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Lock className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="confirmPassword"
                   name="confirmPassword"
@@ -204,7 +204,7 @@ const SignUp = () => {
                   placeholder="Confirm your password"
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
-                  className={`search-input pl-9 pr-10 ${errors.confirmPassword ? 'border-destructive' : ''}`}
+                  className={`search-input pl-8 pr-10 ${errors.confirmPassword ? 'border-destructive' : ''}`}
                   minLength={8}
                   required
                 />

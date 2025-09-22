@@ -123,7 +123,7 @@ const SignIn = () => {
             <div className="space-y-2">
               <Label htmlFor="phone">Phone Number</Label>
               <div className="relative">
-                <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Phone className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="phone"
                   name="phone"
@@ -131,7 +131,7 @@ const SignIn = () => {
                   placeholder="+250 7XX XXX XXX"
                   value={formData.phone}
                   onChange={handleInputChange}
-                  className={`search-input pl-9 ${errors.phone ? 'border-destructive' : ''}`}
+                  className={`search-input pl-8 ${errors.phone ? 'border-destructive' : ''}`}
                   required
                 />
                 {errors.phone && (
@@ -143,7 +143,7 @@ const SignIn = () => {
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <div className="relative">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Lock className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="password"
                   name="password"
@@ -151,7 +151,7 @@ const SignIn = () => {
                   placeholder="Enter your password"
                   value={formData.password}
                   onChange={handleInputChange}
-                  className={`search-input pl-9 pr-10 ${errors.password ? 'border-destructive' : ''}`}
+                  className={`search-input pl-8 pr-10 ${errors.password ? 'border-destructive' : ''}`}
                   required
                 />
                 <button

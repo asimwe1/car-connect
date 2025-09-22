@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 
 const Footer = () => {
   return (
-    <footer className="fixed bottom-0 left-0 right-0 z-40 bg-blue-900/95 backdrop-blur text-white py-10">
+    <footer className="bg-blue-900 text-white py-16">
       <div className="container mx-auto px-4">
         {/* Newsletter Section */}
         <div className="bg-blue-800/60 rounded-lg p-8 mb-12 text-center">
@@ -84,7 +84,7 @@ const Footer = () => {
         </div>
 
         {/* Bottom Bar */}
-        <div className="border-t border-white/20 pt-6 text-center">
+        <div className="border-t border-white/20 pt-8 text-center">
           <p className="text-blue-200">© 2025 car.connect.rw.com. All rights reserved.</p>
         </div>
       </div>

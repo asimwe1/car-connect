@@ -34,7 +34,7 @@ const HeroSection = () => {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center fade-in-up stagger-delay-2">
-            <Link to="/cars">
+            <Link to="/buy-cars">
               <Button className="btn-hero text-lg px-8 py-4">
                 <Search className="w-5 h-5 mr-2" />
                 Browse Cars

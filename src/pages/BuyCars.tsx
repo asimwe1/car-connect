@@ -250,7 +250,7 @@ const BuyCars = () => {
               <Card key={car._id} className="overflow-hidden hover:shadow-lg transition-shadow group">
                 <div className="relative">
                   <img
-                    src={car.primaryImage || car.images[0] || '/placeholder.svg'}
+                    src={(car.primaryImage || car.images?.[0] || '/placeholder.svg')}
                     alt={`${car.make} ${car.model}`}
                     className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
                   />

@@ -131,7 +131,7 @@ const SignIn = () => {
                   placeholder="+250 7XX XXX XXX"
                   value={formData.phone}
                   onChange={handleInputChange}
-                  className={`search-input pl-10 ${errors.phone ? 'border-destructive' : ''}`}
+                  className={`search-input pl-9 ${errors.phone ? 'border-destructive' : ''}`}
                   required
                 />
                 {errors.phone && (
@@ -151,7 +151,7 @@ const SignIn = () => {
                   placeholder="Enter your password"
                   value={formData.password}
                   onChange={handleInputChange}
-                  className={`search-input pl-10 pr-10 ${errors.password ? 'border-destructive' : ''}`}
+                  className={`search-input pl-9 pr-10 ${errors.password ? 'border-destructive' : ''}`}
                   required
                 />
                 <button

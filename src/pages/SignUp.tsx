@@ -139,7 +139,7 @@ const SignUp = () => {
                   placeholder="Enter your full name"
                   value={formData.fullname}
                   onChange={handleInputChange}
-                  className={`search-input pl-10 ${errors.fullname ? 'border-destructive' : ''}`}
+                  className={`search-input pl-9 ${errors.fullname ? 'border-destructive' : ''}`}
                   required
                 />
                 {errors.fullname && (
@@ -159,7 +159,7 @@ const SignUp = () => {
                   placeholder="+250 7XX XXX XXX"
                   value={formData.phone}
                   onChange={handleInputChange}
-                  className={`search-input pl-10 ${errors.phone ? 'border-destructive' : ''}`}
+                  className={`search-input pl-9 ${errors.phone ? 'border-destructive' : ''}`}
                   required
                 />
                 {errors.phone && (
@@ -179,7 +179,7 @@ const SignUp = () => {
                   placeholder="Create a password"
                   value={formData.password}
                   onChange={handleInputChange}
-                  className={`search-input pl-10 pr-10 ${errors.password ? 'border-destructive' : ''}`}
+                  className={`search-input pl-9 pr-10 ${errors.password ? 'border-destructive' : ''}`}
                   minLength={8}
                   required
                 />
@@ -204,7 +204,7 @@ const SignUp = () => {
                   placeholder="Confirm your password"
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
-                  className={`search-input pl-10 pr-10 ${errors.confirmPassword ? 'border-destructive' : ''}`}
+                  className={`search-input pl-9 pr-10 ${errors.confirmPassword ? 'border-destructive' : ''}`}
                   minLength={8}
                   required
                 />

@@ -8,27 +8,35 @@ const Navbar = () => {
   const location = useLocation();
   const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
 
-  const navLinks = [
+  const navLinks: Array<{ name: string; path: string; tab?: 'sell' | 'rent' }> = [
     { name: 'Home', path: '/' },
     { name: 'About', path: '/about' },
     { name: 'Buy Cars', path: '/buy-cars' },
-    { name: 'Sell Car', path: '/list-car?tab=sell' },
-    { name: 'Rent Car', path: '/list-car?tab=rent' },
+    { name: 'Sell Car', path: '/list-car?tab=sell', tab: 'sell' },
+    { name: 'Rent Car', path: '/list-car?tab=rent', tab: 'rent' },
     { name: 'Contact', path: '/contact' },
   ];
 
-  const isActive = (path: string) => {
-    // Exact match
-    if (location.pathname === path) return true;
+  const isActiveLink = (link: { path: string; tab?: 'sell' | 'rent' }) => {
+    const { path, tab } = link;
+    const searchParams = new URLSearchParams(location.search);
+    const currentTab = searchParams.get('tab');
 
-    // Handle list-car tabs (sell / rent)
+    // Handle list-car tabs precisely by tab query param
     if (path.startsWith('/list-car')) {
-      if (location.pathname === '/list-car') return true;
-      if (location.pathname.startsWith('/list-car')) return true;
+      if (location.pathname !== '/list-car') return false;
+      if (!tab) return false;
+      return currentTab === tab;
     }
 
-    // Route groups like /buy-cars, /contact
-    if (path !== '/' && location.pathname.startsWith(path)) return true;
+    // Exact match for home
+    if (path === '/') {
+      return location.pathname === '/';
+    }
+
+    // Exact match or starts-with for section pages
+    if (location.pathname === path) return true;
+    if (location.pathname.startsWith(path)) return true;
 
     return false;
   };
@@ -51,11 +59,11 @@ const Navbar = () => {
                 key={link.name}
                 to={link.path}
                 className={`relative text-sm font-medium transition-colors duration-200 ${
-                  isActive(link.path)
+                  isActiveLink(link)
                     ? 'text-primary'
                     : 'text-muted-foreground hover:text-primary'
                 } after:content-[''] after:absolute after:left-0 after:-bottom-2 after:h-[2px] after:bg-primary after:transition-all after:duration-300 after:origin-left ${
-                  isActive(link.path) ? 'after:w-full after:scale-x-100 after:opacity-100' : 'after:w-0 after:scale-x-0 after:opacity-0 hover:after:w-full hover:after:scale-x-100 hover:after:opacity-100'
+                  isActiveLink(link) ? 'after:w-full after:scale-x-100 after:opacity-100' : 'after:w-0 after:scale-x-0 after:opacity-0 hover:after:w-full hover:after:scale-x-100 hover:after:opacity-100'
                 }`}
               >
                 {link.name}
@@ -115,17 +123,16 @@ const Navbar = () => {
                   to={link.path}
                   onClick={() => setIsOpen(false)}
                   className={`relative px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    isActive(link.path)
+                    isActiveLink(link)
                       ? 'text-primary'
                       : 'text-muted-foreground hover:text-primary hover:bg-accent'
                   } after:content-[''] after:absolute after:left-3 after:bottom-1 after:h-0.5 after:bg-primary after:transition-transform after:duration-300 after:origin-left ${
-                    isActive(link.path) ? 'after:w-10 after:scale-x-100' : 'after:w-10 after:scale-x-0 group-hover:after:scale-x-100'
+                    isActiveLink(link) ? 'after:w-10 after:scale-x-100' : 'after:w-10 after:scale-x-0 group-hover:after:scale-x-100'
                   }`}
                 >
                   {link.name}
                 </Link>
               ))}
-              
               <div className="pt-4 border-t border-border">
                 {isAuthenticated ? (
                   <>

@@ -5,7 +5,19 @@ const admin = require('firebase-admin');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:8080',
+  'http://localhost:3000',
+  'https://carhub-133ehgwgh-leandre000s-projects.vercel.app',
+];
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+}));
 app.use(express.json());
 
 // Health check

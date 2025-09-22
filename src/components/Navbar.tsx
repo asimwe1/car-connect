@@ -54,8 +54,8 @@ const Navbar = () => {
                   isActive(link.path)
                     ? 'text-primary'
                     : 'text-muted-foreground hover:text-primary'
-                } after:content-[''] after:absolute after:left-0 after:-bottom-2 after:h-0.5 after:bg-primary after:transition-transform after:duration-300 after:origin-left ${
-                  isActive(link.path) ? 'after:w-full after:scale-x-100' : 'after:w-full after:scale-x-0 hover:after:scale-x-100'
+                } after:content-[''] after:absolute after:left-0 after:-bottom-2 after:h-[2px] after:bg-primary after:transition-all after:duration-300 after:origin-left ${
+                  isActive(link.path) ? 'after:w-full after:scale-x-100 after:opacity-100' : 'after:w-0 after:scale-x-0 after:opacity-0 hover:after:w-full hover:after:scale-x-100 hover:after:opacity-100'
                 }`}
               >
                 {link.name}

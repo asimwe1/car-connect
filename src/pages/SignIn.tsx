@@ -5,14 +5,16 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, Phone, Lock } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
 const SignIn = () => {
   const [formData, setFormData] = useState({
-    phone: '',
+    phone: localStorage.getItem('rememberPhone') || '',
     password: ''
   });
+  const [rememberMe, setRememberMe] = useState<boolean>(!!localStorage.getItem('rememberPhone'));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -66,6 +68,13 @@ const SignIn = () => {
     }
 
     try {
+      // handle remember me
+      if (rememberMe) {
+        localStorage.setItem('rememberPhone', formData.phone);
+      } else {
+        localStorage.removeItem('rememberPhone');
+      }
+
       const result = await login(formData.phone, formData.password);
 
       if (result.success) {
@@ -159,11 +168,15 @@ const SignIn = () => {
             </div>
 
             <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 select-none text-sm text-muted-foreground">
+                <Checkbox id="remember" checked={rememberMe} onCheckedChange={(v) => setRememberMe(!!v)} />
+                <span>Remember me</span>
+              </label>
               <Link 
                 to="/forgot-password" 
-                className="text-sm text-primary hover:text-primary-light transition-colors"
+                className="text-sm font-semibold text-foreground hover:text-primary transition-colors"
               >
-                Forgot password?
+                Forgot your password?
               </Link>
             </div>
 

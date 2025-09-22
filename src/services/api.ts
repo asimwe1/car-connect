@@ -1,4 +1,5 @@
 // API service layer for backend integration
+// @ts-ignore - Vite provides import.meta.env
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 interface ApiResponse<T> {
@@ -14,10 +15,10 @@ class ApiService {
     this.baseURL = baseURL;
   }
 
-  private async request<T>(
+  private async request<T = any>(
     endpoint: string,
     options: RequestInit = {}
-  ): Promise<ApiResponse<T>> {
+  ): Promise<{ data?: T; error?: string }> {
     const url = `${this.baseURL}${endpoint}`;
     
     const defaultHeaders: HeadersInit = {
@@ -63,23 +64,40 @@ class ApiService {
   }
 
   // Authentication methods
-  async register(userData: { fullname: string; email: string; password: string }) {
-    return this.request('/auth/register', {
+  async register(userData: { fullname: string; phone: string; password: string }) {
+    return this.request<{ message: string; success: boolean }>('/auth/register', {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(userData),
     });
   }
 
-  async login(credentials: { email: string; password: string }) {
-    return this.request('/auth/login', {
+  async login(credentials: { phone: string; password: string }) {
+    return this.request<{ 
+      message: string; 
+      success: boolean; 
+      user?: User 
+    }>('/auth/login', {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(credentials),
     });
   }
 
-  async verifyOtp(data: { email: string; otp: string }) {
-    return this.request('/auth/verify-otp', {
+  async verifyOtp(data: { phone: string; otp: string }) {
+    return this.request<{ 
+      message: string; 
+      success: boolean; 
+      user?: User 
+    }>('/auth/verify-otp', {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(data),
     });
   }
@@ -91,7 +109,11 @@ class ApiService {
   }
 
   async getMe() {
-    return this.request('/auth/me');
+    return this.request<{ success: boolean; user?: User }>('/auth/me', {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
   }
 
   // Car methods
@@ -223,7 +245,7 @@ export const api = new ApiService(API_BASE_URL);
 export interface User {
   _id: string;
   fullname: string;
-  email: string;
+  phone: string;
   role: 'user' | 'admin';
 }
 

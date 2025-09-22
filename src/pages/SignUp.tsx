@@ -4,17 +4,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
+import { Eye, EyeOff, Phone, Lock, User } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
 const SignUp = () => {
   const [formData, setFormData] = useState({
     fullname: '',
-    email: '',
+    phone: '',
     password: '',
     confirmPassword: ''
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -22,51 +23,77 @@ const SignUp = () => {
   const navigate = useNavigate();
   const { register } = useAuth();
 
+  const validatePhoneNumber = (phone: string): boolean => {
+    // Basic phone number validation (10 digits, optional + at start)
+    const phoneRegex = /^\+?[0-9]{10,15}$/;
+    return phoneRegex.test(phone);
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+    
+    if (!formData.fullname.trim()) {
+      newErrors.fullname = 'Full name is required';
+    }
+    
+    if (!formData.phone.trim()) {
+      newErrors.phone = 'Phone number is required';
+    } else if (!validatePhoneNumber(formData.phone)) {
+      newErrors.phone = 'Please enter a valid phone number';
+    }
+    
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+    } else if (formData.password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters';
+    }
+    
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+    
     setIsLoading(true);
 
-    // Validate form
-    if (!formData.fullname || !formData.email || !formData.password || !formData.confirmPassword) {
-      toast({
-        title: "Error",
-        description: "Please fill in all fields",
-        variant: "destructive",
-      });
-      setIsLoading(false);
-      return;
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      toast({
-        title: "Error",
-        description: "Passwords do not match",
-        variant: "destructive",
-      });
-      setIsLoading(false);
-      return;
-    }
-
     try {
-      const result = await register(formData.fullname, formData.email, formData.password);
+      const result = await register(formData.fullname, formData.phone, formData.password);
 
       if (result.success) {
         localStorage.setItem('pendingVerification', JSON.stringify({
-          email: formData.email,
+          phone: formData.phone,
           fullname: formData.fullname,
           isSignUp: true
         }));
         
         toast({
           title: "Verification Code Sent",
-          description: "Please check your email for the verification code",
+          description: "Please check your phone for the verification code",
         });
         
         navigate('/verify-otp');
@@ -112,26 +139,32 @@ const SignUp = () => {
                   placeholder="Enter your full name"
                   value={formData.fullname}
                   onChange={handleInputChange}
-                  className="search-input pl-10"
+                  className={`search-input pl-10 ${errors.fullname ? 'border-destructive' : ''}`}
                   required
                 />
+                {errors.fullname && (
+                  <p className="text-sm text-destructive mt-1">{errors.fullname}</p>
+                )}
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
+              <Label htmlFor="phone">Phone Number</Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder="user@example.com"
-                  value={formData.email}
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  placeholder="+250 7XX XXX XXX"
+                  value={formData.phone}
                   onChange={handleInputChange}
-                  className="search-input pl-10"
+                  className={`search-input pl-10 ${errors.phone ? 'border-destructive' : ''}`}
                   required
                 />
+                {errors.phone && (
+                  <p className="text-sm text-destructive mt-1">{errors.phone}</p>
+                )}
               </div>
             </div>
 
@@ -146,7 +179,8 @@ const SignUp = () => {
                   placeholder="Create a password"
                   value={formData.password}
                   onChange={handleInputChange}
-                  className="search-input pl-10 pr-10"
+                  className={`search-input pl-10 pr-10 ${errors.password ? 'border-destructive' : ''}`}
+                  minLength={8}
                   required
                 />
                 <button
@@ -170,7 +204,8 @@ const SignUp = () => {
                   placeholder="Confirm your password"
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
-                  className="search-input pl-10 pr-10"
+                  className={`search-input pl-10 pr-10 ${errors.confirmPassword ? 'border-destructive' : ''}`}
+                  minLength={8}
                   required
                 />
                 <button
@@ -180,6 +215,9 @@ const SignUp = () => {
                 >
                   {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
+                {errors.confirmPassword && (
+                  <p className="text-sm text-destructive mt-1">{errors.confirmPassword}</p>
+                )}
               </div>
             </div>
 

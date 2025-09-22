@@ -60,10 +60,20 @@ const VerifyOTP = () => {
       return;
     }
 
+    if (!userData?.phone) {
+      toast({
+        title: "Error",
+        description: "Phone number not found",
+        variant: "destructive",
+      });
+      navigate('/signin');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      const result = await verifyOtp(userData?.email, otp);
+      const result = await verifyOtp(userData.phone, otp);
 
       if (result.success) {
         localStorage.removeItem('pendingVerification');
@@ -141,7 +151,7 @@ const VerifyOTP = () => {
           <CardDescription className="text-muted-foreground">
             We've sent a 6-digit code to{' '}
             <span className="font-medium text-foreground">
-              {userData?.email}
+              {userData?.phone}
             </span>
           </CardDescription>
         </CardHeader>

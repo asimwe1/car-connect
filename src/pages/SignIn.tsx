@@ -4,26 +4,42 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
+import { Eye, EyeOff, Phone, Lock } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
 const SignIn = () => {
   const [formData, setFormData] = useState({
-    email: '',
+    phone: '',
     password: ''
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { login } = useAuth();
 
+  const validatePhoneNumber = (phone: string): boolean => {
+    // Basic phone number validation (10 digits, optional + at start)
+    const phoneRegex = /^\+?[0-9]{10,15}$/;
+    return phoneRegex.test(phone);
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -31,28 +47,36 @@ const SignIn = () => {
     setIsLoading(true);
 
     // Validate form
-    if (!formData.email || !formData.password) {
-      toast({
-        title: "Error",
-        description: "Please fill in all fields",
-        variant: "destructive",
-      });
+    const newErrors: Record<string, string> = {};
+    
+    if (!formData.phone.trim()) {
+      newErrors.phone = 'Phone number is required';
+    } else if (!validatePhoneNumber(formData.phone)) {
+      newErrors.phone = 'Please enter a valid phone number';
+    }
+    
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+    }
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       setIsLoading(false);
       return;
     }
 
     try {
-      const result = await login(formData.email, formData.password);
+      const result = await login(formData.phone, formData.password);
 
       if (result.success) {
         localStorage.setItem('pendingVerification', JSON.stringify({
-          email: formData.email,
+          phone: formData.phone,
           isSignIn: true
         }));
         
         toast({
           title: "Verification Code Sent",
-          description: "Please check your email for the verification code",
+          description: "Please check your phone for the verification code",
         });
         
         navigate('/verify-otp');
@@ -88,19 +112,22 @@ const SignIn = () => {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
+              <Label htmlFor="phone">Phone Number</Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder="user@example.com"
-                  value={formData.email}
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  placeholder="+250 7XX XXX XXX"
+                  value={formData.phone}
                   onChange={handleInputChange}
-                  className="search-input pl-10"
+                  className={`search-input pl-10 ${errors.phone ? 'border-destructive' : ''}`}
                   required
                 />
+                {errors.phone && (
+                  <p className="text-sm text-destructive mt-1">{errors.phone}</p>
+                )}
               </div>
             </div>
 
@@ -115,7 +142,7 @@ const SignIn = () => {
                   placeholder="Enter your password"
                   value={formData.password}
                   onChange={handleInputChange}
-                  className="search-input pl-10 pr-10"
+                  className={`search-input pl-10 pr-10 ${errors.password ? 'border-destructive' : ''}`}
                   required
                 />
                 <button
@@ -125,6 +152,9 @@ const SignIn = () => {
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
+                {errors.password && (
+                  <p className="text-sm text-destructive mt-1">{errors.password}</p>
+                )}
               </div>
             </div>
 

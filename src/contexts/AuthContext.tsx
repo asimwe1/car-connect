@@ -2,9 +2,9 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 import { api, User, AuthState, authStorage } from '../services/api';
 
 interface AuthContextType extends AuthState {
-  login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
-  register: (fullname: string, email: string, password: string) => Promise<{ success: boolean; message?: string }>;
-  verifyOtp: (email: string, otp: string) => Promise<{ success: boolean; message?: string }>;
+  login: (phone: string, password: string) => Promise<{ success: boolean; message?: string }>;
+  register: (fullname: string, phone: string, password: string) => Promise<{ success: boolean; message?: string }>;
+  verifyOtp: (phone: string, otp: string) => Promise<{ success: boolean; message?: string }>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
 }
@@ -26,15 +26,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsLoading(true);
       const response = await api.getMe();
       
-      if (response.data?.success && response.data.user) {
-        const userData = response.data.user;
-        setUser(userData);
-        authStorage.setUser(userData);
-      } else {
-        setUser(null);
-        authStorage.clearUser();
+      if (response.data && typeof response.data === 'object' && 'success' in response.data && response.data.success) {
+        const userData = (response.data as any).user as User | undefined;
+        if (userData) {
+          setUser(userData);
+          authStorage.setUser(userData);
+          return;
+        }
       }
+      setUser(null);
+      authStorage.clearUser();
     } catch (error) {
+      console.error('Auth check failed:', error);
       setUser(null);
       authStorage.clearUser();
     } finally {
@@ -42,45 +45,62 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const login = async (email: string, password: string) => {
+  const login = async (phone: string, password: string) => {
     try {
-      const response = await api.login({ email, password });
+      const response = await api.login({ phone, password });
       
-      if (response.data?.success) {
-        return { success: true, message: response.data.message };
-      } else {
-        return { success: false, message: response.error || 'Login failed' };
+      if (response.data && typeof response.data === 'object' && 'success' in response.data && response.data.success) {
+        return { 
+          success: true, 
+          message: 'message' in response.data ? String(response.data.message) : 'Login successful' 
+        };
       }
+      return { 
+        success: false, 
+        message: 'error' in response ? String(response.error) : 'Login failed' 
+      };
     } catch (error) {
       return { success: false, message: 'Network error' };
     }
   };
 
-  const register = async (fullname: string, email: string, password: string) => {
+  const register = async (fullname: string, phone: string, password: string) => {
     try {
-      const response = await api.register({ fullname, email, password });
+      const response = await api.register({ fullname, phone, password });
       
-      if (response.data?.message === 'Registration successful') {
-        return { success: true, message: response.data.message };
-      } else {
-        return { success: false, message: response.error || 'Registration failed' };
+      if (response.data && typeof response.data === 'object' && 'message' in response.data) {
+        if (response.data.message === 'Registration successful') {
+          return { 
+            success: true, 
+            message: String(response.data.message) 
+          };
+        }
       }
+      return { 
+        success: false, 
+        message: 'error' in response ? String(response.error) : 'Registration failed' 
+      };
     } catch (error) {
       return { success: false, message: 'Network error' };
     }
   };
 
-  const verifyOtp = async (email: string, otp: string) => {
+  const verifyOtp = async (phone: string, otp: string) => {
     try {
-      const response = await api.verifyOtp({ email, otp });
+      const response = await api.verifyOtp({ phone, otp });
       
-      if (response.data?.success) {
+      if (response.data && typeof response.data === 'object' && 'success' in response.data && response.data.success) {
         // After successful OTP verification, get user data
         await checkAuth();
-        return { success: true, message: response.data.message };
-      } else {
-        return { success: false, message: response.error || 'OTP verification failed' };
+        return { 
+          success: true, 
+          message: 'message' in response.data ? String(response.data.message) : 'Verification successful' 
+        };
       }
+      return { 
+        success: false, 
+        message: 'error' in response ? String(response.error) : 'OTP verification failed' 
+      };
     } catch (error) {
       return { success: false, message: 'Network error' };
     }

@@ -174,7 +174,7 @@ const SignIn = () => {
               </label>
               <Link 
                 to="/forgot-password" 
-                className="text-sm font-semibold text-foreground hover:text-primary transition-colors"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 Forgot your password?
               </Link>

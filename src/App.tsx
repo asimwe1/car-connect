@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import Layout from "@/components/Layout";
 import { AuthProvider } from "./contexts/AuthContext";
+import { AuthPromptProvider } from "./contexts/AuthPromptContext";
 import Index from "./pages/Index";
 import SignUp from "./pages/SignUp";
 import SignIn from "./pages/SignIn";
@@ -42,6 +43,7 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
+      <AuthPromptProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
@@ -90,6 +92,7 @@ const App = () => (
           </ErrorBoundary>
         </BrowserRouter>
       </TooltipProvider>
+      </AuthPromptProvider>
     </AuthProvider>
   </QueryClientProvider>
 );

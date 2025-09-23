@@ -2,7 +2,7 @@ import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { FaWhatsapp, FaFacebookF, FaInstagram } from 'react-icons/fa';
+import { FaWhatsapp, FaFacebookF, FaInstagram, FaXTwitter } from 'react-icons/fa6';
 
 const Footer = () => {
   return (
@@ -116,6 +116,15 @@ const Footer = () => {
               className="text-white hover:text-pink-400 transition-colors"
             >
               <FaInstagram className="h-5 w-5" />
+            </a>
+            <a
+              href="https://x.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="X"
+              className="text-white hover:text-white/80 transition-colors"
+            >
+              <FaXTwitter className="h-5 w-5" />
             </a>
           </div>
         </div>

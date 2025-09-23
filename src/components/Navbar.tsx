@@ -1,19 +1,22 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Menu, X, User, Settings } from 'lucide-react';
-import { Link, NavLink, useLocation } from 'react-router-dom';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { useAuthPrompt } from '@/contexts/AuthPromptContext';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const authPrompt = useAuthPrompt();
   const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
 
-  const navLinks: Array<{ name: string; path: string; tab?: 'sell' | 'rent' }> = [
+  const navLinks: Array<{ name: string; path: string; tab?: 'sell' | 'rent'; protected?: boolean }> = [
     { name: 'Home', path: '/' },
     { name: 'About', path: '/about' },
     { name: 'Buy Cars', path: '/buy-cars' },
-    { name: 'Sell Car', path: '/list-car?tab=sell', tab: 'sell' },
-    { name: 'Rent Car', path: '/list-car?tab=rent', tab: 'rent' },
+    { name: 'Sell Car', path: '/list-car?tab=sell', tab: 'sell', protected: true },
+    { name: 'Rent Car', path: '/list-car?tab=rent', tab: 'rent', protected: true },
     { name: 'Contact', path: '/contact' },
   ];
 
@@ -22,23 +25,29 @@ const Navbar = () => {
     const searchParams = new URLSearchParams(location.search);
     const currentTab = searchParams.get('tab');
 
-    // Handle list-car tabs precisely by tab query param
     if (path.startsWith('/list-car')) {
       if (location.pathname !== '/list-car') return false;
       if (!tab) return false;
       return currentTab === tab;
     }
 
-    // Exact match for home
     if (path === '/') {
       return location.pathname === '/';
     }
 
-    // Exact match or starts-with for section pages
     if (location.pathname === path) return true;
     if (location.pathname.startsWith(path)) return true;
 
     return false;
+  };
+
+  const handleProtectedClick = (e: React.MouseEvent, to: string, isProtected?: boolean) => {
+    if (!isProtected) return;
+    const authed = localStorage.getItem('user');
+    if (!authed) {
+      e.preventDefault();
+      authPrompt.showPrompt({ redirectTo: to });
+    }
   };
 
   return (
@@ -58,6 +67,7 @@ const Navbar = () => {
               <NavLink
                 key={link.name}
                 to={link.path}
+                onClick={(e) => handleProtectedClick(e, link.path, link.protected)}
                 className={() => {
                   const active = isActiveLink(link);
                   return `relative text-sm font-medium transition-colors duration-200 ${
@@ -122,7 +132,7 @@ const Navbar = () => {
                 <NavLink
                   key={link.name}
                   to={link.path}
-                  onClick={() => setIsOpen(false)}
+                  onClick={(e) => handleProtectedClick(e, link.path, link.protected)}
                   className={() => {
                     const active = isActiveLink(link);
                     return `relative px-3 py-2 rounded-lg text-sm font-medium transition-colors ${

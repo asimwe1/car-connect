@@ -2,6 +2,7 @@ import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
+import { FaWhatsapp, FaFacebookF, FaInstagram } from 'react-icons/fa';
 
 const Footer = () => {
   return (
@@ -84,8 +85,39 @@ const Footer = () => {
         </div>
 
         {/* Bottom Bar */}
-        <div className="border-t border-white/20 pt-8 text-center">
-          <p className="text-blue-200">© 2025 car.connect.rw.com. All rights reserved.</p>
+        <div className="border-t border-white/20 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
+          <p className="text-blue-200">© 2025 car.connect.rw. All rights reserved.</p>
+
+          <div className="flex items-center gap-4">
+            <a
+              href="https://wa.me/250788881400"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="WhatsApp"
+              className="flex items-center gap-2 text-white hover:text-green-400 transition-colors"
+            >
+              <FaWhatsapp className="h-5 w-5" />
+              <span className="hidden sm:inline">+250 788 881 400</span>
+            </a>
+            <a
+              href="https://www.facebook.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Facebook"
+              className="text-white hover:text-blue-400 transition-colors"
+            >
+              <FaFacebookF className="h-5 w-5" />
+            </a>
+            <a
+              href="https://www.instagram.com/car.connect.rw/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Instagram"
+              className="text-white hover:text-pink-400 transition-colors"
+            >
+              <FaInstagram className="h-5 w-5" />
+            </a>
+          </div>
         </div>
       </div>
     </footer>

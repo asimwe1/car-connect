@@ -1,4 +1,5 @@
 import React from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import Navbar from '@/components/Navbar';
@@ -21,7 +22,11 @@ const Index = () => {
 
   return (
     <div className="min-h-screen">
-      <Navbar />
+      <Helmet>
+        <title>CarHub – Find Your Perfect Car</title>
+        <meta name="description" content="Explore premium brands, buy or rent cars, and book test drives on CarHub." />
+        <link rel="canonical" href="https://carhub-rw.vercel.app/" />
+      </Helmet>
       <HeroSection />
       <BrandSection />
       <div className="container mx-auto px-4 py-6 flex justify-end">
@@ -33,7 +38,6 @@ const Index = () => {
       <AboutSection />
       <FeaturesSection />
       <PopularMakesSection />
-      <Footer />
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,78 +8,51 @@ import { Eye, EyeOff, Phone, Lock } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+
+const schema = z.object({
+  phone: z.string().min(10).max(16).regex(/^\+?[0-9]{10,15}$/,
+    'Please enter a valid phone number'),
+  password: z.string().min(1, 'Password is required'),
+  remember: z.boolean().optional()
+});
+
+type FormValues = z.infer<typeof schema>;
 
 const SignIn = () => {
-  const [formData, setFormData] = useState({
-    phone: localStorage.getItem('rememberPhone') || '',
-    password: ''
-  });
-  const [rememberMe, setRememberMe] = useState<boolean>(!!localStorage.getItem('rememberPhone'));
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const rememberDefault = !!localStorage.getItem('rememberPhone');
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { login } = useAuth();
-
-  const validatePhoneNumber = (phone: string): boolean => {
-    // Basic phone number validation (10 digits, optional + at start)
-    const phoneRegex = /^\+?[0-9]{10,15}$/;
-    return phoneRegex.test(phone);
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
+  const { register: rhfRegister, handleSubmit, formState: { errors }, setValue, watch } = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      phone: localStorage.getItem('rememberPhone') || '',
+      password: '',
+      remember: rememberDefault
     }
-  };
+  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const rememberMe = watch('remember');
+
+  const onSubmit = async (data: FormValues) => {
     setIsLoading(true);
-
-    // Validate form
-    const newErrors: Record<string, string> = {};
-    
-    if (!formData.phone.trim()) {
-      newErrors.phone = 'Phone number is required';
-    } else if (!validatePhoneNumber(formData.phone)) {
-      newErrors.phone = 'Please enter a valid phone number';
-    }
-    
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    }
-    
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      setIsLoading(false);
-      return;
-    }
-
     try {
-      // handle remember me
-      if (rememberMe) {
-        localStorage.setItem('rememberPhone', formData.phone);
+      if (data.remember) {
+        localStorage.setItem('rememberPhone', data.phone);
       } else {
         localStorage.removeItem('rememberPhone');
       }
 
-      const result = await login(formData.phone, formData.password);
+      const result = await login(data.phone, data.password);
 
       if (result.success) {
         localStorage.setItem('pendingVerification', JSON.stringify({
-          phone: formData.phone,
+          phone: data.phone,
           isSignIn: true
         }));
         
@@ -119,23 +92,21 @@ const SignIn = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="phone">Phone Number</Label>
               <div className="relative">
                 <Phone className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="phone"
-                  name="phone"
                   type="tel"
                   placeholder="+250 7XX XXX XXX"
-                  value={formData.phone}
-                  onChange={handleInputChange}
+                  {...rhfRegister('phone')}
                   className={`search-input pl-8 ${errors.phone ? 'border-destructive' : ''}`}
                   required
                 />
                 {errors.phone && (
-                  <p className="text-sm text-destructive mt-1">{errors.phone}</p>
+                  <p className="text-sm text-destructive mt-1">{errors.phone.message}</p>
                 )}
               </div>
             </div>
@@ -146,11 +117,9 @@ const SignIn = () => {
                 <Lock className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="password"
-                  name="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
-                  value={formData.password}
-                  onChange={handleInputChange}
+                  {...rhfRegister('password')}
                   className={`search-input pl-8 pr-10 ${errors.password ? 'border-destructive' : ''}`}
                   required
                 />
@@ -162,18 +131,18 @@ const SignIn = () => {
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
                 {errors.password && (
-                  <p className="text-sm text-destructive mt-1">{errors.password}</p>
+                  <p className="text-sm text-destructive mt-1">{errors.password.message}</p>
                 )}
               </div>
             </div>
 
             <div className="flex items-center justify-between">
               <label className="flex items-center gap-2 select-none text-sm text-muted-foreground">
-                <Checkbox id="remember" checked={rememberMe} onCheckedChange={(v) => setRememberMe(!!v)} />
+                <Checkbox id="remember" checked={!!rememberMe} onCheckedChange={(v) => setValue('remember', !!v)} />
                 <span>Remember me</span>
               </label>
               <Link 
-                to="/forgot-password" 
+                to="/signin" 
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 Forgot your password?

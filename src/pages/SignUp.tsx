@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -7,87 +7,44 @@ import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, Phone, Lock, User } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+
+const schema = z.object({
+  fullname: z.string().min(1, 'Full name is required'),
+  phone: z.string().regex(/^\+?[0-9]{10,15}$/, 'Please enter a valid phone number'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+  confirmPassword: z.string().min(8, 'Confirm password is required')
+}).refine((data) => data.password === data.confirmPassword, {
+  message: 'Passwords do not match',
+  path: ['confirmPassword']
+});
+
+type FormValues = z.infer<typeof schema>;
 
 const SignUp = () => {
-  const [formData, setFormData] = useState({
-    fullname: '',
-    phone: '',
-    password: '',
-    confirmPassword: ''
-  });
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { register } = useAuth();
+  const { register: rhfRegister, handleSubmit, formState: { errors }, getValues } = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: { fullname: '', phone: '', password: '', confirmPassword: '' }
+  });
 
-  const validatePhoneNumber = (phone: string): boolean => {
-    // Basic phone number validation (10 digits, optional + at start)
-    const phoneRegex = /^\+?[0-9]{10,15}$/;
-    return phoneRegex.test(phone);
-  };
-
-  const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {};
-    
-    if (!formData.fullname.trim()) {
-      newErrors.fullname = 'Full name is required';
-    }
-    
-    if (!formData.phone.trim()) {
-      newErrors.phone = 'Phone number is required';
-    } else if (!validatePhoneNumber(formData.phone)) {
-      newErrors.phone = 'Please enter a valid phone number';
-    }
-    
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    } else if (formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters';
-    }
-    
-    if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
-    
+  const onSubmit = async (data: FormValues) => {
     setIsLoading(true);
 
     try {
-      const result = await register(formData.fullname, formData.phone, formData.password);
+      const result = await register(data.fullname, data.phone, data.password);
 
       if (result.success) {
         localStorage.setItem('pendingVerification', JSON.stringify({
-          phone: formData.phone,
-          fullname: formData.fullname,
+          phone: data.phone,
+          fullname: data.fullname,
           isSignUp: true
         }));
         
@@ -127,23 +84,21 @@ const SignUp = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="fullname">Full Name</Label>
               <div className="relative">
                 <User className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="fullname"
-                  name="fullname"
                   type="text"
                   placeholder="Enter your full name"
-                  value={formData.fullname}
-                  onChange={handleInputChange}
+                  {...rhfRegister('fullname')}
                   className={`search-input pl-8 ${errors.fullname ? 'border-destructive' : ''}`}
                   required
                 />
                 {errors.fullname && (
-                  <p className="text-sm text-destructive mt-1">{errors.fullname}</p>
+                  <p className="text-sm text-destructive mt-1">{errors.fullname.message}</p>
                 )}
               </div>
             </div>
@@ -154,16 +109,14 @@ const SignUp = () => {
                 <Phone className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="phone"
-                  name="phone"
                   type="tel"
                   placeholder="+250 7XX XXX XXX"
-                  value={formData.phone}
-                  onChange={handleInputChange}
+                  {...rhfRegister('phone')}
                   className={`search-input pl-8 ${errors.phone ? 'border-destructive' : ''}`}
                   required
                 />
                 {errors.phone && (
-                  <p className="text-sm text-destructive mt-1">{errors.phone}</p>
+                  <p className="text-sm text-destructive mt-1">{errors.phone.message}</p>
                 )}
               </div>
             </div>
@@ -174,11 +127,9 @@ const SignUp = () => {
                 <Lock className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="password"
-                  name="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="Create a password"
-                  value={formData.password}
-                  onChange={handleInputChange}
+                  {...rhfRegister('password')}
                   className={`search-input pl-8 pr-10 ${errors.password ? 'border-destructive' : ''}`}
                   minLength={8}
                   required
@@ -199,11 +150,9 @@ const SignUp = () => {
                 <Lock className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="confirmPassword"
-                  name="confirmPassword"
                   type={showConfirmPassword ? "text" : "password"}
                   placeholder="Confirm your password"
-                  value={formData.confirmPassword}
-                  onChange={handleInputChange}
+                  {...rhfRegister('confirmPassword')}
                   className={`search-input pl-8 pr-10 ${errors.confirmPassword ? 'border-destructive' : ''}`}
                   minLength={8}
                   required
@@ -216,7 +165,7 @@ const SignUp = () => {
                   {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
                 {errors.confirmPassword && (
-                  <p className="text-sm text-destructive mt-1">{errors.confirmPassword}</p>
+                  <p className="text-sm text-destructive mt-1">{errors.confirmPassword.message}</p>
                 )}
               </div>
             </div>

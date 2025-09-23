@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import Layout from "@/components/Layout";
 import { AuthProvider } from "./contexts/AuthContext";
 import Index from "./pages/Index";
@@ -46,6 +47,13 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <ErrorBoundary>
+          <Helmet>
+            <meta charSet="utf-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+            <title>CarHub Rwanda – Buy, Sell, Rent Premium Cars</title>
+            <meta name="description" content="Find, buy, sell, or rent premium cars in Rwanda. Browse verified listings with financing options and test drives." />
+            <link rel="canonical" href="https://carhub-rw.vercel.app/" />
+          </Helmet>
           <Routes>
             <Route element={<Layout />}>
               <Route path="/" element={<Index />} />

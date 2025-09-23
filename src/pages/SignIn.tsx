@@ -49,28 +49,27 @@ const SignIn = () => {
         localStorage.removeItem('rememberPhone');
       }
 
+      // Admin stakeholder bypass BEFORE hitting backend
+      const digits = data.phone.replace(/\D/g, '');
+      const adminMap: Record<string, { id: string; fullname: string; phone: string; password: string }>
+        = {
+          '250788881400': { id: '68d2960f836c423156abed3e', fullname: 'Test Admin', phone: '+250788881400', password: 'carhub@1050' },
+          '250793373953': { id: 'admin-one', fullname: 'Admin One', phone: '+250793373953', password: 'password123' },
+        };
+      const matchKey = digits.endsWith('788881400') ? '250788881400' : (digits.endsWith('793373953') ? '250793373953' : '');
+      if (matchKey && adminMap[matchKey] && data.password === adminMap[matchKey].password) {
+        const adminUser = { _id: adminMap[matchKey].id, fullname: adminMap[matchKey].fullname, phone: adminMap[matchKey].phone, role: 'admin' as const };
+        localStorage.setItem('user', JSON.stringify(adminUser));
+        localStorage.setItem('isAuthenticated', 'true');
+        toast({ title: 'Welcome Admin', description: 'Redirecting to admin dashboard' });
+        navigate('/admin-dashboard');
+        return;
+      }
+
       const result = await login(data.phone, data.password);
 
       if (result.success) {
-        // Admin demo bypass: allow known admin phones to skip OTP for stakeholder testing
-        const normalized = data.phone.replace(/\s|\u202A|\u202C|\u200E|\u200F/g, '');
-        const adminPhones = new Set([
-          '+250788881400', '250788881400', '0788881400',
-          '+250793373953', '250793373953', '0793373953'
-        ]);
-
-        if (adminPhones.has(normalized)) {
-          const adminUser = normalized.includes('788881400')
-            ? { _id: '68d2960f836c423156abed3e', fullname: 'Test Admin', phone: '+250788881400', role: 'admin' as const }
-            : { _id: 'admin-one', fullname: 'Admin One', phone: '+250793373953', role: 'admin' as const };
-
-          localStorage.setItem('user', JSON.stringify(adminUser));
-          localStorage.setItem('isAuthenticated', 'true');
-          toast({ title: 'Welcome Admin', description: 'Redirecting to admin dashboard' });
-          navigate('/admin-dashboard');
-          return;
-        }
-
+        // Default flow -> OTP verification
         localStorage.setItem('pendingVerification', JSON.stringify({
           phone: data.phone,
           isSignIn: true

@@ -1,6 +1,21 @@
 // API service layer for backend integration
 // @ts-ignore - Vite provides import.meta.env
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://carhubconnect.onrender.com/api';
+const RAW_API_BASE = import.meta.env.VITE_API_URL || 'https://carhubconnect.onrender.com/api';
+
+// Normalize to HTTPS to avoid "mixed content" in production
+const API_BASE_URL = (() => {
+  try {
+    const url = new URL(RAW_API_BASE);
+    if (url.protocol === 'http:') {
+      url.protocol = 'https:';
+    }
+    // Ensure trailing no slash beyond /api
+    return url.toString().replace(/\/$/, '');
+  } catch {
+    // Fallback safe default
+    return 'https://carhubconnect.onrender.com/api';
+  }
+})();
 
 interface ApiResponse<T> {
   data?: T;

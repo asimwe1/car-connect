@@ -1,6 +1,6 @@
 // API service layer for backend integration
 // @ts-ignore - Vite provides import.meta.env
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://carhubconnect.onrender.com/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://carhubconnect.onrender.com/api';
 
 interface ApiResponse<T> {
   data?: T;

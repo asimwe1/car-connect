@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaWhatsapp, FaPhone, FaFacebookF } from 'react-icons/fa';
+import { FaWhatsapp, FaFacebookF } from 'react-icons/fa';
 
 const FloatingActions: React.FC = () => {
   return (
@@ -13,13 +13,7 @@ const FloatingActions: React.FC = () => {
       >
         <FaWhatsapp className="h-6 w-6" />
       </a>
-      <a
-        href="tel:+250788881400"
-        aria-label="Call us"
-        className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
-      >
-        <FaPhone className="h-5 w-5" />
-      </a>
+      {/* Phone icon removed as requested */}
       <a
         href="https://www.facebook.com/"
         target="_blank"

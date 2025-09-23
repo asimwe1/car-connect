@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import SEO from "@/components/SEO";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -131,6 +132,7 @@ const BuyCars = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-accent/20 to-primary/10 p-8">
+      <SEO title="Buy Cars – CarHub Rwanda" description="Browse verified cars for sale in Rwanda. Filter by make, model, year, mileage, and condition." />
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">

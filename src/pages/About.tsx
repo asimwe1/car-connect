@@ -1,4 +1,5 @@
 import React from 'react';
+import SEO from '@/components/SEO';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Card, CardContent } from '@/components/ui/card';
@@ -22,6 +23,7 @@ const About = () => {
 
   return (
     <div className="min-h-screen">
+      <SEO title="About – CarHub Rwanda" description="Learn about CarHub, our mission, and the team connecting Rwanda with premium vehicles." />
       <Navbar />
       
       {/* Hero Section */}

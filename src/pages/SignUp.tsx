@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import SEO from '@/components/SEO';
 
 const schema = z.object({
   fullname: z.string().min(1, 'Full name is required'),
@@ -74,6 +75,7 @@ const SignUp = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-accent/20 to-primary/10 flex items-center justify-center p-4">
+      <SEO title="Sign Up – CarHub Rwanda" description="Create your CarHub account to save favorites, book test drives, and sell your car." />
       <Card className="w-full max-w-md bg-card/80 backdrop-blur-sm border border-border shadow-card">
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-primary-light bg-clip-text text-transparent">

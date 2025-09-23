@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import SEO from '@/components/SEO';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -108,6 +109,10 @@ const CarDetails = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title={`${car ? `${car.make} ${car.model} – ${car.year}` : 'Car Details'} | CarHub Rwanda`}
+        description={car?.description || 'View detailed specs, photos, and pricing for this vehicle.'}
+      />
       <div className="container mx-auto px-4 py-8">
         <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6">
           <ArrowLeft className="h-4 w-4 mr-2" /> Back

@@ -71,6 +71,24 @@ npm run build
 3. User verifies OTP within 5 minutes
 4. Successful verification redirects to dashboard
 
+## 🚀 Deployment
+
+[![Vercel](https://img.shields.io/badge/deployed%20on-Vercel-000?logo=vercel)](https://carhub-rw.vercel.app)
+
+- Live: https://carhub-rw.vercel.app
+
+## ✅ CI Smoke Tests
+
+Playwright smoke tests run on each push via GitHub Actions.
+
+Locally:
+```bash
+npm run build
+npx playwright install --with-deps
+BASE_URL=http://localhost:4173 npm run preview &
+npx wait-on http://localhost:4173 && npx playwright test --reporter=line
+```
+
 ## 🎯 Next Steps
 
 To enable full functionality including car management, user dashboards, and real-time data:

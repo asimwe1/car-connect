@@ -16,10 +16,6 @@ export default class ErrorBoundary extends React.Component<Props, State> {
 
   handleRetry = () => {
     this.setState({ hasError: false, error: undefined });
-    // simple retry: reload route
-    if (typeof window !== 'undefined') {
-      window.location.reload();
-    }
   };
 
   render() {
@@ -29,6 +25,11 @@ export default class ErrorBoundary extends React.Component<Props, State> {
           <div className="max-w-md w-full bg-card border border-border rounded-lg p-6 text-center">
             <h2 className="text-xl font-semibold mb-2">Something went wrong</h2>
             <p className="text-sm text-muted-foreground mb-4">An unexpected error occurred. Try again.</p>
+            {process.env.NODE_ENV !== 'production' && (
+              <pre className="text-left text-xs bg-muted p-2 rounded overflow-auto max-h-40">
+                {String(this.state.error)}
+              </pre>
+            )}
             <button onClick={this.handleRetry} className="btn-hero px-4 py-2 rounded">Try again</button>
           </div>
         </div>

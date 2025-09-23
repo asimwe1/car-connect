@@ -7,6 +7,8 @@ import { useInView } from 'react-intersection-observer';
 import { Link, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { api } from '@/services/api';
+import LazyImage from '@/components/LazyImage';
+import { localCars } from '@/data/localCars';
 
 interface Car {
   _id: string;
@@ -49,14 +51,15 @@ const ExploreSection = () => {
         limit: 8
       });
 
-      if (response.data?.items) {
+      if (response.data?.items && response.data.items.length > 0) {
         setCars(response.data.items);
       } else {
-        setCars([]);
+        // Fallback to local data
+        setCars(localCars as unknown as Car[]);
       }
     } catch (error) {
       console.error('Error fetching cars:', error);
-      setCars([]);
+      setCars(localCars as unknown as Car[]);
     } finally {
       setLoading(false);
     }
@@ -116,10 +119,11 @@ const ExploreSection = () => {
           {cars.map((car) => (
             <Card key={car._id} className="flex-shrink-0 w-80 overflow-hidden group cursor-pointer">
               <div className="relative">
-                <img
-                  src={car.primaryImage || car.images[0] || '/placeholder.svg'}
+                <LazyImage
+                  src={car.primaryImage || car.images[0]}
                   alt={`${car.make} ${car.model}`}
-                  className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                  containerClassName="w-full h-48"
+                  className="group-hover:scale-105"
                 />
                 {car.status === 'available' && (
                   <div className="absolute top-4 left-4">

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Car, Fuel, Settings, MapPin, Play } from 'lucide-react';
 import { api } from '@/services/api';
+import LazyImage from '@/components/LazyImage';
 
 interface CarData {
   _id: string;
@@ -118,7 +119,11 @@ const CarDetails = () => {
             <CardContent className="p-0">
               <div className="relative">
                 {images[activeImageIdx] ? (
-                  <img src={images[activeImageIdx]} alt={`${car.make} ${car.model}`} className="w-full h-[420px] object-cover" />
+                  <LazyImage
+                    src={images[activeImageIdx]}
+                    alt={`${car.make} ${car.model}`}
+                    containerClassName="w-full h-[420px]"
+                  />
                 ) : (
                   <div className="w-full h-[420px] bg-muted flex items-center justify-center">
                     <Car className="h-10 w-10 text-muted-foreground" />
@@ -130,7 +135,7 @@ const CarDetails = () => {
                 <div className="grid grid-cols-4 gap-2 p-3">
                   {images.map((src, idx) => (
                     <button key={idx} onClick={() => setActiveImageIdx(idx)} className={`h-20 overflow-hidden rounded ${idx === activeImageIdx ? 'ring-2 ring-primary' : ''}`}>
-                      <img src={src} className="w-full h-full object-cover" />
+                      <LazyImage src={src} alt={`thumb-${idx}`} containerClassName="w-full h-full" />
                     </button>
                   ))}
                 </div>

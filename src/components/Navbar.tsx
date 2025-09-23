@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Menu, X, User, Settings } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -55,19 +55,20 @@ const Navbar = () => {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
             {navLinks.map((link) => (
-              <Link
+              <NavLink
                 key={link.name}
                 to={link.path}
-                className={`relative text-sm font-medium transition-colors duration-200 ${
-                  isActiveLink(link)
-                    ? 'text-primary'
-                    : 'text-muted-foreground hover:text-primary'
-                } after:content-[''] after:absolute after:left-0 after:-bottom-2 after:h-[2px] after:bg-primary after:transition-all after:duration-300 after:origin-left ${
-                  isActiveLink(link) ? 'after:w-full after:scale-x-100 after:opacity-100' : 'after:w-0 after:scale-x-0 after:opacity-0 hover:after:w-full hover:after:scale-x-100 hover:after:opacity-100'
-                }`}
+                className={() => {
+                  const active = isActiveLink(link);
+                  return `relative text-sm font-medium transition-colors duration-200 ${
+                    active ? 'text-primary' : 'text-muted-foreground hover:text-primary'
+                  } after:content-[''] after:absolute after:left-0 after:-bottom-2 after:h-[2px] after:bg-primary after:transition-all after:duration-300 after:origin-left ${
+                    active ? 'after:w-full after:scale-x-100 after:opacity-100' : 'after:w-0 after:scale-x-0 after:opacity-0 hover:after:w-full hover:after:scale-x-100 hover:after:opacity-100'
+                  }`;
+                }}
               >
                 {link.name}
-              </Link>
+              </NavLink>
             ))}
           </div>
 
@@ -118,20 +119,21 @@ const Navbar = () => {
           <div className="md:hidden pb-4 border-t border-border">
             <div className="flex flex-col space-y-2 pt-4">
               {navLinks.map((link) => (
-                <Link
+                <NavLink
                   key={link.name}
                   to={link.path}
                   onClick={() => setIsOpen(false)}
-                  className={`relative px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    isActiveLink(link)
-                      ? 'text-primary'
-                      : 'text-muted-foreground hover:text-primary hover:bg-accent'
-                  } after:content-[''] after:absolute after:left-3 after:bottom-1 after:h-0.5 after:bg-primary after:transition-transform after:duration-300 after:origin-left ${
-                    isActiveLink(link) ? 'after:w-10 after:scale-x-100' : 'after:w-10 after:scale-x-0 group-hover:after:scale-x-100'
-                  }`}
+                  className={() => {
+                    const active = isActiveLink(link);
+                    return `relative px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      active ? 'text-primary' : 'text-muted-foreground hover:text-primary hover:bg-accent'
+                    } after:content-[''] after:absolute after:left-3 after:bottom-1 after:h-0.5 after:bg-primary after:transition-transform after:duration-300 after:origin-left ${
+                      active ? 'after:w-10 after:scale-x-100' : 'after:w-10 after:scale-x-0 group-hover:after:scale-x-100'
+                    }`;
+                  }}
                 >
                   {link.name}
-                </Link>
+                </NavLink>
               ))}
               <div className="pt-4 border-t border-border">
                 {isAuthenticated ? (

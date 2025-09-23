@@ -9,6 +9,8 @@ import { Search, Filter, Car, Fuel, Settings, Users, MapPin, Heart } from "lucid
 import { useToast } from "@/hooks/use-toast";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { api } from "@/services/api";
+import LazyImage from "@/components/LazyImage";
+import { localCars } from "@/data/localCars";
 
 interface Car {
   _id: string;
@@ -58,7 +60,7 @@ const BuyCars = () => {
         limit: 50
       });
 
-      if (response.data?.items) {
+      if (response.data?.items && response.data.items.length > 0) {
         let filteredCars = response.data.items;
 
         // Apply client-side filtering for make and year
@@ -96,11 +98,12 @@ const BuyCars = () => {
 
         setCars(filteredCars);
       } else {
-        setCars([]);
+        // Use local fallback data
+        setCars(localCars as unknown as Car[]);
       }
     } catch (error) {
       console.error("Error fetching cars:", error);
-      setCars([]);
+      setCars(localCars as unknown as Car[]);
       toast({
         title: "Error",
         description: "Failed to load cars. Please try again.",
@@ -249,10 +252,11 @@ const BuyCars = () => {
             {cars.map((car) => (
               <Card key={car._id} className="overflow-hidden hover:shadow-lg transition-shadow group">
                 <div className="relative">
-                  <img
-                    src={(car.primaryImage || car.images?.[0] || '/placeholder.svg')}
+                  <LazyImage
+                    src={car.primaryImage || car.images?.[0]}
                     alt={`${car.make} ${car.model}`}
-                    className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                    containerClassName="w-full h-48"
+                    className="group-hover:scale-105"
                   />
                   
                   {car.status === "available" && (

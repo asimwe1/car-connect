@@ -3,6 +3,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Card, CardContent } from '@/components/ui/card';
 import { Shield, Award, Users, Clock } from 'lucide-react';
+import LazyImage from '@/components/LazyImage';
 
 const About = () => {
   const stats = [
@@ -53,10 +54,11 @@ const About = () => {
               </p>
             </div>
             <div className="animate-zoom-in">
-              <img 
+              <LazyImage 
                 src="/placeholder.svg" 
                 alt="Our mission" 
-                className="w-full h-96 object-cover rounded-lg shadow-lg"
+                containerClassName="w-full h-96"
+                className="rounded-lg shadow-lg"
               />
             </div>
           </div>
@@ -91,11 +93,12 @@ const About = () => {
             {team.map((member, index) => (
               <Card key={index} className="text-center overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-2 animate-zoom-in" style={{ animationDelay: `${index * 200}ms` }}>
                 <CardContent className="p-0">
-                  <img 
+                  <LazyImage 
                     src={member.image} 
                     alt={member.name}
-                    className="w-full h-64 object-cover"
+                    containerClassName="w-full h-64"
                   />
+
                   <div className="p-6">
                     <h3 className="text-xl font-semibold mb-2">{member.name}</h3>
                     <p className="text-muted-foreground">{member.role}</p>

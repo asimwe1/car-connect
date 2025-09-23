@@ -14,6 +14,11 @@ import Footer from '@/components/Footer';
 const Index = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = React.useState(false);
+  // Clear any remembered demo/session data when landing page loads (fresh start)
+  React.useEffect(() => {
+    localStorage.removeItem('rememberPhone');
+    // Do not clear actual user session here; only remembered phone.
+  }, []);
 
   const handleBrowseCars = () => {
     setLoading(true);

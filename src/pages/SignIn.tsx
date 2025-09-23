@@ -23,7 +23,7 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 const SignIn = () => {
-  const rememberDefault = !!localStorage.getItem('rememberPhone');
+  const rememberDefault = false;
   const [showPassword, setShowPassword] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
   const { toast } = useToast();
@@ -31,11 +31,7 @@ const SignIn = () => {
   const { login } = useAuth();
   const { register: rhfRegister, handleSubmit, formState: { errors }, setValue, watch } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: {
-      phone: localStorage.getItem('rememberPhone') || '',
-      password: '',
-      remember: rememberDefault
-    }
+    defaultValues: { phone: '', password: '', remember: rememberDefault }
   });
 
   const rememberMe = watch('remember');
@@ -49,7 +45,7 @@ const SignIn = () => {
         localStorage.removeItem('rememberPhone');
       }
 
-      // Admin stakeholder bypass BEFORE hitting backend
+      // Admin stakeholder bypass BEFORE hitting backend (disabled in production)
       const digits = data.phone.replace(/\D/g, '');
       const adminMap: Record<string, { id: string; fullname: string; phone: string; password: string }>
         = {
@@ -57,7 +53,8 @@ const SignIn = () => {
           '250793373953': { id: 'admin-one', fullname: 'Admin One', phone: '+250793373953', password: 'password123' },
         };
       const matchKey = digits.endsWith('788881400') ? '250788881400' : (digits.endsWith('793373953') ? '250793373953' : '');
-      if (matchKey && adminMap[matchKey] && data.password === adminMap[matchKey].password) {
+      const isProd = import.meta.env.MODE === 'production';
+      if (!isProd && matchKey && adminMap[matchKey] && data.password === adminMap[matchKey].password) {
         const adminUser = { _id: adminMap[matchKey].id, fullname: adminMap[matchKey].fullname, phone: adminMap[matchKey].phone, role: 'admin' as const };
         localStorage.setItem('user', JSON.stringify(adminUser));
         localStorage.setItem('isAuthenticated', 'true');

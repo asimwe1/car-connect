@@ -16,11 +16,13 @@ const Footer = () => {
           </p>
           <div className="flex max-w-md mx-auto gap-2">
             <Input
-              type="email"
-              placeholder="Your phone number"
+              type="tel"
+              placeholder="Enter phone (optional)"
               className="bg-white/10 border-white/20 text-white placeholder:text-blue-200"
             />
-            <Button className="btn-hero">Sign Up</Button>
+            <Button className="btn-hero" asChild>
+              <a href="/signup">Sign Up</a>
+            </Button>
           </div>
         </div>
 

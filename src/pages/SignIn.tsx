@@ -12,6 +12,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import SEO from '@/components/SEO';
+import { firebasePhoneAuth } from '@/services/firebaseAuth';
 
 const schema = z.object({
   phone: z.string().min(10).max(16).regex(/^\+?[0-9]{10,15}$/,
@@ -45,45 +46,61 @@ const SignIn = () => {
         localStorage.removeItem('rememberPhone');
       }
 
-      // Admin stakeholder bypass BEFORE hitting backend (disabled in production)
-      const digits = data.phone.replace(/\D/g, '');
-      const adminMap: Record<string, { id: string; fullname: string; phone: string; password: string }>
-        = {
-          '250788881400': { id: '68d2960f836c423156abed3e', fullname: 'Test Admin', phone: '+250788881400', password: 'carhub@1050' },
-          '250793373953': { id: 'admin-one', fullname: 'Admin One', phone: '+250793373953', password: 'password123' },
-        };
-      const matchKey = digits.endsWith('788881400') ? '250788881400' : (digits.endsWith('793373953') ? '250793373953' : '');
-      const isProd = import.meta.env.MODE === 'production';
-      if (!isProd && matchKey && adminMap[matchKey] && data.password === adminMap[matchKey].password) {
-        const adminUser = { _id: adminMap[matchKey].id, fullname: adminMap[matchKey].fullname, phone: adminMap[matchKey].phone, role: 'admin' as const };
-        localStorage.setItem('user', JSON.stringify(adminUser));
-        localStorage.setItem('isAuthenticated', 'true');
-        toast({ title: 'Welcome Admin', description: 'Redirecting to admin dashboard' });
-        navigate('/admin-dashboard');
-        return;
+      // Check if it's an admin number for bypass
+      if (firebasePhoneAuth.isAdminNumber(data.phone)) {
+        const adminBypass = await firebasePhoneAuth.adminBypass(data.phone);
+        if (adminBypass.success) {
+          // Admin credentials validation
+          const digits = data.phone.replace(/\D/g, '');
+          const adminMap: Record<string, { id: string; fullname: string; phone: string; password: string }> = {
+              '250788881400': { id: '68d2960f836c423156abed3e', fullname: 'Test Admin', phone: '+250788881400', password: 'carhub@1050' },
+              '250793373953': { id: 'admin-one', fullname: 'Admin One', phone: '+250793373953', password: 'password123' },
+            };
+          const matchKey = digits.endsWith('788881400') ? '250788881400' : (digits.endsWith('793373953') ? '250793373953' : '');
+          
+          if (matchKey && adminMap[matchKey] && data.password === adminMap[matchKey].password) {
+            const adminUser = { _id: adminMap[matchKey].id, fullname: adminMap[matchKey].fullname, phone: adminMap[matchKey].phone, role: 'admin' as const };
+            localStorage.setItem('user', JSON.stringify(adminUser));
+            localStorage.setItem('isAuthenticated', 'true');
+            toast({ title: 'Welcome Admin', description: 'Admin access granted. Redirecting to dashboard.' });
+            navigate('/admin-dashboard');
+            return;
+          } else {
+            toast({
+              title: "Invalid Admin Credentials",
+              description: "Please check your password",
+              variant: "destructive",
+            });
+            return;
+          }
+        }
       }
 
-      const result = await login(data.phone, data.password);
-
-      if (result.success) {
-        // Default flow -> OTP verification
-        localStorage.setItem('pendingVerification', JSON.stringify({
-          phone: data.phone,
-          isSignIn: true
-        }));
-        toast({ title: 'Verification Code Sent', description: 'Please check your phone for the verification code' });
-        navigate('/verify-otp');
-      } else {
-        toast({
-          title: "Error",
-          description: result.message || "Login failed",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
+      // Initialize Firebase Phone Auth
+      firebasePhoneAuth.initializeRecaptcha();
+      
+      // Send OTP using Firebase Phone Auth
+      await firebasePhoneAuth.sendOTP(data.phone);
+      
+      // Store verification data
+      localStorage.setItem('pendingVerification', JSON.stringify({
+        phone: data.phone,
+        password: data.password,
+        isSignIn: true,
+        useFirebase: true
+      }));
+      
+      toast({ 
+        title: 'Verification Code Sent', 
+        description: 'Please check your phone for the verification code' 
+      });
+      navigate('/verify-otp');
+      
+    } catch (error: any) {
+      console.error('SignIn error:', error);
       toast({
         title: "Error",
-        description: "An unexpected error occurred",
+        description: error.message || "An unexpected error occurred",
         variant: "destructive",
       });
     } finally {
@@ -183,6 +200,9 @@ const SignIn = () => {
           </div>
         </CardContent>
       </Card>
+      
+      {/* Hidden reCAPTCHA container */}
+      <div id="recaptcha-container" className="hidden"></div>
     </div>
   );
 };

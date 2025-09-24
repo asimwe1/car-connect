@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Shield, Clock, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { firebasePhoneAuth } from '@/services/firebaseAuth';
 
 const VerifyOTP = () => {
   const [otp, setOtp] = useState('');
@@ -73,7 +74,24 @@ const VerifyOTP = () => {
     setIsLoading(true);
 
     try {
-      const result = await verifyOtp(userData.phone, otp);
+      let result;
+      
+      // Check if using Firebase Phone Auth
+      if (userData.useFirebase) {
+        // Verify OTP using Firebase
+        const firebaseUser = await firebasePhoneAuth.verifyOTP(otp);
+        
+        // Now authenticate with backend using the verified phone number
+        if (userData.isSignIn) {
+          result = await login(userData.phone, userData.password);
+        } else {
+          // For signup, you might want to create the user account here
+          result = { success: true, user: firebaseUser };
+        }
+      } else {
+        // Use existing backend OTP verification
+        result = await verifyOtp(userData.phone, otp);
+      }
 
       if (result.success) {
         localStorage.removeItem('pendingVerification');
@@ -96,11 +114,11 @@ const VerifyOTP = () => {
         });
         setOtp('');
       }
-    } catch (error) {
+    } catch (error: any) {
       setAttempts(prev => prev + 1);
       toast({
         title: "Verification Failed",
-        description: "Please try again",
+        description: error.message || "Please try again",
         variant: "destructive",
       });
       setOtp('');
@@ -116,11 +134,26 @@ const VerifyOTP = () => {
     setTimeLeft(60);
     setAttempts(0);
     
-    toast({
-      title: "OTP Sent",
-      description: "A new verification code has been sent to your phone",
-      variant: "default",
-    });
+    try {
+      // Check if using Firebase Phone Auth
+      if (userData?.useFirebase) {
+        // Re-initialize Firebase Phone Auth and send new OTP
+        firebasePhoneAuth.initializeRecaptcha();
+        await firebasePhoneAuth.sendOTP(userData.phone);
+      }
+      
+      toast({
+        title: "OTP Sent",
+        description: "A new verification code has been sent to your phone",
+        variant: "default",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to resend OTP",
+        variant: "destructive",
+      });
+    }
 
     // Restart timer
     const timer = setInterval(() => {
@@ -210,6 +243,9 @@ const VerifyOTP = () => {
           )}
         </CardContent>
       </Card>
+      
+      {/* Hidden reCAPTCHA container */}
+      <div id="recaptcha-container" className="hidden"></div>
     </div>
   );
 };

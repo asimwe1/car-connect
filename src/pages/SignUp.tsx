@@ -11,6 +11,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import SEO from '@/components/SEO';
+import { firebasePhoneAuth } from '@/services/firebaseAuth';
 
 const schema = z.object({
   fullname: z.string().min(1, 'Full name is required'),
@@ -40,32 +41,32 @@ const SignUp = () => {
     setIsLoading(true);
 
     try {
-      const result = await register(data.fullname, data.phone, data.password);
-
-      if (result.success) {
-        localStorage.setItem('pendingVerification', JSON.stringify({
-          phone: data.phone,
-          fullname: data.fullname,
-          isSignUp: true
-        }));
-        
-        toast({
-          title: "Verification Code Sent",
-          description: "Please check your phone for the verification code",
-        });
-        
-        navigate('/verify-otp');
-      } else {
-        toast({
-          title: "Error",
-          description: result.message || "Registration failed",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
+      // Initialize Firebase Phone Auth
+      firebasePhoneAuth.initializeRecaptcha();
+      
+      // Send OTP using Firebase Phone Auth
+      await firebasePhoneAuth.sendOTP(data.phone);
+      
+      // Store verification data
+      localStorage.setItem('pendingVerification', JSON.stringify({
+        phone: data.phone,
+        fullname: data.fullname,
+        password: data.password,
+        isSignUp: true,
+        useFirebase: true
+      }));
+      
+      toast({ 
+        title: 'Verification Code Sent', 
+        description: 'Please check your phone for the verification code' 
+      });
+      navigate('/verify-otp');
+      
+    } catch (error: any) {
+      console.error('SignUp error:', error);
       toast({
         title: "Error",
-        description: "An unexpected error occurred",
+        description: error.message || "An unexpected error occurred",
         variant: "destructive",
       });
     } finally {
@@ -75,14 +76,14 @@ const SignUp = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-accent/20 to-primary/10 flex items-center justify-center p-4">
-      <SEO title="Sign Up – CarHub Rwanda" description="Create your CarHub account to save favorites, book test drives, and sell your car." />
+      <SEO title="Sign Up – CarHub Rwanda" description="Create your CarHub account to start buying, selling, and renting cars in Rwanda." />
       <Card className="w-full max-w-md bg-card/80 backdrop-blur-sm border border-border shadow-card">
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-primary-light bg-clip-text text-transparent">
             Create Account
           </CardTitle>
           <CardDescription className="text-muted-foreground">
-            Join our premium car marketplace
+            Join CarHub Rwanda today
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -133,7 +134,6 @@ const SignUp = () => {
                   placeholder="Create a password"
                   {...rhfRegister('password')}
                   className={`search-input pl-8 pr-10 ${errors.password ? 'border-destructive' : ''}`}
-                  minLength={8}
                   required
                 />
                 <button
@@ -143,6 +143,9 @@ const SignUp = () => {
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
+                {errors.password && (
+                  <p className="text-sm text-destructive mt-1">{errors.password.message}</p>
+                )}
               </div>
             </div>
 
@@ -156,7 +159,6 @@ const SignUp = () => {
                   placeholder="Confirm your password"
                   {...rhfRegister('confirmPassword')}
                   className={`search-input pl-8 pr-10 ${errors.confirmPassword ? 'border-destructive' : ''}`}
-                  minLength={8}
                   required
                 />
                 <button
@@ -194,6 +196,9 @@ const SignUp = () => {
           </div>
         </CardContent>
       </Card>
+      
+      {/* Hidden reCAPTCHA container */}
+      <div id="recaptcha-container" className="hidden"></div>
     </div>
   );
 };

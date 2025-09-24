@@ -90,7 +90,6 @@ const AdminDashboard = () => {
     { icon: BarChart3, label: 'Dashboard', href: '/admin-dashboard', active: true },
     { icon: Car, label: 'Manage Cars', href: '/admin/cars' },
     { icon: Plus, label: 'Add New Car', href: '/admin/add-car' },
-    { icon: Users, label: 'Manage Users', href: '/admin/users' },
     { icon: Calendar, label: 'Bookings', href: '/admin/orders' },
     { icon: DollarSign, label: 'Orders', href: '/admin/orders' },
     { icon: Settings, label: 'Settings', href: '/settings' },
@@ -255,15 +254,7 @@ const AdminDashboard = () => {
               </Card>
             </Link>
 
-            <Link to="/admin/users">
-              <Card className="bg-card/80 backdrop-blur-sm border border-border hover:shadow-card transition-shadow cursor-pointer">
-                <CardContent className="p-6 text-center">
-                  <Users className="w-8 h-8 text-primary mx-auto mb-3" />
-                  <h3 className="font-semibold mb-1">Manage Users</h3>
-                  <p className="text-sm text-muted-foreground">User accounts</p>
-                </CardContent>
-              </Card>
-            </Link>
+            
 
             <Link to="/admin/orders">
               <Card className="bg-card/80 backdrop-blur-sm border border-border hover:shadow-card transition-shadow cursor-pointer">

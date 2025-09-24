@@ -105,8 +105,7 @@ const AdminDashboard = () => {
     { icon: Car, label: 'Sell/Rent Cars', href: '/list-car' },
     { icon: Calendar, label: 'Bookings', href: '/admin/orders' },
     { icon: DollarSign, label: 'Orders', href: '/admin/orders' },
-    { icon: MessageCircle, label: 'Support', href: '/support' },
-    { icon: Settings, label: 'Settings', href: '/settings' },
+    // Settings and Support moved to bottom section
   ];
 
   return (
@@ -138,7 +137,21 @@ const AdminDashboard = () => {
             ))}
           </nav>
 
-          <div className="absolute bottom-4 left-4 right-4">
+          <div className="absolute bottom-4 left-4 right-4 space-y-2">
+            <Link
+              to="/settings"
+              className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent/50"
+            >
+              <Settings className="w-4 h-4" />
+              Settings
+            </Link>
+            <Link
+              to="/support"
+              className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent/50"
+            >
+              <MessageCircle className="w-4 h-4" />
+              Support
+            </Link>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button
@@ -146,7 +159,7 @@ const AdminDashboard = () => {
                   className="w-full justify-start text-muted-foreground hover:text-foreground"
                 >
                   <LogOut className="w-5 h-5 mr-3" />
-                  Sign Out
+                  Log out
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>

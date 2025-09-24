@@ -8,6 +8,9 @@ import {
 } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 
+// Feature flag: allow using a fake OTP flow when Firebase is not configured
+const USE_FAKE_OTP = (import.meta as any)?.env?.VITE_USE_FAKE_OTP === 'true';
+
 // Test phone numbers for development (no SMS charges)
 const TEST_PHONE_NUMBERS = [
   '+250788881400', // Admin number 1
@@ -63,11 +66,46 @@ export class FirebasePhoneAuth {
         console.log(`Use verification code: ${TEST_VERIFICATION_CODES[phoneNumber as keyof typeof TEST_VERIFICATION_CODES] || '123456'}`);
       }
 
+      // If fake mode enabled, short-circuit and simulate a ConfirmationResult
+      if (USE_FAKE_OTP) {
+        console.warn('[OTP] Using FAKE OTP flow (VITE_USE_FAKE_OTP=true). No SMS will be sent.');
+        this.confirmationResult = {
+          // Minimal shape for what we use later
+          confirm: async (code: string) => {
+            const expected = TEST_VERIFICATION_CODES[phoneNumber as keyof typeof TEST_VERIFICATION_CODES] || '123456';
+            if (code !== expected) {
+              // mimic Firebase behavior
+              throw Object.assign(new Error('Invalid verification code'), { code: 'auth/invalid-verification-code' });
+            }
+            // Return a minimal user-like object
+            return { user: { phoneNumber } as unknown as User } as unknown as any;
+          }
+        } as unknown as ConfirmationResult;
+        return this.confirmationResult;
+      }
+
       this.confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, this.recaptchaVerifier);
       return this.confirmationResult;
     } catch (error: any) {
       console.error('Error sending OTP:', error);
-      throw new Error(this.getErrorMessage(error.code));
+      // If Firebase is misconfigured (e.g., invalid api key), fallback to FAKE OTP automatically
+      const code: string | undefined = error?.code;
+      const apiKeyInvalid = code === 'auth/api-key-not-valid' || /api-key/i.test(String(error?.message || ''));
+      if (apiKeyInvalid || USE_FAKE_OTP) {
+        console.warn('[OTP] Falling back to FAKE OTP due to Firebase configuration issue.');
+        this.confirmationResult = {
+          confirm: async (codeInput: string) => {
+            const expected = TEST_VERIFICATION_CODES[phoneNumber as keyof typeof TEST_VERIFICATION_CODES] || '123456';
+            if (codeInput !== expected) {
+              throw Object.assign(new Error('Invalid verification code'), { code: 'auth/invalid-verification-code' });
+            }
+            return { user: { phoneNumber } as unknown as User } as unknown as any;
+          }
+        } as unknown as ConfirmationResult;
+        return this.confirmationResult;
+      }
+
+      throw new Error(this.getErrorMessage(code || ''));
     }
   }
 

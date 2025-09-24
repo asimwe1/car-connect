@@ -9,7 +9,12 @@ import {
 import { auth } from '../lib/firebase';
 
 // Feature flag: allow using a fake OTP flow when Firebase is not configured
-const USE_FAKE_OTP = (import.meta as any)?.env?.VITE_USE_FAKE_OTP === 'true';
+// Default to true if the env var is missing to simplify testing
+const USE_FAKE_OTP = ((): boolean => {
+  const raw = (import.meta as any)?.env?.VITE_USE_FAKE_OTP;
+  if (raw === undefined || raw === null || String(raw).trim() === '') return true;
+  return String(raw) === 'true';
+})();
 
 // Test phone numbers for development (no SMS charges)
 const TEST_PHONE_NUMBERS = [

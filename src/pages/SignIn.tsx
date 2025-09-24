@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { notify } from '@/components/Notifier';
 import { Eye, EyeOff, Phone, Lock } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Link, useNavigate } from 'react-router-dom';
@@ -76,10 +77,11 @@ const SignIn = () => {
         }
       }
 
-      // Initialize Firebase Phone Auth
-      firebasePhoneAuth.initializeRecaptcha();
-      
-      // Send OTP using Firebase Phone Auth
+      // Initialize Firebase Phone Auth when not in fake mode
+      if (!firebasePhoneAuth.isFakeMode()) {
+        firebasePhoneAuth.initializeRecaptcha();
+      }
+      // Send OTP (in fake mode this does not hit Firebase)
       await firebasePhoneAuth.sendOTP(data.phone);
       
       // Store verification data
@@ -90,20 +92,13 @@ const SignIn = () => {
         useFirebase: true
       }));
       
-      toast({ 
-        title: 'Verification Code Sent', 
-        description: 'Please check your phone for the verification code' 
-      });
+      notify.success('Verification Code Sent', 'Use 123456 for test numbers');
       navigate('/verify-otp');
       
     } catch (error: unknown) {
       console.error('SignIn error:', error);
-      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+      notify.error('Sign in failed', errorMessage);
     } finally {
       setIsLoading(false);
     }

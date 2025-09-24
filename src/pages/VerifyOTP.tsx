@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { useToast } from '@/hooks/use-toast';
+import { notify } from '@/components/Notifier';
 import { Shield, Clock, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -44,29 +45,17 @@ const VerifyOTP = () => {
 
   const handleVerifyOTP = async () => {
     if (otp.length !== 6) {
-      toast({
-        title: "Invalid OTP",
-        description: "Please enter the 6-digit code",
-        variant: "destructive",
-      });
+      notify.error('Invalid OTP', 'Please enter the 6-digit code');
       return;
     }
 
     if (attempts >= 5) {
-      toast({
-        title: "Too Many Attempts",
-        description: "Please try again later",
-        variant: "destructive",
-      });
+      notify.error('Too Many Attempts', 'Please try again later');
       return;
     }
 
     if (!userData?.phone) {
-      toast({
-        title: "Error",
-        description: "Phone number not found",
-        variant: "destructive",
-      });
+      notify.error('Error', 'Phone number not found');
       navigate('/signin');
       return;
     }
@@ -98,11 +87,7 @@ const VerifyOTP = () => {
         await checkAuth();
         localStorage.removeItem('pendingVerification');
         
-        toast({
-          title: "Success!",
-          description: "Account verified successfully",
-          variant: "default",
-        });
+        notify.success('Success!', 'Account verified successfully');
         
         // Redirect based on user role (re-read from storage/context)
         const updatedUser = JSON.parse(localStorage.getItem('user') || 'null') || user;
@@ -121,20 +106,12 @@ const VerifyOTP = () => {
         }
       } else {
         setAttempts(prev => prev + 1);
-        toast({
-          title: "Invalid OTP",
-          description: result.message || `Wrong code. ${5 - attempts - 1} attempts remaining`,
-          variant: "destructive",
-        });
+        notify.error('Invalid OTP', result.message || `Wrong code. ${5 - attempts - 1} attempts remaining`);
         setOtp('');
       }
     } catch (error: any) {
       setAttempts(prev => prev + 1);
-      toast({
-        title: "Verification Failed",
-        description: error.message || "Please try again",
-        variant: "destructive",
-      });
+      notify.error('Verification Failed', error.message || 'Please try again');
       setOtp('');
     } finally {
       setIsLoading(false);
@@ -156,17 +133,9 @@ const VerifyOTP = () => {
         await firebasePhoneAuth.sendOTP(userData.phone);
       }
       
-      toast({
-        title: "OTP Sent",
-        description: "A new verification code has been sent to your phone",
-        variant: "default",
-      });
+      notify.success('OTP Sent', 'Use code 123456 for test numbers');
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to resend OTP",
-        variant: "destructive",
-      });
+      notify.error('Error', error.message || 'Failed to resend OTP');
     }
 
     // Restart timer

@@ -39,6 +39,7 @@ interface Vehicle {
 const AdminCars = () => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -49,41 +50,33 @@ const AdminCars = () => {
 
   const fetchVehicles = async () => {
     try {
+      setErrorMessage(null);
       setLoading(true);
-      const response = await api.getCars({
-        page: 1,
-        limit: 100
-      });
-      
-      if (response.data?.items) {
-        // Map backend car data to frontend vehicle format
-        const mappedVehicles: Vehicle[] = response.data.items.map((car: any) => ({
-          id: car._id,
-          name: `${car.make} ${car.model}`,
-          year: car.year,
-          subtitle: car.bodyType || 'Vehicle',
-          image: car.primaryImage || car.images[0] || '/placeholder.svg',
-          price: car.price,
-          mileage: car.mileage,
-          fuelType: car.fuelType,
-          transmission: car.transmission,
-          badge: car.status === 'available' ? 'Available' : car.status === 'reserved' ? 'Reserved' : undefined,
-          make: car.make,
-          location: car.location,
-          seats: 5, // Default value
-          condition: 'Used', // Default value
-        }));
-        setVehicles(mappedVehicles);
-      } else {
-        setVehicles([]);
-      }
-    } catch (error) {
+      const response = await api.getCars({ page: 1, limit: 100 });
+      const raw = (response as any)?.data;
+      const src: any[] = Array.isArray(raw?.items) ? raw.items : (Array.isArray(raw) ? raw : []);
+      const mappedVehicles: Vehicle[] = src.map((car: any) => ({
+        id: String(car._id || car.id || ''),
+        name: `${car.make || 'Unknown'} ${car.model || ''}`.trim(),
+        year: Number(car.year || new Date().getFullYear()),
+        subtitle: car.bodyType || car.category || 'Vehicle',
+        image: car.primaryImage || (Array.isArray(car.images) ? car.images[0] : '') || '/placeholder.svg',
+        price: Number(car.price || 0),
+        mileage: Number(car.mileage || 0),
+        fuelType: car.fuelType || '—',
+        transmission: car.transmission || '—',
+        badge: car.status === 'available' ? 'Available' : car.status === 'reserved' ? 'Reserved' : undefined,
+        make: car.make || undefined,
+        location: car.location || undefined,
+        seats: 5,
+        condition: car.condition || 'Used',
+      }));
+      setVehicles(mappedVehicles);
+    } catch (error: any) {
       console.error("Error fetching vehicles:", error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch vehicles. Please try again.",
-        variant: "destructive",
-      });
+      const msg = typeof error?.message === 'string' ? error.message : 'Failed to fetch vehicles. Please try again.';
+      setErrorMessage(msg);
+      toast({ title: 'Error', description: msg, variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -174,6 +167,18 @@ const AdminCars = () => {
               </Card>
             ))}
           </div>
+        ) : errorMessage ? (
+          <Card className="bg-destructive/10 border-destructive/30 mb-8">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h3 className="font-semibold text-destructive">Vehicles failed to load</h3>
+                  <p className="text-sm text-muted-foreground mt-1">{errorMessage}</p>
+                </div>
+                <Button onClick={fetchVehicles} variant="destructive">Retry</Button>
+              </div>
+            </CardContent>
+          </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredVehicles.map((vehicle) => (

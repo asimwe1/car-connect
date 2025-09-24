@@ -35,6 +35,7 @@ interface User {
 const AdminUsers = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRole, setSelectedRole] = useState<string>("");
   const navigate = useNavigate();
@@ -46,67 +47,29 @@ const AdminUsers = () => {
 
   const fetchUsers = async () => {
     try {
+      setErrorMessage(null);
       setLoading(true);
-      // Mock data for now - replace with actual API call
-      const mockUsers: User[] = [
-        {
-          id: '1',
-          full_name: 'John Doe',
-          email: 'john@example.com',
-          phone: '+250 123 456 789',
-          role: 'buyer',
-          created_at: '2024-01-15T10:30:00Z',
-          last_login: '2024-01-20T14:22:00Z',
-          is_active: true,
-          total_orders: 3,
-          total_spent: 125000
-        },
-        {
-          id: '2',
-          full_name: 'Jane Smith',
-          email: 'jane@example.com',
-          phone: '+250 987 654 321',
-          role: 'admin',
-          created_at: '2024-01-10T09:15:00Z',
-          last_login: '2024-01-20T16:45:00Z',
-          is_active: true,
-          total_orders: 0,
-          total_spent: 0
-        },
-        {
-          id: '3',
-          full_name: 'Mike Johnson',
-          email: 'mike@example.com',
-          phone: '+250 555 123 456',
-          role: 'seller',
-          created_at: '2024-01-12T11:20:00Z',
-          last_login: '2024-01-19T13:30:00Z',
-          is_active: true,
-          total_orders: 0,
-          total_spent: 0
-        },
-        {
-          id: '4',
-          full_name: 'Sarah Wilson',
-          email: 'sarah@example.com',
-          phone: '+250 444 777 888',
-          role: 'buyer',
-          created_at: '2024-01-18T15:45:00Z',
-          last_login: '2024-01-20T10:15:00Z',
-          is_active: false,
-          total_orders: 1,
-          total_spent: 45000
-        }
-      ];
-      
-      setUsers(mockUsers);
-    } catch (error) {
+      const response = await api.getUsers({ page: 1, limit: 100 });
+      const raw = (response as any)?.data;
+      const src: any[] = Array.isArray(raw?.items) ? raw.items : (Array.isArray(raw) ? raw : []);
+      const normalized: User[] = src.map((u: any) => ({
+        id: String(u._id || u.id || ''),
+        full_name: String(u.fullname || u.full_name || u.name || '—'),
+        email: String(u.email || '—'),
+        phone: String(u.phone || '—'),
+        role: (u.role || 'buyer') as any,
+        created_at: String(u.createdAt || u.created_at || new Date().toISOString()),
+        last_login: u.lastLogin || u.last_login || undefined,
+        is_active: Boolean(u.isActive ?? true),
+        total_orders: Number(u.totalOrders || 0),
+        total_spent: Number(u.totalSpent || 0)
+      }));
+      setUsers(normalized);
+    } catch (error: any) {
       console.error("Error fetching users:", error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch users. Please try again.",
-        variant: "destructive",
-      });
+      const msg = typeof error?.message === 'string' ? error.message : 'Failed to fetch users. Please try again.';
+      setErrorMessage(msg);
+      toast({ title: 'Error', description: msg, variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -244,6 +207,18 @@ const AdminUsers = () => {
               </Card>
             ))}
           </div>
+        ) : errorMessage ? (
+          <Card className="bg-destructive/10 border-destructive/30 mb-6">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h3 className="font-semibold text-destructive">Users failed to load</h3>
+                  <p className="text-sm text-muted-foreground mt-1">{errorMessage}</p>
+                </div>
+                <Button onClick={fetchUsers} variant="destructive">Retry</Button>
+              </div>
+            </CardContent>
+          </Card>
         ) : (
           <div className="space-y-4">
             {filteredUsers.map((user) => (

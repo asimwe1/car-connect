@@ -38,6 +38,16 @@ export class FirebasePhoneAuth {
     }
   }
 
+  // Expose whether FAKE OTP mode is active
+  isFakeMode(): boolean {
+    return USE_FAKE_OTP === true;
+  }
+
+  // Expose whether a phone number is one of our test numbers
+  isTestNumber(phoneNumber: string): boolean {
+    return TEST_PHONE_NUMBERS.includes(phoneNumber);
+  }
+
   // Initialize reCAPTCHA verifier
   initializeRecaptcha(containerId: string = 'recaptcha-container'): RecaptchaVerifier {
     this.recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {

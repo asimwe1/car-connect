@@ -6,10 +6,10 @@ import { FaWhatsapp, FaFacebookF, FaInstagram, FaXTwitter } from 'react-icons/fa
 
 const Footer = () => {
   return (
-    <footer className="bg-blue-900 text-white py-16">
+    <footer className="bg-[#0B2559] text-white py-16">
       <div className="container mx-auto px-4">
         {/* Newsletter Section */}
-        <div className="bg-blue-800/60 rounded-lg p-8 mb-12 text-center">
+        <div className="bg-[#12306E]/60 rounded-lg p-8 mb-12 text-center">
           <h2 className="text-2xl font-bold mb-4">CarConnect</h2>
           <p className="text-blue-100 mb-6">
             We help you to buy your favorite car and make sure it's delivered to your door

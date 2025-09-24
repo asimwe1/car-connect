@@ -106,8 +106,19 @@ const VerifyOTP = () => {
         
         // Redirect based on user role (re-read from storage/context)
         const updatedUser = JSON.parse(localStorage.getItem('user') || 'null') || user;
-        const isAdmin = updatedUser?.role === 'admin';
-        navigate(isAdmin ? '/admin-dashboard' : '/buyer-dashboard');
+        if (updatedUser) {
+          const isAdmin = updatedUser?.role === 'admin';
+          navigate(isAdmin ? '/admin-dashboard' : '/buyer-dashboard');
+          return;
+        }
+        
+        // If backend didn't return a session (e.g. test numbers in FAKE mode), create a local session
+        if (firebasePhoneAuth.isFakeMode() && firebasePhoneAuth.isTestNumber(userData.phone)) {
+          const fallbackUser = { _id: 'test-user', fullname: 'Test User', phone: userData.phone, role: 'user' as const };
+          localStorage.setItem('user', JSON.stringify(fallbackUser));
+          navigate('/buyer-dashboard');
+          return;
+        }
       } else {
         setAttempts(prev => prev + 1);
         toast({

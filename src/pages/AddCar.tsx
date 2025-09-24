@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Car, Upload, Save, ArrowLeft } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { api } from '@/services/api';
+import { uploadImages, uploadVideo } from '@/services/upload';
 
 const AddCar = () => {
   const [formData, setFormData] = useState({
@@ -84,12 +85,9 @@ const AddCar = () => {
     setVideo(file || null);
   };
 
-  const uploadFiles = async (carId: string) => {
-    // TODO: Implement file upload with backend
-    // For now, return placeholder URLs
-    const imageUrls: string[] = images.map((_, i) => `/placeholder.svg`);
-    let videoUrl = video ? '/placeholder.svg' : '';
-
+  const uploadFiles = async () => {
+    const imageUrls = images.length ? await uploadImages(images) : [];
+    const videoUrl = video ? await uploadVideo(video) : '';
     return { imageUrls, videoUrl };
   };
 
@@ -146,8 +144,19 @@ const AddCar = () => {
       const created = response.data;
       const createdId = created._id;
 
-      // TODO: Implement file upload for backend API
-      // For now, file upload is disabled
+      // Upload media and optionally update the car record
+      try {
+        const { imageUrls, videoUrl } = await uploadFiles();
+        if (imageUrls.length || videoUrl) {
+          await api.updateCar(createdId, {
+            images: imageUrls,
+            primaryImage: imageUrls[0] || '',
+            video: videoUrl || '',
+          });
+        }
+      } catch (uploadErr: any) {
+        console.warn('Upload failed, continuing without media:', uploadErr?.message);
+      }
 
       toast({
         title: "Success!",

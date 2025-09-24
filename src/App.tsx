@@ -43,56 +43,56 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AuthPromptProvider>
-          <ErrorBoundary>
-          <Helmet>
-            <meta charSet="utf-8" />
-            <meta name="viewport" content="width=device-width, initial-scale=1" />
-            <title>CarHub Rwanda – Buy, Sell, Rent Premium Cars</title>
-            <meta name="description" content="Find, buy, sell, or rent premium cars in Rwanda. Browse verified listings with financing options and test drives." />
-            <link rel="canonical" href="https://carhub-rw.vercel.app/" />
-          </Helmet>
-          <Routes>
-            <Route element={<Layout />}>
-              <Route path="/" element={<Index />} />
-            <Route path="/signup" element={<SignUp />} />
-            <Route path="/signin" element={<SignIn />} />
-            <Route path="/verify-otp" element={<VerifyOTP />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/buyer-dashboard" element={<BuyerDashboard />} />
-            <Route path="/admin-dashboard" element={<AdminDashboard />} />
-            <Route path="/admin/add-car" element={<AddCar />} />
-            <Route path="/buy-cars" element={<BuyCars />} />
-            <Route path="/wishlist" element={<Wishlist />} />
-            <Route path="/bookings" element={<Bookings />} />
-            <Route path="/orders" element={<Orders />} />
-            <Route path="/support" element={<Support />} />
-            <Route path="/list-car" element={<ListCar />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/terms" element={<Terms />} />
-            <Route path="/faq" element={<FAQ />} />
-            <Route path="/blog" element={<Blog />} />
-            <Route path="/services" element={<Services />} />
-            <Route path="/how-it-works" element={<HowItWorks />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/car/:id" element={<CarDetails />} />
-            <Route path="/admin/cars" element={<AdminCars />} />
-            <Route path="/admin/users" element={<AdminUsers />} />
-            <Route path="/admin/orders" element={<AdminOrders />} />
-            <Route path="/admin/edit-car/:id" element={<EditCar />} />
-            <Route path="/test-drive/:id" element={<TestDriveBooking />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Route>
-          </Routes>
-          </ErrorBoundary>
-          </AuthPromptProvider>
-        </BrowserRouter>
-      </TooltipProvider>
+      <BrowserRouter>
+        <AuthPromptProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <ErrorBoundary>
+              <Helmet>
+                <meta charSet="utf-8" />
+                <meta name="viewport" content="width=device-width, initial-scale=1" />
+                <title>CarHub Rwanda – Buy, Sell, Rent Premium Cars</title>
+                <meta name="description" content="Find, buy, sell, or rent premium cars in Rwanda. Browse verified listings with financing options and test drives." />
+                <link rel="canonical" href="https://carhub-rw.vercel.app/" />
+              </Helmet>
+              <Routes>
+                <Route element={<Layout />}>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/signup" element={<SignUp />} />
+                  <Route path="/signin" element={<SignIn />} />
+                  <Route path="/verify-otp" element={<VerifyOTP />} />
+                  <Route path="/contact" element={<Contact />} />
+                  <Route path="/buyer-dashboard" element={<BuyerDashboard />} />
+                  <Route path="/admin-dashboard" element={<AdminDashboard />} />
+                  <Route path="/admin/add-car" element={<AddCar />} />
+                  <Route path="/buy-cars" element={<BuyCars />} />
+                  <Route path="/wishlist" element={<Wishlist />} />
+                  <Route path="/bookings" element={<Bookings />} />
+                  <Route path="/orders" element={<Orders />} />
+                  <Route path="/support" element={<Support />} />
+                  <Route path="/list-car" element={<ListCar />} />
+                  <Route path="/about" element={<About />} />
+                  <Route path="/terms" element={<Terms />} />
+                  <Route path="/faq" element={<FAQ />} />
+                  <Route path="/blog" element={<Blog />} />
+                  <Route path="/services" element={<Services />} />
+                  <Route path="/how-it-works" element={<HowItWorks />} />
+                  <Route path="/settings" element={<Settings />} />
+                  <Route path="/car/:id" element={<CarDetails />} />
+                  <Route path="/admin/cars" element={<AdminCars />} />
+                  <Route path="/admin/users" element={<AdminUsers />} />
+                  <Route path="/admin/orders" element={<AdminOrders />} />
+                  <Route path="/admin/edit-car/:id" element={<EditCar />} />
+                  <Route path="/test-drive/:id" element={<TestDriveBooking />} />
+                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                  <Route path="*" element={<NotFound />} />
+                </Route>
+              </Routes>
+            </ErrorBoundary>
+          </TooltipProvider>
+        </AuthPromptProvider>
+      </BrowserRouter>
     </AuthProvider>
   </QueryClientProvider>
 );

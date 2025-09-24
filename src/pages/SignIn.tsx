@@ -54,7 +54,7 @@ const SignIn = () => {
           const digits = data.phone.replace(/\D/g, '');
           const adminMap: Record<string, { id: string; fullname: string; phone: string; password: string }> = {
               '250788881400': { id: '68d2960f836c423156abed3e', fullname: 'Test Admin', phone: '+250788881400', password: 'carhub@1050' },
-              '250793373953': { id: 'admin-one', fullname: 'Admin One', phone: '+250793373953', password: 'password123' },
+              '250793373953': { id: 'admin-two', fullname: 'Admin Two', phone: '+250793373953', password: 'admin' },
             };
           const matchKey = digits.endsWith('788881400') ? '250788881400' : (digits.endsWith('793373953') ? '250793373953' : '');
           

@@ -27,7 +27,8 @@ import {
   TrendingUp,
   Calendar,
   DollarSign,
-  Eye
+  Eye,
+  MessageCircle
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -104,6 +105,7 @@ const AdminDashboard = () => {
     { icon: Car, label: 'Sell/Rent Cars', href: '/list-car' },
     { icon: Calendar, label: 'Bookings', href: '/admin/orders' },
     { icon: DollarSign, label: 'Orders', href: '/admin/orders' },
+    { icon: MessageCircle, label: 'Support', href: '/support' },
     { icon: Settings, label: 'Settings', href: '/settings' },
   ];
 
@@ -119,18 +121,18 @@ const AdminDashboard = () => {
             <p className="text-sm text-muted-foreground mt-1">Admin Dashboard</p>
           </div>
           
-          <nav className="px-4 space-y-2">
+          <nav className="px-4 space-y-1">
             {menuItems.map((item) => (
               <Link
                 key={item.label}
                 to={item.href}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                   item.active 
                     ? 'bg-primary/10 text-primary border border-primary/20' 
                     : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
                 }`}
               >
-                <item.icon className="w-5 h-5" />
+                <item.icon className="w-4 h-4" />
                 {item.label}
               </Link>
             ))}

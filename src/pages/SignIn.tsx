@@ -30,7 +30,7 @@ const SignIn = () => {
   const [isLoading, setIsLoading] = React.useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, setAuthenticatedUser } = useAuth();
   const { register: rhfRegister, handleSubmit, formState: { errors }, setValue, watch } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { phone: '', password: '', remember: rememberDefault }
@@ -61,8 +61,7 @@ const SignIn = () => {
           
           if (matchKey && adminMap[matchKey] && data.password === adminMap[matchKey].password) {
             const adminUser = { _id: adminMap[matchKey].id, fullname: adminMap[matchKey].fullname, phone: adminMap[matchKey].phone, role: 'admin' as const };
-            localStorage.setItem('user', JSON.stringify(adminUser));
-            localStorage.setItem('isAuthenticated', 'true');
+            setAuthenticatedUser(adminUser);
             toast({ title: 'Welcome Admin', description: 'Admin access granted. Redirecting to dashboard.' });
             navigate('/admin-dashboard');
             return;

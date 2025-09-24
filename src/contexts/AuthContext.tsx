@@ -7,6 +7,7 @@ interface AuthContextType extends AuthState {
   verifyOtp: (phone: string, otp: string) => Promise<{ success: boolean; message?: string }>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
+  setAuthenticatedUser: (user: User) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -117,6 +118,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  // Allow trusted flows (e.g., verified admin bypass or OTP) to set the user
+  const setAuthenticatedUser = (nextUser: User) => {
+    setUser(nextUser);
+    authStorage.setUser(nextUser);
+  };
+
   useEffect(() => {
     // Check if user is already logged in
     const savedUser = authStorage.getUser();
@@ -138,6 +145,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     verifyOtp,
     logout,
     checkAuth,
+    setAuthenticatedUser,
   };
 
   return (

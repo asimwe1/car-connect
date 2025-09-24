@@ -234,6 +234,27 @@ class ApiService {
     });
   }
 
+  // Admin analytics/mgmt
+  async getAdminOrders(params?: { page?: number; limit?: number; q?: string; status?: string }) {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.append('page', String(params.page));
+    if (params?.limit) searchParams.append('limit', String(params.limit));
+    if (params?.q) searchParams.append('q', params.q);
+    if (params?.status) searchParams.append('status', params.status);
+    const qs = searchParams.toString();
+    return this.request(`/admin/orders${qs ? `?${qs}` : ''}`);
+  }
+
+  async getAdminBookings(params?: { page?: number; limit?: number; q?: string; status?: string }) {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.append('page', String(params.page));
+    if (params?.limit) searchParams.append('limit', String(params.limit));
+    if (params?.q) searchParams.append('q', params.q);
+    if (params?.status) searchParams.append('status', params.status);
+    const qs = searchParams.toString();
+    return this.request(`/admin/bookings${qs ? `?${qs}` : ''}`);
+  }
+
   // User methods (admin only)
   async getUsers(params?: { page?: number; limit?: number; q?: string }) {
     const searchParams = new URLSearchParams();

@@ -36,6 +36,7 @@ interface Order {
 const AdminOrders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const navigate = useNavigate();
@@ -47,17 +48,37 @@ const AdminOrders = () => {
 
   const fetchOrders = async () => {
     try {
+      setErrorMessage(null);
       setLoading(true);
       const response = await api.getAdminOrders({ page: 1, limit: 100 });
-      if (response.data?.items) setOrders(response.data.items as any);
-      else setOrders([]);
-    } catch (error) {
+      const raw = (response as any)?.data;
+      const src: any[] = Array.isArray(raw?.items) ? raw.items : (Array.isArray(raw) ? raw : []);
+      const normalized: Order[] = src.map((o: any) => ({
+        _id: String(o._id || o.id || ''),
+        amount: Number(o.amount || o.total || 0),
+        status: (o.status || 'initiated') as any,
+        createdAt: String(o.createdAt || o.created_at || new Date().toISOString()),
+        updatedAt: String(o.updatedAt || o.updated_at || new Date().toISOString()),
+        buyer: {
+          fullname: String(o.buyer?.fullname || o.customer_name || '—'),
+          email: String(o.buyer?.email || o.customer_email || '—'),
+        },
+        car: {
+          make: String(o.car?.make || o.make || 'Unknown'),
+          model: String(o.car?.model || o.model || ''),
+          year: Number(o.car?.year || o.year || new Date().getFullYear()),
+          images: Array.isArray(o.car?.images) ? o.car.images : [],
+          primaryImage: o.car?.primaryImage || o.primaryImage,
+        },
+        paymentRef: o.paymentRef || o.payment_ref || undefined,
+        notes: o.notes || undefined,
+      }));
+      setOrders(normalized);
+    } catch (error: any) {
       console.error("Error fetching orders:", error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch orders. Please try again.",
-        variant: "destructive",
-      });
+      const msg = typeof error?.message === 'string' ? error.message : 'Failed to fetch orders. Please try again.';
+      setErrorMessage(msg);
+      toast({ title: 'Error', description: msg, variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -248,6 +269,18 @@ const AdminOrders = () => {
               </Card>
             ))}
           </div>
+        ) : errorMessage ? (
+          <Card className="bg-destructive/10 border-destructive/30 mb-6">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h3 className="font-semibold text-destructive">Orders failed to load</h3>
+                  <p className="text-sm text-muted-foreground mt-1">{errorMessage}</p>
+                </div>
+                <Button onClick={fetchOrders} variant="destructive">Retry</Button>
+              </div>
+            </CardContent>
+          </Card>
         ) : (
           <div className="space-y-4">
             {filteredOrders.map((order) => (

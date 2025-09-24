@@ -30,6 +30,7 @@ interface Booking {
 const Bookings = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -39,20 +40,34 @@ const Bookings = () => {
 
   const fetchBookings = async () => {
     try {
+      setErrorMessage(null);
       setLoading(true);
       const response = await api.getMyBookings();
-      if (response.data) {
-        setBookings(response.data as any);
-      } else {
-        setBookings([]);
-      }
-    } catch (error) {
+      const raw = (response as any)?.data;
+      const source: any[] = Array.isArray(raw?.items) ? raw.items : (Array.isArray(raw) ? raw : []);
+      const normalized: Booking[] = source.map((b: any) => ({
+        _id: String(b._id || b.id || ''),
+        status: String(b.status || 'pending'),
+        notes: b.notes || undefined,
+        createdAt: String(b.createdAt || b.created_at || new Date().toISOString()),
+        car: {
+          _id: String(b.car?._id || b.car_id || ''),
+          make: String(b.car?.make || b.make || 'Unknown'),
+          model: String(b.car?.model || b.model || ''),
+          year: Number(b.car?.year || b.year || new Date().getFullYear()),
+          price: Number(b.car?.price || b.price || 0),
+          images: Array.isArray(b.car?.images) ? b.car.images : [],
+          primaryImage: b.car?.primaryImage || b.primaryImage,
+          location: b.car?.location || b.location,
+        },
+        expiresAt: b.expiresAt || b.expiry || undefined,
+      }));
+      setBookings(normalized);
+    } catch (error: any) {
       console.error("Error fetching bookings:", error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch bookings. Please try again.",
-        variant: "destructive",
-      });
+      const msg = typeof error?.message === 'string' ? error.message : 'Failed to fetch bookings. Please try again.';
+      setErrorMessage(msg);
+      toast({ title: 'Error', description: msg, variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -125,6 +140,20 @@ const Bookings = () => {
               </Card>
             ))}
           </div>
+        ) : errorMessage ? (
+          <Card className="bg-destructive/10 border-destructive/30">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h3 className="font-semibold text-destructive">We couldn\'t load your bookings</h3>
+                  <p className="text-sm text-muted-foreground mt-1">{errorMessage}</p>
+                </div>
+                <Button onClick={fetchBookings} variant="destructive">
+                  Retry
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         ) : bookings.length === 0 ? (
           <div className="text-center py-12">
             <Calendar className="h-16 w-16 text-muted-foreground mx-auto mb-4" />

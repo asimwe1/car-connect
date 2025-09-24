@@ -31,6 +31,7 @@ interface Order {
 const Orders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -40,18 +41,45 @@ const Orders = () => {
 
   const fetchOrders = async () => {
     try {
+      setErrorMessage(null);
       setLoading(true);
       const response = await api.getMyOrders();
-      if (response.data) {
-        setOrders(response.data as any);
-      } else {
-        setOrders([]);
-      }
-    } catch (error) {
+      const raw = (response as any)?.data;
+
+      // Normalize various backend shapes
+      const source: any[] = Array.isArray(raw?.items)
+        ? raw.items
+        : Array.isArray(raw)
+          ? raw
+          : [];
+
+      const normalized: Order[] = source.map((o: any) => ({
+        _id: String(o._id || o.id || ''),
+        amount: Number(o.amount || o.total || 0),
+        status: String(o.status || 'pending'),
+        paymentRef: o.paymentRef || o.payment_ref || undefined,
+        notes: o.notes || undefined,
+        createdAt: String(o.createdAt || o.created_at || new Date().toISOString()),
+        car: {
+          _id: String(o.car?._id || o.car_id || ''),
+          make: String(o.car?.make || o.make || 'Unknown'),
+          model: String(o.car?.model || o.model || ''),
+          year: Number(o.car?.year || o.year || new Date().getFullYear()),
+          price: Number(o.car?.price || o.price || 0),
+          images: Array.isArray(o.car?.images) ? o.car.images : [],
+          primaryImage: o.car?.primaryImage || o.primaryImage,
+          location: o.car?.location || o.location,
+        },
+      }));
+
+      setOrders(normalized);
+    } catch (error: any) {
       console.error("Error fetching orders:", error);
+      const msg = typeof error?.message === 'string' ? error.message : 'Failed to fetch orders. Please try again.';
+      setErrorMessage(msg);
       toast({
         title: "Error",
-        description: "Failed to fetch orders. Please try again.",
+        description: msg,
         variant: "destructive",
       });
     } finally {
@@ -108,6 +136,20 @@ const Orders = () => {
               </Card>
             ))}
           </div>
+        ) : errorMessage ? (
+          <Card className="bg-destructive/10 border-destructive/30">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h3 className="font-semibold text-destructive">We couldn\'t load your orders</h3>
+                  <p className="text-sm text-muted-foreground mt-1">{errorMessage}</p>
+                </div>
+                <Button onClick={fetchOrders} variant="destructive">
+                  Retry
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         ) : orders.length === 0 ? (
           <div className="text-center py-12">
             <ShoppingBag className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
@@ -129,22 +171,22 @@ const Orders = () => {
 
             <div className="space-y-6">
               {orders.map((order) => (
-                <Card key={order.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                <Card key={order._id} className="overflow-hidden hover:shadow-lg transition-shadow">
                   <CardHeader className="pb-4">
                     <div className="flex items-start justify-between">
                       <div>
                         <CardTitle className="text-lg mb-2">
-                          Order #{order.id.slice(0, 8).toUpperCase()}
+                          Order #{order._id.slice(0, 8).toUpperCase()}
                         </CardTitle>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           <div className="flex items-center gap-1">
                             <Calendar className="h-4 w-4" />
-                            <span>{formatDate(order.created_at)}</span>
+                            <span>{formatDate(order.createdAt)}</span>
                           </div>
-                          {order.payment_method && (
+                          {order.paymentRef && (
                             <div className="flex items-center gap-1">
                               <CreditCard className="h-4 w-4" />
-                              <span>{order.payment_method}</span>
+                              <span>{order.paymentRef}</span>
                             </div>
                           )}
                         </div>

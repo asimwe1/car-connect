@@ -102,7 +102,7 @@ const Footer = () => {
               <span className="hidden sm:inline">+250 788 881 400</span>
             </a>
             <a
-              href="https://www.facebook.com/"
+              href="https://www.facebook.com/haruna.nyamushanja/"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Facebook"

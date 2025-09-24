@@ -101,10 +101,21 @@ const VerifyOTP = () => {
         if (firebasePhoneAuth.isFakeMode() && firebasePhoneAuth.isTestNumber(userData.phone)) {
           const fallbackUser = { _id: 'test-user', fullname: 'Test User', phone: userData.phone, role: 'user' as const };
           localStorage.setItem('user', JSON.stringify(fallbackUser));
+          localStorage.setItem('isAuthenticated', 'true');
           navigate('/buyer-dashboard');
           return;
         }
       } else {
+        // In FAKE mode with test numbers, allow proceeding even when backend says user not found
+        if (firebasePhoneAuth.isFakeMode() && firebasePhoneAuth.isTestNumber(userData.phone)) {
+          const fallbackUser = { _id: 'test-user', fullname: 'Test User', phone: userData.phone, role: 'user' as const };
+          localStorage.setItem('user', JSON.stringify(fallbackUser));
+          localStorage.setItem('isAuthenticated', 'true');
+          notify.info('Test mode', 'Proceeding with local session');
+          navigate('/buyer-dashboard');
+          return;
+        }
+
         setAttempts(prev => prev + 1);
         notify.error('Invalid OTP', result.message || `Wrong code. ${5 - attempts - 1} attempts remaining`);
         setOtp('');

@@ -80,6 +80,7 @@ const BuyerDashboard = () => {
     { icon: Heart, label: 'Wishlist', href: '/wishlist' },
     { icon: Calendar, label: 'Bookings', href: '/bookings' },
     { icon: Car, label: 'Buy Cars', href: '/buy-cars' },
+    { icon: Car, label: 'Sell/Rent Cars', href: '/list-car' },
     { icon: Settings, label: 'Settings', href: '/settings' },
     { icon: Phone, label: 'Support', href: '/support' },
   ];

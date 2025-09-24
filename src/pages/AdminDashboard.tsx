@@ -101,6 +101,7 @@ const AdminDashboard = () => {
     { icon: BarChart3, label: 'Dashboard', href: '/admin-dashboard', active: true },
     { icon: Car, label: 'Manage Cars', href: '/admin/cars' },
     { icon: Plus, label: 'Add New Car', href: '/admin/add-car' },
+    { icon: Car, label: 'Sell/Rent Cars', href: '/list-car' },
     { icon: Calendar, label: 'Bookings', href: '/admin/orders' },
     { icon: DollarSign, label: 'Orders', href: '/admin/orders' },
     { icon: Settings, label: 'Settings', href: '/settings' },

@@ -59,6 +59,8 @@ const BuyerDashboard = () => {
   };
 
   const handleSignOut = async () => {
+    const confirmed = window.confirm('Are you sure you want to log out?');
+    if (!confirmed) return;
     await logout();
     navigate('/');
   };

@@ -96,11 +96,12 @@ const SignIn = () => {
       });
       navigate('/verify-otp');
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('SignIn error:', error);
+      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
       toast({
         title: "Error",
-        description: error.message || "An unexpected error occurred",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {

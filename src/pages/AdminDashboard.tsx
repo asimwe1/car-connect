@@ -30,6 +30,8 @@ const AdminDashboard = () => {
     totalRevenue: 0,
     recentBookings: 0
   });
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -45,7 +47,8 @@ const AdminDashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      // Fetch stats from backend
+      setErrorMessage(null);
+      setLoading(true);
       const [carsRes, usersRes, ordersRes, bookingsRes] = await Promise.all([
         api.getCars({ page: 1, limit: 1 }),
         api.getUsers({ page: 1, limit: 1 }),
@@ -53,15 +56,28 @@ const AdminDashboard = () => {
         api.getAdminBookings({ page: 1, limit: 1 }),
       ]);
 
+      const carsRaw: any = (carsRes as any)?.data;
+      const usersRaw: any = (usersRes as any)?.data;
+      const ordersRaw: any = (ordersRes as any)?.data;
+      const bookingsRaw: any = (bookingsRes as any)?.data;
+
+      const totalCars = typeof carsRaw?.total === 'number' ? carsRaw.total : Array.isArray(carsRaw?.items) ? carsRaw.items.length : Array.isArray(carsRaw) ? carsRaw.length : 0;
+      const totalUsers = typeof usersRaw?.total === 'number' ? usersRaw.total : Array.isArray(usersRaw?.items) ? usersRaw.items.length : Array.isArray(usersRaw) ? usersRaw.length : 0;
+      const totalOrders = typeof ordersRaw?.total === 'number' ? ordersRaw.total : Array.isArray(ordersRaw?.items) ? ordersRaw.items.length : Array.isArray(ordersRaw) ? ordersRaw.length : 0;
+      const recentBookings = typeof bookingsRaw?.total === 'number' ? bookingsRaw.total : Array.isArray(bookingsRaw?.items) ? bookingsRaw.items.length : Array.isArray(bookingsRaw) ? bookingsRaw.length : 0;
+
       setStats({
-        totalCars: carsRes.data?.total || 0,
-        totalUsers: usersRes.data?.total || 0,
-        totalOrders: ordersRes.data?.total || 0,
-        totalRevenue: 0, // Requires separate revenue aggregation endpoint
-        recentBookings: bookingsRes.data?.total || 0
+        totalCars,
+        totalUsers,
+        totalOrders,
+        totalRevenue: 0,
+        recentBookings,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch dashboard data:', error);
+      setErrorMessage(typeof error?.message === 'string' ? error.message : 'Failed to load dashboard stats');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -140,11 +156,24 @@ const AdminDashboard = () => {
                   className="search-input pl-10 w-80"
                 />
               </div>
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" onClick={fetchDashboardData} disabled={loading} title="Refresh">
                 <Bell className="w-5 h-5" />
               </Button>
+              {errorMessage && (
+                <Button variant="destructive" onClick={fetchDashboardData} disabled={loading}>
+                  Retry Sync
+                </Button>
+              )}
             </div>
           </div>
+
+          {errorMessage && (
+            <div className="mb-6">
+              <div className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-2 text-sm">
+                {errorMessage}
+              </div>
+            </div>
+          )}
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">

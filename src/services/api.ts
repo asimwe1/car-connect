@@ -30,6 +30,11 @@ class ApiService {
     this.baseURL = baseURL;
   }
 
+  // --- Support Chat: REST fallbacks (not used when Firestore available) ---
+  async listSupportAgents() {
+    return this.request('/support/agents');
+  }
+
   private async request<T = any>(
     endpoint: string,
     options: RequestInit = {}

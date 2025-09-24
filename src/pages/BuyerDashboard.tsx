@@ -70,6 +70,7 @@ const BuyerDashboard = () => {
     { icon: Calendar, label: 'Bookings', href: '/bookings' },
     { icon: Car, label: 'Buy Cars', href: '/buy-cars' },
     { icon: Settings, label: 'Settings', href: '/settings' },
+    { icon: Phone, label: 'Support', href: '/support' },
   ];
 
   return (

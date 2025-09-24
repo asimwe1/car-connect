@@ -17,7 +17,7 @@ const VerifyOTP = () => {
   const [userData, setUserData] = useState<any>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { verifyOtp, user } = useAuth();
+  const { verifyOtp, login, checkAuth, user } = useAuth();
 
   useEffect(() => {
     // Get pending verification data
@@ -94,6 +94,8 @@ const VerifyOTP = () => {
       }
 
       if (result.success) {
+        // Refresh auth state from backend (sets user in context)
+        await checkAuth();
         localStorage.removeItem('pendingVerification');
         
         toast({
@@ -102,8 +104,9 @@ const VerifyOTP = () => {
           variant: "default",
         });
         
-        // Redirect based on user role
-        const isAdmin = user?.role === 'admin';
+        // Redirect based on user role (re-read from storage/context)
+        const updatedUser = JSON.parse(localStorage.getItem('user') || 'null') || user;
+        const isAdmin = updatedUser?.role === 'admin';
         navigate(isAdmin ? '/admin-dashboard' : '/buyer-dashboard');
       } else {
         setAttempts(prev => prev + 1);

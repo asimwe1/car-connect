@@ -55,7 +55,8 @@ export class FirebasePhoneAuth {
 
   // Send OTP to phone number
   async sendOTP(phoneNumber: string): Promise<ConfirmationResult> {
-    if (!this.recaptchaVerifier) {
+    // In FAKE OTP mode, skip requiring reCAPTCHA entirely to avoid Firebase calls
+    if (!this.recaptchaVerifier && !USE_FAKE_OTP) {
       throw new Error('reCAPTCHA verifier not initialized');
     }
 
@@ -84,7 +85,7 @@ export class FirebasePhoneAuth {
         return this.confirmationResult;
       }
 
-      this.confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, this.recaptchaVerifier);
+      this.confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, this.recaptchaVerifier!);
       return this.confirmationResult;
     } catch (error: any) {
       console.error('Error sending OTP:', error);

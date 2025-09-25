@@ -142,50 +142,50 @@ const AdminSupportChat = () => {
     <div className="min-h-screen bg-background">
       <div className="flex h-screen">
         {/* Sidebar */}
-        <div className="w-80 bg-card/80 backdrop-blur-sm border-r border-border flex flex-col">
-          <div className="p-6 border-b">
+        <div className="w-80 bg-primary text-primary-foreground flex flex-col">
+          <div className="p-6 border-b border-primary-foreground/20">
             <div className="flex items-center gap-4 mb-4">
-              <Button variant="ghost" onClick={() => navigate('/admin-dashboard')}>
+              <Button variant="ghost" onClick={() => navigate('/admin-dashboard')} className="text-primary-foreground hover:bg-primary-foreground/10">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Dashboard
               </Button>
             </div>
-            <h1 className="text-xl font-bold">Support Chat</h1>
-            <p className="text-sm text-muted-foreground">Manage user conversations</p>
+            <h1 className="text-xl font-bold text-white">Support Chat</h1>
+            <p className="text-sm text-primary-foreground/80">Manage user conversations</p>
           </div>
 
           {/* System Stats */}
-          <div className="p-4 border-b">
-            <h3 className="text-sm font-medium mb-3">System Overview</h3>
+          <div className="p-4 border-b border-primary-foreground/20">
+            <h3 className="text-sm font-medium mb-3 text-white">System Overview</h3>
             <div className="grid grid-cols-2 gap-2">
-              <div className="bg-accent/50 rounded-lg p-3 text-center">
-                <div className="text-lg font-bold text-primary">{systemStats.totalUsers}</div>
-                <div className="text-xs text-muted-foreground">Users</div>
+              <div className="bg-primary-foreground/10 rounded-lg p-3 text-center">
+                <div className="text-lg font-bold text-white">{systemStats.totalUsers}</div>
+                <div className="text-xs text-primary-foreground/80">Users</div>
               </div>
-              <div className="bg-accent/50 rounded-lg p-3 text-center">
-                <div className="text-lg font-bold text-primary">{systemStats.totalCars}</div>
-                <div className="text-xs text-muted-foreground">Cars</div>
+              <div className="bg-primary-foreground/10 rounded-lg p-3 text-center">
+                <div className="text-lg font-bold text-white">{systemStats.totalCars}</div>
+                <div className="text-xs text-primary-foreground/80">Cars</div>
               </div>
-              <div className="bg-accent/50 rounded-lg p-3 text-center">
-                <div className="text-lg font-bold text-primary">{systemStats.totalOrders}</div>
-                <div className="text-xs text-muted-foreground">Orders</div>
+              <div className="bg-primary-foreground/10 rounded-lg p-3 text-center">
+                <div className="text-lg font-bold text-white">{systemStats.totalOrders}</div>
+                <div className="text-xs text-primary-foreground/80">Orders</div>
               </div>
-              <div className="bg-accent/50 rounded-lg p-3 text-center">
-                <div className="text-lg font-bold text-primary">{systemStats.activeBookings}</div>
-                <div className="text-xs text-muted-foreground">Bookings</div>
+              <div className="bg-primary-foreground/10 rounded-lg p-3 text-center">
+                <div className="text-lg font-bold text-white">{systemStats.activeBookings}</div>
+                <div className="text-xs text-primary-foreground/80">Bookings</div>
               </div>
             </div>
           </div>
 
           {/* Search */}
-          <div className="p-4 border-b">
+          <div className="p-4 border-b border-primary-foreground/20">
             <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-3 h-4 w-4 text-primary-foreground/60" />
               <Input
                 placeholder="Search conversations..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-10 bg-primary-foreground/10 border-primary-foreground/20 text-white placeholder:text-primary-foreground/60"
               />
             </div>
           </div>
@@ -193,29 +193,27 @@ const AdminSupportChat = () => {
           {/* Rooms List */}
           <div className="flex-1 overflow-y-auto">
             <div className="p-4">
-              <h3 className="text-sm font-medium mb-3">Active Conversations</h3>
+              <h3 className="text-sm font-medium mb-3 text-white">Active Conversations</h3>
               <div className="space-y-2">
                 {filteredRooms.map((room) => (
-                  <Card 
+                  <div 
                     key={room.id}
-                    className={`cursor-pointer transition-all duration-200 hover:shadow-md hover:scale-[1.02] ${
-                      selectedRoom === room.id ? 'bg-primary/10 border-primary shadow-md' : 'hover:bg-accent/50 border-border'
+                    className={`cursor-pointer transition-all duration-200 hover:bg-primary-foreground/10 rounded-lg p-3 ${
+                      selectedRoom === room.id ? 'bg-primary-foreground/20' : ''
                     }`}
                     onClick={() => setSelectedRoom(room.id || null)}
                   >
-                    <CardContent className="p-3">
-                      <div className="flex items-center gap-2 mb-1">
-                        <User className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-medium">User {room.userId.slice(-6)}</span>
-                        <Badge variant="secondary" className="text-xs">Active</Badge>
-                      </div>
-                      {room.lastMessage && (
-                        <p className="text-xs text-muted-foreground truncate">
-                          {room.lastMessage}
-                        </p>
-                      )}
-                    </CardContent>
-                  </Card>
+                    <div className="flex items-center gap-2 mb-1">
+                      <User className="h-4 w-4 text-primary-foreground/80" />
+                      <span className="text-sm font-medium text-white">User {room.userId.slice(-6)}</span>
+                      <Badge variant="secondary" className="text-xs bg-primary-foreground/20 text-white">Active</Badge>
+                    </div>
+                    {room.lastMessage && (
+                      <p className="text-xs text-primary-foreground/70 truncate">
+                        {room.lastMessage}
+                      </p>
+                    )}
+                  </div>
                 ))}
               </div>
             </div>
@@ -223,11 +221,37 @@ const AdminSupportChat = () => {
         </div>
 
         {/* Chat Area */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col bg-gray-50">
+          {/* Top Header */}
+          <div className="bg-white border-b p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Search or type"
+                    className="pl-10 w-64"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <Button variant="ghost" size="icon" className="relative">
+                  <Bell className="h-5 w-5" />
+                  <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 bg-red-600 rounded-full">
+                    3
+                  </span>
+                </Button>
+                <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
+                  <User className="h-4 w-4 text-white" />
+                </div>
+              </div>
+            </div>
+          </div>
+
           {selectedRoom ? (
             <>
               {/* Chat Header */}
-              <div className="border-b p-4 bg-gradient-to-r from-primary/5 to-primary/10">
+              <div className="border-b p-4 bg-white">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
                     <span className="text-primary-foreground font-bold text-sm">S</span>
@@ -244,7 +268,7 @@ const AdminSupportChat = () => {
               </div>
 
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
                 {messages.map((message) => (
                   <div key={message.id} className={`flex ${message.senderId === user?._id ? 'justify-end' : 'justify-start'} items-end gap-2`}>
                     {message.senderId !== user?._id && (
@@ -255,7 +279,7 @@ const AdminSupportChat = () => {
                     <div className={`max-w-[70%] rounded-2xl px-4 py-3 ${
                       message.senderId === user?._id 
                         ? 'bg-primary text-primary-foreground' 
-                        : 'bg-accent'
+                        : 'bg-white border'
                     }`}>
                       <div className="text-sm whitespace-pre-wrap">{message.content}</div>
                       <div className={`text-xs mt-1 ${
@@ -278,7 +302,7 @@ const AdminSupportChat = () => {
                     <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
                       <span className="text-primary-foreground font-bold text-xs">S</span>
                     </div>
-                    <div className="bg-accent rounded-2xl px-4 py-3">
+                    <div className="bg-white border rounded-2xl px-4 py-3">
                       <div className="flex gap-1">
                         <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"></div>
                         <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></div>
@@ -291,7 +315,7 @@ const AdminSupportChat = () => {
               </div>
 
               {/* Input */}
-              <div className="border-t p-4 bg-card">
+              <div className="border-t p-4 bg-white">
                 <div className="flex gap-2">
                   <Input
                     placeholder="Ask any question..."
@@ -304,11 +328,13 @@ const AdminSupportChat = () => {
                       }
                     }}
                     disabled={isTyping}
+                    className="flex-1"
                   />
                   <Button 
                     onClick={handleSendMessage} 
                     disabled={!inputMessage.trim() || isTyping}
                     className="bg-primary hover:bg-primary/90 transition-all duration-200 hover:scale-105"
+                    size="icon"
                   >
                     <Send className="h-4 w-4" />
                   </Button>

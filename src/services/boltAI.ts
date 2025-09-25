@@ -34,6 +34,9 @@ class BoltAIService {
       // Enhanced prompt with system context
       const systemPrompt = this.buildSystemPrompt(systemContext, isAdmin);
       
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout for fast responses
+
       const response = await fetch(`${this.baseURL}/chat/completions`, {
         method: 'POST',
         headers: {
@@ -52,10 +55,14 @@ class BoltAIService {
               content: userMessage
             }
           ],
-          max_tokens: 500,
+          max_tokens: 150, // Reduced for faster responses
           temperature: 0.7,
+          stream: false,
         }),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error(`Bolt AI API error: ${response.status}`);
@@ -70,6 +77,14 @@ class BoltAIService {
         suggestions: this.generateSuggestions(userMessage, systemContext)
       };
     } catch (error) {
+      if (error.name === 'AbortError') {
+        console.warn("Bolt AI request timed out, using fallback");
+        return {
+          response: this.getFallbackResponse(userMessage, systemContext),
+          confidence: 0.3,
+          suggestions: this.generateSuggestions(userMessage, systemContext)
+        };
+      }
       console.error('Bolt AI integration error:', error);
       return {
         response: this.getFallbackResponse(userMessage, systemContext),

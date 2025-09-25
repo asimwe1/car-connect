@@ -32,6 +32,7 @@ const SignUp = () => {
   const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
   const [selectedCountry, setSelectedCountry] = useState('RW'); // Default to Rwanda
+  const [localPhoneNumber, setLocalPhoneNumber] = useState(''); // Store local number separately
   const { toast } = useToast();
   const navigate = useNavigate();
   const { register } = useAuth();
@@ -114,7 +115,15 @@ const SignUp = () => {
               <div className="flex gap-2">
                 <CountryCodeSelector
                   value={selectedCountry}
-                  onValueChange={setSelectedCountry}
+                  onValueChange={(countryCode) => {
+                    setSelectedCountry(countryCode);
+                    // Update full phone number when country changes
+                    if (localPhoneNumber) {
+                      const country = getCountryByCode(countryCode);
+                      const fullNumber = country ? `${country.dialCode}${localPhoneNumber}` : `+${localPhoneNumber}`;
+                      setValue('phone', fullNumber);
+                    }
+                  }}
                   disabled={isLoading}
                 />
                 <div className="relative flex-1">
@@ -123,12 +132,15 @@ const SignUp = () => {
                     id="phone"
                     type="tel"
                     placeholder="7XX XXX XXX"
-                    {...rhfRegister('phone')}
+                    value={localPhoneNumber}
                     className={`search-input pl-8 ${errors.phone ? 'border-destructive' : ''}`}
                     required
                     onChange={(e) => {
+                      const localNumber = e.target.value.replace(/[^\d]/g, ''); // Only allow digits
+                      setLocalPhoneNumber(localNumber);
+                      
                       const country = getCountryByCode(selectedCountry);
-                      const fullNumber = country ? `${country.dialCode}${e.target.value.replace(/^\+?[0-9]*/, '')}` : e.target.value;
+                      const fullNumber = country ? `${country.dialCode}${localNumber}` : `+${localNumber}`;
                       setValue('phone', fullNumber);
                     }}
                   />

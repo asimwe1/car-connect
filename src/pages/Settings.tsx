@@ -3,8 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { User, Bell, Shield, CreditCard, Settings as SettingsIcon, Moon, Sun } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const Settings = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
   const settingSections = [
     {
       icon: <User className="h-6 w-6 text-primary" />,
@@ -58,6 +63,13 @@ const Settings = () => {
       <section className="py-16 bg-gradient-to-r from-primary to-primary-dark text-white">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
+            <div className="text-left mb-6">
+              <Button variant="ghost" onClick={() => navigate(user?.role === 'admin' ? '/admin-dashboard' : '/buyer-dashboard')}>
+                {/* simple arrow */}
+                <span className="mr-2">←</span>
+                Back to Dashboard
+              </Button>
+            </div>
             <SettingsIcon className="h-16 w-16 mx-auto mb-6 animate-fade-in" />
             <h1 className="text-4xl font-bold mb-4 animate-fade-in">Account Settings</h1>
             <p className="text-xl leading-relaxed animate-slide-up">

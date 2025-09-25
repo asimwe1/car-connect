@@ -10,7 +10,8 @@ const Layout: React.FC = () => {
   const hideGlobalChrome = location.pathname.startsWith('/admin') || 
                           location.pathname === '/support' || 
                           location.pathname === '/admin/support-chat' ||
-                          location.pathname === '/list-car';
+                          location.pathname === '/list-car' ||
+                          location.pathname === '/settings';
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {!hideGlobalChrome && <OfflineBanner />}

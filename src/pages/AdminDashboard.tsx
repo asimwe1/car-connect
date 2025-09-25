@@ -33,6 +33,7 @@ import {
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/services/api';
+import NotificationBell from '@/components/NotificationBell';
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState({
@@ -146,7 +147,7 @@ const AdminDashboard = () => {
               Settings
             </Link>
             <Link
-              to="/support"
+              to="/admin/support-chat"
               className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent/50"
             >
               <MessageCircle className="w-4 h-4" />
@@ -197,6 +198,7 @@ const AdminDashboard = () => {
                   className="search-input pl-10 w-80"
                 />
               </div>
+              <NotificationBell />
               <Button variant="ghost" size="icon" onClick={fetchDashboardData} disabled={loading} title="Refresh">
                 <Bell className="w-5 h-5" />
               </Button>

@@ -31,6 +31,7 @@ import NotFound from "./pages/NotFound";
 import CarDetails from "./pages/CarDetails";
 import AdminCars from "./pages/AdminCars";
 import AdminOrders from "./pages/AdminOrders";
+import AdminSupportChat from "./pages/AdminSupportChat";
 import EditCar from "./pages/EditCar";
 import TestDriveBooking from "./pages/TestDriveBooking";
 import PageLoader from "./components/PageLoader";
@@ -80,7 +81,7 @@ const App = () => (
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/car/:id" element={<CarDetails />} />
                   <Route path="/admin/cars" element={<AdminCars />} />
-                  
+                  <Route path="/admin/support-chat" element={<AdminSupportChat />} />
                   <Route path="/admin/orders" element={<AdminOrders />} />
                   <Route path="/admin/edit-car/:id" element={<EditCar />} />
                   <Route path="/test-drive/:id" element={<TestDriveBooking />} />

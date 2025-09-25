@@ -31,6 +31,7 @@ import {
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/services/api';
+import NotificationBell from '@/components/NotificationBell';
 
 const BuyerDashboard = () => {
   const [stats, setStats] = useState({
@@ -174,6 +175,7 @@ const BuyerDashboard = () => {
                   className="search-input pl-10 w-80"
                 />
               </div>
+              <NotificationBell />
               <Button variant="ghost" size="icon">
                 <Bell className="w-5 h-5" />
               </Button>

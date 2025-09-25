@@ -7,7 +7,7 @@ import OfflineBanner from "@/components/OfflineBanner";
 
 const Layout: React.FC = () => {
   const location = useLocation();
-  const hideGlobalChrome = location.pathname.startsWith('/admin');
+  const hideGlobalChrome = location.pathname.startsWith('/admin') || location.pathname === '/support';
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {!hideGlobalChrome && <OfflineBanner />}

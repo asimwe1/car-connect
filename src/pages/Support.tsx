@@ -134,7 +134,11 @@ const Support = () => {
                 <div className={`max-w-[70%] rounded-2xl px-4 py-3 ${isMine(m) ? 'bg-primary text-primary-foreground' : 'bg-accent'}`}>
                   <div className="text-sm whitespace-pre-wrap">{m.content}</div>
                   <div className={`text-xs mt-1 ${isMine(m) ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
-                    {new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {(() => {
+                      const created = (m as any).createdAt;
+                      const date = created?.toDate ? created.toDate() : (created ? new Date(created) : new Date());
+                      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    })()}
                   </div>
                 </div>
                 {isMine(m) && (

@@ -287,7 +287,12 @@ const AdminSupportChat = () => {
                           ? 'text-primary-foreground/70' 
                           : 'text-muted-foreground'
                       }`}>
-                        {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {(() => {
+                          const created = (message as any).createdAt;
+                          // Firestore Timestamp support and fallback
+                          const date = created?.toDate ? created.toDate() : (created ? new Date(created) : new Date());
+                          return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                        })()}
                       </div>
                     </div>
                     {message.senderId === user?._id && (

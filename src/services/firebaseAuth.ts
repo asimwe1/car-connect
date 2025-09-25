@@ -19,7 +19,7 @@ const USE_FAKE_OTP = ((): boolean => {
 // Test phone numbers for development (no SMS charges)
 const TEST_PHONE_NUMBERS = [
   '+250788881400', // Admin number 1
-  '+250793373953', // Admin number 2
+  '+250793373953', // Admin number 2 (from user data)
   '+16505551234',  // Test number 1
   '+16505551235',  // Test number 2
 ];
@@ -27,7 +27,7 @@ const TEST_PHONE_NUMBERS = [
 // Test verification codes for development
 const TEST_VERIFICATION_CODES = {
   '+250788881400': '123456',
-  '+250793373953': '123456',
+  '+250793373953': '123456', // OTP bypass for this user
   '+16505551234': '123456',
   '+16505551235': '123456',
 };

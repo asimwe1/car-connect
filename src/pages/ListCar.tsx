@@ -17,13 +17,20 @@ const ListCar: React.FC = () => {
 
   const initialTab = useMemo(() => {
     const params = new URLSearchParams(location.search);
-    const q = (params.get('sell') !== null || params.get('rent') !== null)
-      ? (params.get('rent') !== null ? 'rent' : 'sell')
-      : (location.search.includes('rent') ? 'rent' : location.search.includes('sell') ? 'sell' : 'sell');
-    // Also support /list-car?sell and /list-car?rent shortcuts
+    // Check for explicit parameters first
+    if (params.has('rent')) return 'rent';
+    if (params.has('sell')) return 'sell';
+    
+    // Check for simple query strings
     if (location.search === '?rent') return 'rent';
     if (location.search === '?sell') return 'sell';
-    return q;
+    
+    // Check if rent or sell is in the search string
+    if (location.search.includes('rent')) return 'rent';
+    if (location.search.includes('sell')) return 'sell';
+    
+    // Default to sell
+    return 'sell';
   }, [location.search]);
 
   const [tab, setTab] = useState<'sell' | 'rent'>(initialTab as 'sell' | 'rent');

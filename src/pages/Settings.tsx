@@ -102,7 +102,14 @@ const Settings = () => {
                         </li>
                       ))}
                     </ul>
-                    <Button variant="outline" className="w-full hover:bg-primary hover:text-primary-foreground transition-all duration-200">
+                    <Button 
+                      variant="outline" 
+                      className="w-full hover:bg-primary hover:text-primary-foreground transition-all duration-200"
+                      onClick={() => {
+                        // For now, show a toast that this feature is coming soon
+                        alert(`${section.title} feature is coming soon!`);
+                      }}
+                    >
                       Manage Settings
                     </Button>
                   </CardContent>
@@ -126,7 +133,14 @@ const Settings = () => {
                   <CardContent className="p-0">
                     <Bell className="h-8 w-8 text-primary mx-auto mb-3" />
                     <h3 className="font-semibold mb-2">Notification Center</h3>
-                    <Button size="sm" variant="outline" className="hover:bg-primary hover:text-primary-foreground transition-all duration-200">Manage</Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="hover:bg-primary hover:text-primary-foreground transition-all duration-200"
+                      onClick={() => alert('Notification settings coming soon!')}
+                    >
+                      Manage
+                    </Button>
                   </CardContent>
                 </Card>
 
@@ -134,7 +148,14 @@ const Settings = () => {
                   <CardContent className="p-0">
                     <Shield className="h-8 w-8 text-primary mx-auto mb-3" />
                     <h3 className="font-semibold mb-2">Security Center</h3>
-                    <Button size="sm" variant="outline" className="hover:bg-primary hover:text-primary-foreground transition-all duration-200">Review</Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="hover:bg-primary hover:text-primary-foreground transition-all duration-200"
+                      onClick={() => alert('Security center coming soon!')}
+                    >
+                      Review
+                    </Button>
                   </CardContent>
                 </Card>
               </div>
@@ -147,10 +168,17 @@ const Settings = () => {
                 Can't find what you're looking for? Our support team is here to help you with any questions or issues.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button className="bg-primary text-primary-foreground hover:bg-primary-dark transition-all duration-200 hover:scale-105">
+                <Button 
+                  className="bg-primary text-primary-foreground hover:bg-primary-dark transition-all duration-200 hover:scale-105"
+                  onClick={() => window.location.href = '/support'}
+                >
                   Contact Support
                 </Button>
-                <Button variant="outline" className="hover:bg-primary hover:text-primary-foreground transition-all duration-200">
+                <Button 
+                  variant="outline" 
+                  className="hover:bg-primary hover:text-primary-foreground transition-all duration-200"
+                  onClick={() => alert('Help center coming soon!')}
+                >
                   View Help Center
                 </Button>
               </div>

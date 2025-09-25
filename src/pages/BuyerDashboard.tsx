@@ -16,7 +16,6 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { 
   User, 
-  ShoppingCart, 
   Heart, 
   Calendar, 
   Car,
@@ -35,7 +34,6 @@ import NotificationBell from '@/components/NotificationBell';
 
 const BuyerDashboard = () => {
   const [stats, setStats] = useState({
-    orders: 0,
     wishlist: 0,
     bookings: 0
   });
@@ -55,13 +53,9 @@ const BuyerDashboard = () => {
   const fetchDashboardData = async () => {
     try {
       // Fetch stats from backend
-      const [ordersRes, bookingsRes] = await Promise.all([
-        api.getMyOrders(),
-        api.getMyBookings()
-      ]);
+      const bookingsRes = await api.getMyBookings();
 
       setStats({
-        orders: ordersRes.data?.length || 0,
         wishlist: 0, // TODO: Implement wishlist count
         bookings: bookingsRes.data?.length || 0
       });
@@ -77,7 +71,6 @@ const BuyerDashboard = () => {
 
   const menuItems = [
     { icon: User, label: 'Dashboard', href: '/buyer-dashboard', active: true },
-    { icon: ShoppingCart, label: 'Orders', href: '/orders' },
     { icon: Heart, label: 'Wishlist', href: '/wishlist' },
     { icon: Calendar, label: 'Bookings', href: '/bookings' },
     { icon: Car, label: 'Buy Cars', href: '/buy-cars' },
@@ -183,17 +176,7 @@ const BuyerDashboard = () => {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <Card className="bg-card/80 backdrop-blur-sm border border-border">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-                <ShoppingCart className="h-4 w-4 text-primary" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.orders}</div>
-                <p className="text-xs text-muted-foreground">Active purchases</p>
-              </CardContent>
-            </Card>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
 
             <Card className="bg-card/80 backdrop-blur-sm border border-border">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -250,15 +233,6 @@ const BuyerDashboard = () => {
               </Card>
             </Link>
 
-            <Link to="/buyer/orders">
-              <Card className="bg-card/80 backdrop-blur-sm border border-border hover:shadow-card transition-shadow cursor-pointer">
-                <CardContent className="p-6 text-center">
-                  <ShoppingCart className="w-8 h-8 text-primary mx-auto mb-3" />
-                  <h3 className="font-semibold mb-1">My Orders</h3>
-                  <p className="text-sm text-muted-foreground">Track purchases</p>
-                </CardContent>
-              </Card>
-            </Link>
           </div>
 
           {/* Recent Activity */}

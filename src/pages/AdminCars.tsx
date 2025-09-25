@@ -65,11 +65,11 @@ const AdminCars = () => {
         mileage: Number(car.mileage || 0),
         fuelType: car.fuelType || '—',
         transmission: car.transmission || '—',
-        badge: car.status === 'available' ? 'Available' : car.status === 'reserved' ? 'Reserved' : undefined,
+        badge: car.status === 'available' ? 'Available' : car.status === 'reserved' ? 'Reserved' : car.status === 'sold' ? 'Sold' : undefined,
         make: car.make || undefined,
         location: car.location || undefined,
         seats: 5,
-        condition: car.condition || 'Used',
+        condition: 'Used', // Default since condition is not in Mongoose schema
       }));
       setVehicles(mappedVehicles);
     } catch (error: any) {
@@ -143,7 +143,7 @@ const AdminCars = () => {
                   className="pl-10"
                 />
               </div>
-              <Button onClick={() => navigate('/admin/add-car')} className="btn-hero">
+              <Button onClick={() => navigate('/add-car')} className="btn-hero">
                 <Plus className="h-4 w-4 mr-2" />
                 Add New Vehicle
               </Button>

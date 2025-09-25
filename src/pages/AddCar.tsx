@@ -109,30 +109,27 @@ const AddCar = () => {
         return;
       }
 
-      // Create car record via backend API
+      // Upload files first
+      const { imageUrls, videoUrl } = await uploadFiles();
+
+      // Create car record via backend API - mapped to Mongoose schema
       const carData = {
         make: formData.make,
         model: formData.model,
         year: parseInt(formData.year),
         price: parseFloat(formData.price),
         mileage: parseInt(formData.mileage) || 0,
-        fuelType: formData.fuel_type,
-        transmission: formData.transmission,
+        fuelType: formData.fuel_type.toLowerCase(), // Convert to lowercase for enum
+        transmission: formData.transmission.toLowerCase(), // Convert to lowercase for enum
         status: 'available',
         description: formData.description,
         location: formData.location,
         bodyType: formData.body_type,
         color: formData.color,
-        vin: formData.vin,
-        images: [], // Will be updated after file upload
-        primaryImage: '',
-        // listing modes
-        sellEnabled: !!formData.sell_enabled,
-        rentEnabled: !!formData.rent_enabled,
-        rentPricePerDay: formData.rent_enabled && formData.rent_price_per_day ? parseFloat(formData.rent_price_per_day) : undefined,
-        rentDeposit: formData.rent_enabled && formData.rent_deposit ? parseFloat(formData.rent_deposit) : undefined,
-        rentMinDays: formData.rent_enabled && formData.rent_min_days ? parseInt(formData.rent_min_days) : undefined,
-        rentMaxDays: formData.rent_enabled && formData.rent_max_days ? parseInt(formData.rent_max_days) : undefined,
+        vin: formData.vin || undefined, // Only include if provided
+        images: imageUrls,
+        primaryImage: imageUrls[0] || '',
+        // owner will be set by the backend to the admin user
       };
 
       const response = await api.createCar(carData);
@@ -141,29 +138,12 @@ const AddCar = () => {
         throw new Error(response.error);
       }
 
-      const created = response.data;
-      const createdId = created._id;
-
-      // Upload media and optionally update the car record
-      try {
-        const { imageUrls, videoUrl } = await uploadFiles();
-        if (imageUrls.length || videoUrl) {
-          await api.updateCar(createdId, {
-            images: imageUrls,
-            primaryImage: imageUrls[0] || '',
-            video: videoUrl || '',
-          });
-        }
-      } catch (uploadErr: any) {
-        console.warn('Upload failed, continuing without media:', uploadErr?.message);
-      }
-
       toast({
         title: "Success!",
         description: "Car listing created successfully",
       });
 
-      navigate('/admin/cars');
+      navigate('/admin-dashboard');
     } catch (error: any) {
       toast({
         title: "Error",

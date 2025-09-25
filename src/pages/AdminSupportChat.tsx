@@ -11,7 +11,8 @@ import {
   Users,
   Search,
   Clock,
-  Shield
+  Shield,
+  Bell
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -23,6 +24,7 @@ import {
   ChatMessage 
 } from '@/services/chat';
 import { api } from '@/services/api';
+import { boltAI } from '@/services/boltAI';
 
 const AdminSupportChat = () => {
   const { user } = useAuth();
@@ -38,6 +40,7 @@ const AdminSupportChat = () => {
     totalOrders: 0,
     activeBookings: 0
   });
+  const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -98,13 +101,34 @@ const AdminSupportChat = () => {
   const handleSendMessage = async () => {
     if (!selectedRoom || !user || !inputMessage.trim()) return;
 
-    // Send admin message with system context
+    const userMessage = inputMessage.trim();
+    setInputMessage('');
+    setIsTyping(true);
+
+    // Send admin message
     await sendMessage(selectedRoom, {
-      content: inputMessage.trim(),
+      content: userMessage,
       senderId: user._id,
       senderName: `Admin: ${user.fullname}`,
     });
-    setInputMessage('');
+
+    // Generate AI response with system context
+    try {
+      const aiResponse = await boltAI.generateResponse(userMessage, systemStats, true);
+      
+      // Send AI response
+      setTimeout(async () => {
+        await sendMessage(selectedRoom, {
+          content: aiResponse.response,
+          senderId: 'ai-assistant',
+          senderName: 'AI Assistant',
+        });
+        setIsTyping(false);
+      }, 1000);
+    } catch (error) {
+      console.error('AI response error:', error);
+      setIsTyping(false);
+    }
   };
 
   const filteredRooms = rooms.filter(room => 
@@ -132,23 +156,23 @@ const AdminSupportChat = () => {
 
           {/* System Stats */}
           <div className="p-4 border-b">
-            <h3 className="text-sm font-medium mb-2">System Overview</h3>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="bg-accent/20 p-2 rounded">
-                <div className="font-medium">{systemStats.totalUsers}</div>
-                <div className="text-muted-foreground">Users</div>
+            <h3 className="text-sm font-medium mb-3">System Overview</h3>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="bg-accent/50 rounded-lg p-3 text-center">
+                <div className="text-lg font-bold text-primary">{systemStats.totalUsers}</div>
+                <div className="text-xs text-muted-foreground">Users</div>
               </div>
-              <div className="bg-accent/20 p-2 rounded">
-                <div className="font-medium">{systemStats.totalCars}</div>
-                <div className="text-muted-foreground">Cars</div>
+              <div className="bg-accent/50 rounded-lg p-3 text-center">
+                <div className="text-lg font-bold text-primary">{systemStats.totalCars}</div>
+                <div className="text-xs text-muted-foreground">Cars</div>
               </div>
-              <div className="bg-accent/20 p-2 rounded">
-                <div className="font-medium">{systemStats.totalOrders}</div>
-                <div className="text-muted-foreground">Orders</div>
+              <div className="bg-accent/50 rounded-lg p-3 text-center">
+                <div className="text-lg font-bold text-primary">{systemStats.totalOrders}</div>
+                <div className="text-xs text-muted-foreground">Orders</div>
               </div>
-              <div className="bg-accent/20 p-2 rounded">
-                <div className="font-medium">{systemStats.activeBookings}</div>
-                <div className="text-muted-foreground">Bookings</div>
+              <div className="bg-accent/50 rounded-lg p-3 text-center">
+                <div className="text-lg font-bold text-primary">{systemStats.activeBookings}</div>
+                <div className="text-xs text-muted-foreground">Bookings</div>
               </div>
             </div>
           </div>
@@ -203,14 +227,14 @@ const AdminSupportChat = () => {
           {selectedRoom ? (
             <>
               {/* Chat Header */}
-              <div className="border-b p-4 bg-card/50">
+              <div className="border-b p-4 bg-gradient-to-r from-primary/5 to-primary/10">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                    <User className="h-5 w-5 text-primary" />
+                  <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+                    <span className="text-primary-foreground font-bold text-sm">S</span>
                   </div>
                   <div>
-                    <h2 className="font-semibold">User {selectedRoomData?.userId.slice(-6)}</h2>
-                    <p className="text-sm text-muted-foreground">Support conversation</p>
+                    <h2 className="font-semibold">Support Team</h2>
+                    <p className="text-sm text-muted-foreground">Chat with User {selectedRoomData?.userId.slice(-6)}</p>
                   </div>
                   <Badge variant="outline" className="ml-auto">
                     <Shield className="h-3 w-3 mr-1" />
@@ -222,31 +246,55 @@ const AdminSupportChat = () => {
               {/* Messages */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {messages.map((message) => (
-                  <div key={message.id} className={`flex ${message.senderId === user?._id ? 'justify-end' : 'justify-start'}`}>
+                  <div key={message.id} className={`flex ${message.senderId === user?._id ? 'justify-end' : 'justify-start'} items-end gap-2`}>
+                    {message.senderId !== user?._id && (
+                      <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-primary-foreground font-bold text-xs">S</span>
+                      </div>
+                    )}
                     <div className={`max-w-[70%] rounded-2xl px-4 py-3 ${
                       message.senderId === user?._id 
                         ? 'bg-primary text-primary-foreground' 
                         : 'bg-accent'
                     }`}>
                       <div className="text-sm whitespace-pre-wrap">{message.content}</div>
-                      <div className={`text-xs mt-2 ${
+                      <div className={`text-xs mt-1 ${
                         message.senderId === user?._id 
                           ? 'text-primary-foreground/70' 
                           : 'text-muted-foreground'
                       }`}>
-                        {message.senderName} • {message.createdAt?.toDate?.()?.toLocaleTimeString() || 'Now'}
+                        {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    </div>
+                    {message.senderId === user?._id && (
+                      <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
+                        <User className="h-3 w-3 text-white" />
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {isTyping && (
+                  <div className="flex justify-start items-end gap-2">
+                    <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-primary-foreground font-bold text-xs">S</span>
+                    </div>
+                    <div className="bg-accent rounded-2xl px-4 py-3">
+                      <div className="flex gap-1">
+                        <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"></div>
+                        <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></div>
+                        <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
                       </div>
                     </div>
                   </div>
-                ))}
+                )}
                 <div ref={messagesEndRef} />
               </div>
 
               {/* Input */}
-              <div className="border-t p-4">
+              <div className="border-t p-4 bg-card">
                 <div className="flex gap-2">
                   <Input
-                    placeholder="Type your response..."
+                    placeholder="Ask any question..."
                     value={inputMessage}
                     onChange={(e) => setInputMessage(e.target.value)}
                     onKeyDown={(e) => {
@@ -255,10 +303,11 @@ const AdminSupportChat = () => {
                         handleSendMessage();
                       }
                     }}
+                    disabled={isTyping}
                   />
                   <Button 
                     onClick={handleSendMessage} 
-                    disabled={!inputMessage.trim()}
+                    disabled={!inputMessage.trim() || isTyping}
                     className="bg-primary hover:bg-primary/90 transition-all duration-200 hover:scale-105"
                   >
                     <Send className="h-4 w-4" />
@@ -282,3 +331,4 @@ const AdminSupportChat = () => {
 };
 
 export default AdminSupportChat;
+

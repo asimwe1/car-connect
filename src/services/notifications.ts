@@ -31,20 +31,15 @@ class NotificationService {
   };
 
   constructor() {
-    // Only connect in production or when WebSocket URL is explicitly provided
-    if (import.meta.env.PROD || import.meta.env.VITE_WS_URL) {
-      this.connect();
-    } else {
-      console.log('WebSocket notifications disabled in development');
-      // Simulate some demo notifications in development
-      this.addDemoNotifications();
-    }
+    // Always try to connect to WebSocket server
+    // Will fallback to demo notifications if connection fails in development
+    this.connect();
   }
 
   private connect() {
     try {
-      // In production, this would connect to your WebSocket server
-      const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:8080/notifications';
+      // Connect to production WebSocket server or development fallback
+      const wsUrl = import.meta.env.VITE_WS_URL || 'wss://carhubconnect.onrender.com/notifications';
       this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = () => {
@@ -80,6 +75,7 @@ class NotificationService {
         // Don't attempt reconnect in development
         if (!import.meta.env.PROD) {
           console.log('WebSocket connection failed - using demo notifications in development');
+          this.addDemoNotifications();
         }
       };
     } catch (error) {
@@ -87,6 +83,9 @@ class NotificationService {
       // Don't attempt reconnect in development
       if (import.meta.env.PROD) {
         this.attemptReconnect();
+      } else {
+        console.log('WebSocket connection failed - using demo notifications in development');
+        this.addDemoNotifications();
       }
     }
   }

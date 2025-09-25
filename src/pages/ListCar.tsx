@@ -5,6 +5,8 @@ import SellCarTab from '@/components/SellCarTab';
 import CarRentTab from '@/components/CarRentTab';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
 
 const ListCar: React.FC = () => {
   const location = useLocation();
@@ -39,6 +41,12 @@ const ListCar: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-accent/20 to-primary/10">
       <div className="container mx-auto px-4 py-10">
+        <div className="mb-4">
+          <Button variant="ghost" onClick={() => navigate('/buyer-dashboard')}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Dashboard
+          </Button>
+        </div>
         <Card className="bg-card/80 backdrop-blur-sm border border-border">
           <CardContent className="p-6">
             <Tabs value={tab} onValueChange={handleTabChange} className="w-full">

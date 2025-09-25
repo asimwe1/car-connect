@@ -5,12 +5,14 @@ import SellCarTab from '@/components/SellCarTab';
 import CarRentTab from '@/components/CarRentTab';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 
 const ListCar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
 
   const initialTab = useMemo(() => {
@@ -42,7 +44,7 @@ const ListCar: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-background via-accent/20 to-primary/10">
       <div className="container mx-auto px-4 py-10">
         <div className="mb-4">
-          <Button variant="ghost" onClick={() => navigate('/buyer-dashboard')}>
+          <Button variant="ghost" onClick={() => navigate(user?.role === 'admin' ? '/admin-dashboard' : '/buyer-dashboard')}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Dashboard
           </Button>

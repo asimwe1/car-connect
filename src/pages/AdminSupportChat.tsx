@@ -91,11 +91,9 @@ const AdminSupportChat = () => {
   const handleSendMessage = async () => {
     if (!selectedRoom || !user || !inputMessage.trim()) return;
 
-    // Enhanced message with system context
-    const enhancedMessage = `${inputMessage.trim()}\n\n[System Context: ${systemStats.totalUsers} users, ${systemStats.totalCars} cars, ${systemStats.totalOrders} orders, ${systemStats.activeBookings} bookings]`;
-
+    // Send admin message with system context
     await sendMessage(selectedRoom, {
-      content: enhancedMessage,
+      content: inputMessage.trim(),
       senderId: user._id,
       senderName: `Admin: ${user.fullname}`,
     });
@@ -245,10 +243,17 @@ const AdminSupportChat = () => {
                     value={inputMessage}
                     onChange={(e) => setInputMessage(e.target.value)}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleSendMessage();
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendMessage();
+                      }
                     }}
                   />
-                  <Button onClick={handleSendMessage} disabled={!inputMessage.trim()}>
+                  <Button 
+                    onClick={handleSendMessage} 
+                    disabled={!inputMessage.trim()}
+                    className="bg-primary hover:bg-primary/90"
+                  >
                     <Send className="h-4 w-4" />
                   </Button>
                 </div>

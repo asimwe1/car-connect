@@ -106,7 +106,7 @@ const Support = () => {
         <div className="flex items-center gap-4 mb-6">
           <Button variant="ghost" onClick={() => navigate('/buyer-dashboard')}>
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Dashboard
+            Back
           </Button>
           <div className="flex items-center gap-2">
             <MessageCircle className="h-6 w-6 text-primary" />
@@ -152,10 +152,18 @@ const Support = () => {
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleSend();
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend();
+                  }
                 }}
+                disabled={!roomId}
               />
-              <Button onClick={handleSend} disabled={!inputMessage.trim() || !roomId}>
+              <Button 
+                onClick={handleSend} 
+                disabled={!inputMessage.trim() || !roomId || isTyping}
+                className="bg-primary hover:bg-primary/90"
+              >
                 <Send className="h-4 w-4" />
               </Button>
             </div>

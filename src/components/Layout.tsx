@@ -11,7 +11,9 @@ const Layout: React.FC = () => {
                           location.pathname === '/support' || 
                           location.pathname === '/admin/support-chat' ||
                           location.pathname === '/list-car' ||
-                          location.pathname === '/settings';
+                          location.pathname === '/settings' ||
+                          location.pathname === '/buyer-dashboard' ||
+                          location.pathname === '/admin-dashboard';
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {!hideGlobalChrome && <OfflineBanner />}

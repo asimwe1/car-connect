@@ -3,13 +3,14 @@ import { Button } from '@/components/ui/button';
 import { Menu, X, User, Settings } from 'lucide-react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthPrompt } from '@/contexts/AuthPromptContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const authPrompt = useAuthPrompt();
-  const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
+  const { user, isAuthenticated } = useAuth();
 
   const navLinks: Array<{ name: string; path: string; tab?: 'sell' | 'rent'; protected?: boolean }> = [
     { name: 'Home', path: '/' },
@@ -43,8 +44,7 @@ const Navbar = () => {
 
   const handleProtectedClick = (e: React.MouseEvent, to: string, isProtected?: boolean) => {
     if (!isProtected) return;
-    const authed = localStorage.getItem('user');
-    if (!authed) {
+    if (!isAuthenticated) {
       e.preventDefault();
       authPrompt.showPrompt({ redirectTo: to });
     }
@@ -92,12 +92,14 @@ const Navbar = () => {
                     Dashboard
                   </Button>
                 </Link>
-                <Link to="/admin-dashboard">
-                  <Button variant="ghost" size="sm">
-                    <Settings className="w-4 h-4 mr-2" />
-                    Admin
-                  </Button>
-                </Link>
+                {user?.role === 'admin' && (
+                  <Link to="/admin-dashboard">
+                    <Button variant="ghost" size="sm">
+                      <Settings className="w-4 h-4 mr-2" />
+                      Admin
+                    </Button>
+                  </Link>
+                )}
               </>
             ) : (
               <>
@@ -156,14 +158,16 @@ const Navbar = () => {
                       <User className="w-4 h-4 mr-2" />
                       Dashboard
                     </Link>
-                    <Link
-                      to="/admin-dashboard"
-                      onClick={() => setIsOpen(false)}
-                      className="flex items-center px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-primary hover:bg-accent"
-                    >
-                      <Settings className="w-4 h-4 mr-2" />
-                      Admin
-                    </Link>
+                    {user?.role === 'admin' && (
+                      <Link
+                        to="/admin-dashboard"
+                        onClick={() => setIsOpen(false)}
+                        className="flex items-center px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-primary hover:bg-accent"
+                      >
+                        <Settings className="w-4 h-4 mr-2" />
+                        Admin
+                      </Link>
+                    )}
                   </>
                 ) : (
                   <>

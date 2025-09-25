@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -6,10 +6,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
-import { Upload, Shield, Zap, Users, Car, CheckCircle, DollarSign } from 'lucide-react';
+import { Upload, Shield, Zap, Users, Car, CheckCircle, DollarSign, X, Image, Video } from 'lucide-react';
+import { uploadImages, uploadVideo } from '@/services/upload';
+import { useToast } from '@/hooks/use-toast';
 import { useInView } from 'react-intersection-observer';
 
 const SellCarTab = () => {
+  const { toast } = useToast();
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
+  
   const [formData, setFormData] = useState({
     make: '',
     model: '',
@@ -23,6 +29,10 @@ const SellCarTab = () => {
     location: '',
     description: ''
   });
+  
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [uploadedVideo, setUploadedVideo] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const { ref: stepsRef, inView: stepsInView } = useInView({
     threshold: 0.1,
@@ -41,6 +51,100 @@ const SellCarTab = () => {
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    // Validate file count
+    if (uploadedImages.length + files.length > 20) {
+      toast({
+        title: "Too many images",
+        description: "Maximum 20 images allowed",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file sizes
+    for (const file of files) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB
+        toast({
+          title: "File too large",
+          description: `${file.name} is larger than 5MB`,
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    setIsUploading(true);
+    try {
+      const newImages = await uploadImages(Array.from(files));
+      setUploadedImages(prev => [...prev, ...newImages]);
+      toast({
+        title: "Images uploaded",
+        description: `${files.length} image(s) uploaded successfully`,
+      });
+    } catch (error) {
+      console.error('Image upload error:', error);
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload images. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+      if (imageInputRef.current) {
+        imageInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleVideoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file size
+    if (file.size > 50 * 1024 * 1024) { // 50MB
+      toast({
+        title: "File too large",
+        description: "Video must be smaller than 50MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const videoUrl = await uploadVideo(file);
+      setUploadedVideo(videoUrl);
+      toast({
+        title: "Video uploaded",
+        description: "Video uploaded successfully",
+      });
+    } catch (error) {
+      console.error('Video upload error:', error);
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload video. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+      if (videoInputRef.current) {
+        videoInputRef.current.value = '';
+      }
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setUploadedImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const removeVideo = () => {
+    setUploadedVideo(null);
   };
 
   const formatPrice = (price) => {
@@ -300,25 +404,101 @@ const SellCarTab = () => {
         {/* Image Upload */}
         <div className="mt-6">
           <Label>Upload Photos (Max 20 images, 5MB each)</Label>
-          <div className="mt-2 border-2 border-dashed border-border rounded-lg p-8 text-center">
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={handleImageUpload}
+            className="hidden"
+          />
+          <div 
+            className="mt-2 border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
+            onClick={() => imageInputRef.current?.click()}
+          >
             <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
             <p className="text-muted-foreground">Drag and drop images here, or click to browse</p>
-            <Button variant="outline" className="mt-4">
-              Select Images
+            <Button 
+              variant="outline" 
+              className="mt-4"
+              disabled={isUploading}
+              onClick={(e) => {
+                e.stopPropagation();
+                imageInputRef.current?.click();
+              }}
+            >
+              {isUploading ? 'Uploading...' : 'Select Images'}
             </Button>
           </div>
+          
+          {/* Image Previews */}
+          {uploadedImages.length > 0 && (
+            <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+              {uploadedImages.map((url, index) => (
+                <div key={index} className="relative group">
+                  <img
+                    src={url}
+                    alt={`Upload ${index + 1}`}
+                    className="w-full h-24 object-cover rounded-lg"
+                  />
+                  <button
+                    onClick={() => removeImage(index)}
+                    className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Video Upload */}
         <div className="mt-6">
           <Label>Upload Video (Optional, Max 50MB)</Label>
-          <div className="mt-2 border-2 border-dashed border-border rounded-lg p-6 text-center">
-            <Car className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
+          <input
+            ref={videoInputRef}
+            type="file"
+            accept="video/*"
+            onChange={handleVideoUpload}
+            className="hidden"
+          />
+          <div 
+            className="mt-2 border-2 border-dashed border-border rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
+            onClick={() => videoInputRef.current?.click()}
+          >
+            <Video className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
             <p className="text-muted-foreground text-sm">Add a video walkthrough of your car</p>
-            <Button variant="outline" size="sm" className="mt-2">
-              Select Video
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="mt-2"
+              disabled={isUploading}
+              onClick={(e) => {
+                e.stopPropagation();
+                videoInputRef.current?.click();
+              }}
+            >
+              {isUploading ? 'Uploading...' : 'Select Video'}
             </Button>
           </div>
+          
+          {/* Video Preview */}
+          {uploadedVideo && (
+            <div className="mt-4 relative">
+              <video
+                src={uploadedVideo}
+                controls
+                className="w-full max-w-md mx-auto rounded-lg"
+              />
+              <button
+                onClick={removeVideo}
+                className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          )}
         </div>
 
         <Button className="w-full mt-8 btn-hero text-lg py-4">

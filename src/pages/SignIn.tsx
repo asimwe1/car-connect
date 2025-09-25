@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,10 +14,12 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import SEO from '@/components/SEO';
 import { firebasePhoneAuth } from '@/services/firebaseAuth';
+import { CountryCodeSelector } from '@/components/CountryCodeSelector';
+import { getCountryByCode } from '@/data/countryCodes';
 
 const schema = z.object({
-  phone: z.string().min(10).max(16).regex(/^\+?[0-9]{10,15}$/,
-    'Please enter a valid phone number'),
+  phone: z.string().min(8).max(20).regex(/^\+[1-9]\d{1,14}$/,
+    'Please enter a valid international phone number'),
   password: z.string().min(1, 'Password is required'),
   remember: z.boolean().optional()
 });
@@ -28,6 +30,7 @@ const SignIn = () => {
   const rememberDefault = false;
   const [showPassword, setShowPassword] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
+  const [selectedCountry, setSelectedCountry] = useState('RW'); // Default to Rwanda
   const { toast } = useToast();
   const navigate = useNavigate();
   const { login, setAuthenticatedUser } = useAuth();
@@ -132,20 +135,32 @@ const SignIn = () => {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="phone">Phone Number</Label>
-              <div className="relative">
-                <Phone className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="phone"
-                  type="tel"
-                  placeholder="+250 7XX XXX XXX"
-                  {...rhfRegister('phone')}
-                  className={`search-input pl-8 ${errors.phone ? 'border-destructive' : ''}`}
-                  required
+              <div className="flex gap-2">
+                <CountryCodeSelector
+                  value={selectedCountry}
+                  onValueChange={setSelectedCountry}
+                  disabled={isLoading}
                 />
-                {errors.phone && (
-                  <p className="text-sm text-destructive mt-1">{errors.phone.message}</p>
-                )}
+                <div className="relative flex-1">
+                  <Phone className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="7XX XXX XXX"
+                    {...rhfRegister('phone')}
+                    className={`search-input pl-8 ${errors.phone ? 'border-destructive' : ''}`}
+                    required
+                    onChange={(e) => {
+                      const country = getCountryByCode(selectedCountry);
+                      const fullNumber = country ? `${country.dialCode}${e.target.value.replace(/^\+?[0-9]*/, '')}` : e.target.value;
+                      setValue('phone', fullNumber);
+                    }}
+                  />
+                </div>
               </div>
+              {errors.phone && (
+                <p className="text-sm text-destructive mt-1">{errors.phone.message}</p>
+              )}
             </div>
 
             <div className="space-y-2">

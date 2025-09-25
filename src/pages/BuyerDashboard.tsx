@@ -21,11 +21,11 @@ import {
   Car,
   Search,
   Bell,
-  Settings,
   LogOut,
   Star,
   MapPin,
-  MessageCircle
+  MessageCircle,
+  ArrowLeft
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -75,7 +75,6 @@ const BuyerDashboard = () => {
     { icon: Calendar, label: 'Bookings', href: '/bookings' },
     { icon: Car, label: 'Buy Cars', href: '/buy-cars' },
     { icon: Car, label: 'Sell/Rent Cars', href: '/list-car' },
-    { icon: Settings, label: 'Settings', href: '/settings' },
     { icon: MessageCircle, label: 'Support', href: '/support' },
   ];
 
@@ -85,6 +84,15 @@ const BuyerDashboard = () => {
         {/* Sidebar */}
         <div className="w-64 bg-card/80 backdrop-blur-sm border-r border-border min-h-screen relative">
           <div className="p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <button
+                onClick={() => navigate('/')}
+                className="flex items-center text-muted-foreground hover:text-primary transition-colors text-sm"
+              >
+                <ArrowLeft className="h-4 w-4 mr-1" />
+                Back to Home
+              </button>
+            </div>
             <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary-light bg-clip-text text-transparent">
               CarConnect
             </h1>

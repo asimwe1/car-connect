@@ -142,7 +142,7 @@ export class FirebasePhoneAuth {
 
   // Check if phone number is admin number (bypass OTP in production)
   isAdminNumber(phoneNumber: string): boolean {
-    const adminNumbers = ['+250788881400', '+250793373953'];
+    const adminNumbers = ['+250788881400']; // Only the actual admin number
     return adminNumbers.includes(phoneNumber);
   }
 

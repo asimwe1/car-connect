@@ -53,34 +53,40 @@ const SignIn = () => {
         if (adminBypass.success) {
           // Admin credentials validation
           const digits = data.phone.replace(/\D/g, '');
-          const userMap: Record<string, { id: string; fullname: string; phone: string; password: string; role: 'admin' | 'user' }> = {
-              '250788881400': { id: '68d5498abc621c37fe2b5fab', fullname: 'Admin One', phone: '+250788881400', password: 'carhub@1050', role: 'admin' },
-              '250793373953': { id: '68d5491683ce5fa40a99954b', fullname: 'User One', phone: '+250793373953', password: 'carhub@1050', role: 'user' },
+          if (digits.endsWith('788881400') && data.password === 'carhub@1050') {
+            const adminUser = { 
+              _id: '68d5498abc621c37fe2b5fab', 
+              fullname: 'Admin One', 
+              phone: '+250788881400', 
+              role: 'admin' as const 
             };
-          const matchKey = digits.endsWith('788881400') ? '250788881400' : (digits.endsWith('793373953') ? '250793373953' : '');
-          
-          if (matchKey && userMap[matchKey] && data.password === userMap[matchKey].password) {
-            const userData = userMap[matchKey];
-            const authenticatedUser = { _id: userData.id, fullname: userData.fullname, phone: userData.phone, role: userData.role };
-            setAuthenticatedUser(authenticatedUser);
-            
-            if (userData.role === 'admin') {
-              toast({ title: 'Welcome Admin', description: 'Admin access granted. Redirecting to dashboard.' });
-              navigate('/admin-dashboard');
-            } else {
-              toast({ title: 'Welcome', description: 'Login successful. Redirecting to dashboard.' });
-              navigate('/buyer-dashboard');
-            }
+            setAuthenticatedUser(adminUser);
+            toast({ title: 'Welcome Admin', description: 'Admin access granted. Redirecting to dashboard.' });
+            navigate('/admin-dashboard');
             return;
           } else {
             toast({
-              title: "Invalid Credentials",
+              title: "Invalid Admin Credentials",
               description: "Please check your password",
               variant: "destructive",
             });
             return;
           }
         }
+      }
+
+      // Handle regular user login for test user
+      if (data.phone === '+250793373953' && data.password === 'carhub@1050') {
+        const regularUser = { 
+          _id: '68d5491683ce5fa40a99954b', 
+          fullname: 'User One', 
+          phone: '+250793373953', 
+          role: 'user' as const 
+        };
+        setAuthenticatedUser(regularUser);
+        toast({ title: 'Welcome', description: 'Login successful. Redirecting to dashboard.' });
+        navigate('/buyer-dashboard');
+        return;
       }
 
       // Initialize Firebase Phone Auth when not in fake mode

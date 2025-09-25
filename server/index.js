@@ -174,9 +174,93 @@ const seedVehicles = async () => {
   }
 };
 
+// Add some demo cars for admin testing
+const addDemoCars = async () => {
+  const demoCars = [
+    {
+      _id: 'demo-car-1',
+      make: 'Toyota',
+      model: 'Camry',
+      year: 2022,
+      price: 25000,
+      mileage: 15000,
+      fuelType: 'Petrol',
+      transmission: 'Automatic',
+      status: 'available',
+      bodyType: 'Sedan',
+      color: 'White',
+      location: 'Kigali',
+      description: 'Well maintained Toyota Camry in excellent condition.',
+      images: ['/placeholder.svg'],
+      primaryImage: '/placeholder.svg',
+      createdAt: new Date(),
+      updatedAt: new Date()
+    },
+    {
+      _id: 'demo-car-2',
+      make: 'Honda',
+      model: 'Civic',
+      year: 2023,
+      price: 22000,
+      mileage: 8000,
+      fuelType: 'Petrol',
+      transmission: 'Manual',
+      status: 'available',
+      bodyType: 'Sedan',
+      color: 'Blue',
+      location: 'Butare',
+      description: 'Sporty Honda Civic with low mileage.',
+      images: ['/placeholder.svg'],
+      primaryImage: '/placeholder.svg',
+      createdAt: new Date(),
+      updatedAt: new Date()
+    },
+    {
+      _id: 'demo-car-3',
+      make: 'BMW',
+      model: 'X5',
+      year: 2021,
+      price: 45000,
+      mileage: 25000,
+      fuelType: 'Petrol',
+      transmission: 'Automatic',
+      status: 'available',
+      bodyType: 'SUV',
+      color: 'Black',
+      location: 'Kigali',
+      description: 'Luxury BMW X5 SUV with premium features.',
+      images: ['/placeholder.svg'],
+      primaryImage: '/placeholder.svg',
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }
+  ];
+
+  if (firestore) {
+    try {
+      for (const car of demoCars) {
+        const carRef = firestore.collection(VEHICLES_COLLECTION).doc(car._id);
+        const doc = await carRef.get();
+        if (!doc.exists) {
+          await carRef.set(car);
+          console.log(`Demo car ${car.make} ${car.model} seeded to Firestore`);
+        }
+      }
+    } catch (error) {
+      console.error('Error seeding demo cars to Firestore:', error);
+    }
+  } else {
+    for (const car of demoCars) {
+      memoryVehicles.set(car._id, car);
+    }
+    console.log('Demo cars seeded to memory');
+  }
+};
+
 // Seed data on startup
 seedVehicles();
 seedUsers();
+addDemoCars();
 
 // AUTH ENDPOINTS
 // POST /auth/login - User login

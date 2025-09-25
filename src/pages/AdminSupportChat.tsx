@@ -49,6 +49,13 @@ const AdminSupportChat = () => {
   }, [user, navigate]);
 
   useEffect(() => {
+    // Auto-select first room if available
+    if (rooms.length > 0 && !selectedRoom) {
+      setSelectedRoom(rooms[0].id || null);
+    }
+  }, [rooms, selectedRoom]);
+
+  useEffect(() => {
     const unsubscribe = subscribeToAllRoomsForSupport(setRooms);
     return () => unsubscribe();
   }, []);
@@ -167,8 +174,8 @@ const AdminSupportChat = () => {
                 {filteredRooms.map((room) => (
                   <Card 
                     key={room.id}
-                    className={`cursor-pointer transition-colors ${
-                      selectedRoom === room.id ? 'bg-primary/10 border-primary' : 'hover:bg-accent/50'
+                    className={`cursor-pointer transition-all duration-200 hover:shadow-md hover:scale-[1.02] ${
+                      selectedRoom === room.id ? 'bg-primary/10 border-primary shadow-md' : 'hover:bg-accent/50 border-border'
                     }`}
                     onClick={() => setSelectedRoom(room.id || null)}
                   >
@@ -252,7 +259,7 @@ const AdminSupportChat = () => {
                   <Button 
                     onClick={handleSendMessage} 
                     disabled={!inputMessage.trim()}
-                    className="bg-primary hover:bg-primary/90"
+                    className="bg-primary hover:bg-primary/90 transition-all duration-200 hover:scale-105"
                   >
                     <Send className="h-4 w-4" />
                   </Button>

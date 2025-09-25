@@ -1,6 +1,4 @@
 import React from 'react';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -55,9 +53,7 @@ const Settings = () => {
   ];
 
   return (
-    <div className="min-h-screen">
-      <Navbar />
-      
+    <div className="min-h-screen bg-background">
       {/* Hero Section */}
       <section className="py-16 bg-gradient-to-r from-primary to-primary-dark text-white">
         <div className="container mx-auto px-4">
@@ -77,7 +73,7 @@ const Settings = () => {
           <div className="max-w-4xl mx-auto">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {settingSections.map((section, index) => (
-                <Card key={index} className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1 animate-zoom-in" style={{ animationDelay: `${index * 150}ms` }}>
+                <Card key={index} className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1 hover:scale-[1.02] animate-zoom-in" style={{ animationDelay: `${index * 150}ms` }}>
                   <CardHeader>
                     <div className="flex items-center gap-3 mb-2">
                       {section.icon}
@@ -94,7 +90,7 @@ const Settings = () => {
                         </li>
                       ))}
                     </ul>
-                    <Button variant="outline" className="w-full">
+                    <Button variant="outline" className="w-full hover:bg-primary hover:text-primary-foreground transition-all duration-200">
                       Manage Settings
                     </Button>
                   </CardContent>
@@ -106,7 +102,7 @@ const Settings = () => {
             <div className="mt-12">
               <h2 className="text-2xl font-bold mb-6 animate-fade-in">Quick Actions</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card className="p-6 text-center hover:shadow-lg transition-all duration-300 animate-slide-up">
+                <Card className="p-6 text-center hover:shadow-lg transition-all duration-300 hover:scale-[1.02] animate-slide-up">
                   <CardContent className="p-0">
                     <Moon className="h-8 w-8 text-primary mx-auto mb-3" />
                     <h3 className="font-semibold mb-2">Dark Mode</h3>
@@ -114,19 +110,19 @@ const Settings = () => {
                   </CardContent>
                 </Card>
 
-                <Card className="p-6 text-center hover:shadow-lg transition-all duration-300 animate-slide-up" style={{ animationDelay: '150ms' }}>
+                <Card className="p-6 text-center hover:shadow-lg transition-all duration-300 hover:scale-[1.02] animate-slide-up" style={{ animationDelay: '150ms' }}>
                   <CardContent className="p-0">
                     <Bell className="h-8 w-8 text-primary mx-auto mb-3" />
                     <h3 className="font-semibold mb-2">Notification Center</h3>
-                    <Button size="sm" variant="outline">Manage</Button>
+                    <Button size="sm" variant="outline" className="hover:bg-primary hover:text-primary-foreground transition-all duration-200">Manage</Button>
                   </CardContent>
                 </Card>
 
-                <Card className="p-6 text-center hover:shadow-lg transition-all duration-300 animate-slide-up" style={{ animationDelay: '300ms' }}>
+                <Card className="p-6 text-center hover:shadow-lg transition-all duration-300 hover:scale-[1.02] animate-slide-up" style={{ animationDelay: '300ms' }}>
                   <CardContent className="p-0">
                     <Shield className="h-8 w-8 text-primary mx-auto mb-3" />
                     <h3 className="font-semibold mb-2">Security Center</h3>
-                    <Button size="sm" variant="outline">Review</Button>
+                    <Button size="sm" variant="outline" className="hover:bg-primary hover:text-primary-foreground transition-all duration-200">Review</Button>
                   </CardContent>
                 </Card>
               </div>
@@ -139,10 +135,10 @@ const Settings = () => {
                 Can't find what you're looking for? Our support team is here to help you with any questions or issues.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button className="bg-primary text-primary-foreground hover:bg-primary-dark">
+                <Button className="bg-primary text-primary-foreground hover:bg-primary-dark transition-all duration-200 hover:scale-105">
                   Contact Support
                 </Button>
-                <Button variant="outline">
+                <Button variant="outline" className="hover:bg-primary hover:text-primary-foreground transition-all duration-200">
                   View Help Center
                 </Button>
               </div>
@@ -150,8 +146,6 @@ const Settings = () => {
           </div>
         </div>
       </section>
-      
-      <Footer />
     </div>
   );
 };

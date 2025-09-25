@@ -115,25 +115,40 @@ const Support = () => {
         </div>
 
         <Card className="h-[70vh] flex flex-col">
-          <CardHeader className="border-b">
+          <CardHeader className="border-b bg-gradient-to-r from-primary/5 to-primary/10">
               <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
-                AI-Powered Support Chat
+                <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                  <span className="text-primary-foreground font-bold text-sm">S</span>
+                </div>
+                Support Team
               </CardTitle>
           </CardHeader>
           <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.map((m) => (
-              <div key={m.id} className={`flex ${isMine(m) ? 'justify-end' : 'justify-start'}`}>
+              <div key={m.id} className={`flex ${isMine(m) ? 'justify-end' : 'justify-start'} items-end gap-2`}>
+                {!isMine(m) && (
+                  <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-primary-foreground font-bold text-xs">S</span>
+                  </div>
+                )}
                 <div className={`max-w-[70%] rounded-2xl px-4 py-3 ${isMine(m) ? 'bg-primary text-primary-foreground' : 'bg-accent'}`}>
                   <div className="text-sm whitespace-pre-wrap">{m.content}</div>
                   <div className={`text-xs mt-1 ${isMine(m) ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
-                    {m.senderName}
+                    {new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </div>
                 </div>
+                {isMine(m) && (
+                  <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <User className="h-3 w-3 text-white" />
+                  </div>
+                )}
               </div>
             ))}
             {isTyping && (
-              <div className="flex justify-start">
+              <div className="flex justify-start items-end gap-2">
+                <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
+                  <span className="text-primary-foreground font-bold text-xs">S</span>
+                </div>
                 <div className="bg-accent rounded-2xl px-4 py-3">
                   <div className="flex gap-1">
                     <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"></div>
@@ -162,7 +177,7 @@ const Support = () => {
               <Button 
                 onClick={handleSend} 
                 disabled={!inputMessage.trim() || !roomId || isTyping}
-                className="bg-primary hover:bg-primary/90"
+                className="bg-primary hover:bg-primary/90 transition-all duration-200 hover:scale-105"
               >
                 <Send className="h-4 w-4" />
               </Button>

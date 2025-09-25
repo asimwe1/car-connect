@@ -53,21 +53,28 @@ const SignIn = () => {
         if (adminBypass.success) {
           // Admin credentials validation
           const digits = data.phone.replace(/\D/g, '');
-          const adminMap: Record<string, { id: string; fullname: string; phone: string; password: string }> = {
-              '250788881400': { id: '68d2960f836c423156abed3e', fullname: 'Test Admin', phone: '+250788881400', password: 'carhub@1050' },
-              '250793373953': { id: '68d525aa9325d460f7f890e8', fullname: 'Admin One', phone: '+250793373953', password: 'carhub@1050' },
+          const userMap: Record<string, { id: string; fullname: string; phone: string; password: string; role: 'admin' | 'user' }> = {
+              '250788881400': { id: '68d5498abc621c37fe2b5fab', fullname: 'Admin One', phone: '+250788881400', password: 'carhub@1050', role: 'admin' },
+              '250793373953': { id: '68d5491683ce5fa40a99954b', fullname: 'User One', phone: '+250793373953', password: 'carhub@1050', role: 'user' },
             };
           const matchKey = digits.endsWith('788881400') ? '250788881400' : (digits.endsWith('793373953') ? '250793373953' : '');
           
-          if (matchKey && adminMap[matchKey] && data.password === adminMap[matchKey].password) {
-            const adminUser = { _id: adminMap[matchKey].id, fullname: adminMap[matchKey].fullname, phone: adminMap[matchKey].phone, role: 'admin' as const };
-            setAuthenticatedUser(adminUser);
-            toast({ title: 'Welcome Admin', description: 'Admin access granted. Redirecting to dashboard.' });
-            navigate('/admin-dashboard');
+          if (matchKey && userMap[matchKey] && data.password === userMap[matchKey].password) {
+            const userData = userMap[matchKey];
+            const authenticatedUser = { _id: userData.id, fullname: userData.fullname, phone: userData.phone, role: userData.role };
+            setAuthenticatedUser(authenticatedUser);
+            
+            if (userData.role === 'admin') {
+              toast({ title: 'Welcome Admin', description: 'Admin access granted. Redirecting to dashboard.' });
+              navigate('/admin-dashboard');
+            } else {
+              toast({ title: 'Welcome', description: 'Login successful. Redirecting to dashboard.' });
+              navigate('/buyer-dashboard');
+            }
             return;
           } else {
             toast({
-              title: "Invalid Admin Credentials",
+              title: "Invalid Credentials",
               description: "Please check your password",
               variant: "destructive",
             });

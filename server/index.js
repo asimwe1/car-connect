@@ -53,33 +53,49 @@ const USERS_COLLECTION = 'users';
 const memoryVehicles = new Map();
 const memoryUsers = new Map();
 
-// Add test user data
+// Add test users data
 const seedUsers = async () => {
-  const testUser = {
-    _id: '68d525aa9325d460f7f890e8',
-    fullname: 'Admin One',
-    email: 'admin1@gmail.com',
-    phone: '+250793373953',
-    password: '$2b$12$LalazslcFM/HEWakVxQXvjoSADcQ7l1CUAlEr5dnYTvWw4S5P9i', // hashed version of 'carhub@1050'
-    role: 'user', // Set as regular user for testing, not admin
-    createdAt: new Date('2025-01-17T00:00:00Z'),
-    updatedAt: new Date('2025-01-17T00:00:00Z')
-  };
+  const testUsers = [
+    {
+      _id: '68d5491683ce5fa40a99954b',
+      fullname: 'User One',
+      email: 'user1@gmail.com',
+      phone: '+250793373953',
+      password: '$2b$12$LalazslcFM/HEWakVxQXvjoSADcQ7l1CUAlEr5dnYTvWw4S5P9i', // hashed version of 'carhub@1050'
+      role: 'user',
+      createdAt: new Date('2025-01-17T00:00:00Z'),
+      updatedAt: new Date('2025-01-17T00:00:00Z')
+    },
+    {
+      _id: '68d5498abc621c37fe2b5fab',
+      fullname: 'Admin One',
+      email: 'admin1@gmail.com',
+      phone: '+250788881400',
+      password: '$2b$12$LalazslcFM/HEWakVxQXvjoSADcQ7l1CUAlEr5dnYTvWw4S5P9i', // hashed version of 'carhub@1050'
+      role: 'admin',
+      createdAt: new Date('2025-01-17T00:00:00Z'),
+      updatedAt: new Date('2025-01-17T00:00:00Z')
+    }
+  ];
 
   if (firestore) {
     try {
-      const userRef = firestore.collection(USERS_COLLECTION).doc(testUser._id);
-      const doc = await userRef.get();
-      if (!doc.exists) {
-        await userRef.set(testUser);
-        console.log('Test user seeded to Firestore');
+      for (const testUser of testUsers) {
+        const userRef = firestore.collection(USERS_COLLECTION).doc(testUser._id);
+        const doc = await userRef.get();
+        if (!doc.exists) {
+          await userRef.set(testUser);
+          console.log(`Test user ${testUser.fullname} seeded to Firestore`);
+        }
       }
     } catch (error) {
-      console.error('Error seeding test user to Firestore:', error);
+      console.error('Error seeding test users to Firestore:', error);
     }
   } else {
-    memoryUsers.set(testUser._id, testUser);
-    console.log('Test user seeded to memory');
+    for (const testUser of testUsers) {
+      memoryUsers.set(testUser._id, testUser);
+    }
+    console.log('Test users seeded to memory');
   }
 };
 
@@ -192,8 +208,8 @@ app.post('/auth/login', async (req, res) => {
       }
     }
 
-    // For testing, allow the exact password 'carhub@1050' or any password for test user
-    if (phone === '+250793373953' || password === 'carhub@1050') {
+    // For testing, allow the exact password 'carhub@1050' for test users
+    if ((phone === '+250793373953' || phone === '+250788881400') && password === 'carhub@1050') {
       const { password: _, ...userWithoutPassword } = user;
       return res.json({ 
         success: true, 
@@ -274,7 +290,7 @@ app.post('/auth/verify-otp', async (req, res) => {
     }
 
     // For testing, accept '123456' for test phone numbers
-    if (phone === '+250793373953' && otp === '123456') {
+    if ((phone === '+250793373953' || phone === '+250788881400') && otp === '123456') {
       let user;
       if (firestore) {
         const snapshot = await firestore.collection(USERS_COLLECTION)

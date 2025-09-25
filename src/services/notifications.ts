@@ -31,7 +31,14 @@ class NotificationService {
   };
 
   constructor() {
-    this.connect();
+    // Only connect in production or when WebSocket URL is explicitly provided
+    if (import.meta.env.PROD || import.meta.env.VITE_WS_URL) {
+      this.connect();
+    } else {
+      console.log('WebSocket notifications disabled in development');
+      // Simulate some demo notifications in development
+      this.addDemoNotifications();
+    }
   }
 
   private connect() {
@@ -60,17 +67,27 @@ class NotificationService {
         console.log('Notifications WebSocket disconnected');
         this.state.isConnected = false;
         this.notifyListeners();
-        this.attemptReconnect();
+        // Don't attempt reconnect in development
+        if (import.meta.env.PROD) {
+          this.attemptReconnect();
+        }
       };
 
       this.ws.onerror = (error) => {
         console.error('Notifications WebSocket error:', error);
         this.state.isConnected = false;
         this.notifyListeners();
+        // Don't attempt reconnect in development
+        if (!import.meta.env.PROD) {
+          console.log('WebSocket connection failed - using demo notifications in development');
+        }
       };
     } catch (error) {
       console.error('Failed to connect to notifications WebSocket:', error);
-      this.attemptReconnect();
+      // Don't attempt reconnect in development
+      if (import.meta.env.PROD) {
+        this.attemptReconnect();
+      }
     }
   }
 
@@ -82,6 +99,34 @@ class NotificationService {
         this.connect();
       }, this.reconnectDelay * this.reconnectAttempts);
     }
+  }
+
+  private addDemoNotifications() {
+    // Add some demo notifications for development
+    const demoNotifications: Notification[] = [
+      {
+        id: '1',
+        type: 'info',
+        title: 'Welcome to CarHub',
+        message: 'Your account has been successfully created!',
+        timestamp: new Date(Date.now() - 5 * 60 * 1000), // 5 minutes ago
+        read: false,
+        category: 'system'
+      },
+      {
+        id: '2',
+        type: 'success',
+        title: 'Car Listed Successfully',
+        message: 'Your Toyota Camry has been listed for sale.',
+        timestamp: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes ago
+        read: true,
+        category: 'user'
+      }
+    ];
+
+    this.state.notifications = demoNotifications;
+    this.state.unreadCount = demoNotifications.filter(n => !n.read).length;
+    this.notifyListeners();
   }
 
   private handleNotification(data: any) {

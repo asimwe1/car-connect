@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { api, User, AuthState, authStorage } from '../services/api';
+import { clearAllStorageAndCookies } from '../utils/cookies';
 
 interface AuthContextType extends AuthState {
   login: (phone: string, password: string) => Promise<{ success: boolean; message?: string }>;
@@ -115,6 +116,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } finally {
       setUser(null);
       authStorage.clearUser();
+      // Clear all cookies and storage
+      clearAllStorageAndCookies();
     }
   };
 

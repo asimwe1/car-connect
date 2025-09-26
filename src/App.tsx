@@ -7,6 +7,8 @@ import { Helmet } from "react-helmet-async";
 import Layout from "@/components/Layout";
 import { AuthProvider } from "./contexts/AuthContext";
 import { AuthPromptProvider } from "./contexts/AuthPromptContext";
+// Import cookie utilities to make clearAllData() available globally
+import "./utils/cookies";
 import Index from "./pages/Index";
 import SignUp from "./pages/SignUp";
 import SignIn from "./pages/SignIn";

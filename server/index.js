@@ -456,6 +456,92 @@ app.get('/api/vehicles', async (req, res) => {
   }
 });
 
+// GET /api/cars - Get all cars with filtering, sorting, and pagination
+app.get('/api/cars', async (req, res) => {
+  try {
+    const { 
+      search, 
+      make, 
+      year, 
+      sort, 
+      page = 1, 
+      limit = 10,
+      status,
+      minPrice,
+      maxPrice,
+      q
+    } = req.query;
+    
+    let vehicles = [];
+
+    if (firestore) {
+      let ref = firestore.collection(VEHICLES_COLLECTION);
+      const snapshot = await ref.get();
+      vehicles = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+    } else {
+      vehicles = Array.from(memoryVehicles.values());
+    }
+
+    // Apply filters
+    if (search || q) {
+      const s = String(search || q || '').toLowerCase();
+      vehicles = vehicles.filter((v) =>
+        [v.name, v.subtitle, v.make, v.model].some((val) => String(val || '').toLowerCase().includes(s))
+      );
+    }
+    if (make) {
+      const m = String(make).toLowerCase();
+      vehicles = vehicles.filter((v) => String(v.make || '').toLowerCase().includes(m));
+    }
+    if (year) {
+      const y = parseInt(String(year));
+      vehicles = vehicles.filter((v) => Number(v.year) === y);
+    }
+    if (status) {
+      vehicles = vehicles.filter((v) => String(v.status || 'available').toLowerCase() === String(status).toLowerCase());
+    }
+    if (minPrice) {
+      vehicles = vehicles.filter((v) => Number(v.price) >= Number(minPrice));
+    }
+    if (maxPrice) {
+      vehicles = vehicles.filter((v) => Number(v.price) <= Number(maxPrice));
+    }
+
+    // Sorting
+    const sortKey = String(sort || 'newest');
+    const sorters = {
+      price_low: (a, b) => Number(a.price) - Number(b.price),
+      price_high: (a, b) => Number(b.price) - Number(a.price),
+      year_new: (a, b) => Number(b.year) - Number(a.year),
+      mileage: (a, b) => Number(a.mileage || 0) - Number(b.mileage || 0),
+      newest: (a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0),
+    };
+    vehicles.sort(sorters[sortKey] || sorters.newest);
+
+    // Pagination
+    const pageNum = Math.max(1, parseInt(String(page)));
+    const limitNum = Math.max(1, Math.min(100, parseInt(String(limit))));
+    const total = vehicles.length;
+    const totalPages = Math.ceil(total / limitNum);
+    const startIndex = (pageNum - 1) * limitNum;
+    const endIndex = startIndex + limitNum;
+    const paginatedVehicles = vehicles.slice(startIndex, endIndex);
+
+    res.json({
+      data: {
+        items: paginatedVehicles,
+        total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching cars:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
 // GET /api/vehicles/:id - Get single vehicle
 app.get('/api/vehicles/:id', async (req, res) => {
   try {
@@ -472,6 +558,26 @@ app.get('/api/vehicles/:id', async (req, res) => {
     res.json(vehicle);
   } catch (error) {
     console.error('Error fetching vehicle:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// GET /api/cars/:id - Get single car
+app.get('/api/cars/:id', async (req, res) => {
+  try {
+    let vehicle;
+    if (firestore) {
+      const doc = await firestore.collection(VEHICLES_COLLECTION).doc(req.params.id).get();
+      vehicle = doc.exists ? { id: doc.id, ...doc.data() } : null;
+    } else {
+      vehicle = memoryVehicles.get(req.params.id) || null;
+    }
+    if (!vehicle) {
+      return res.status(404).json({ message: 'Car not found' });
+    }
+    res.json(vehicle);
+  } catch (error) {
+    console.error('Error fetching car:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
@@ -495,6 +601,50 @@ app.post('/api/vehicles', async (req, res) => {
     }
   } catch (error) {
     console.error('Error creating vehicle:', error);
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// POST /api/cars - Create new car
+app.post('/api/cars', async (req, res) => {
+  try {
+    // Validate required fields
+    const { make, model, year, price, transmission } = req.body;
+    if (!make || !model || !year || !price || !transmission) {
+      return res.status(400).json({ 
+        message: 'Missing required fields: make, model, year, price, transmission' 
+      });
+    }
+
+    if (firestore) {
+      const ref = await firestore.collection(VEHICLES_COLLECTION).add({
+        ...req.body,
+        status: req.body.status || 'available',
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      const doc = await ref.get();
+      return res.status(201).json({ 
+        message: 'Car created successfully',
+        data: { id: doc.id, ...doc.data() }
+      });
+    } else {
+      const id = Math.random().toString(36).slice(2);
+      const record = { 
+        id, 
+        ...req.body, 
+        status: req.body.status || 'available',
+        createdAt: Date.now(), 
+        updatedAt: Date.now() 
+      };
+      memoryVehicles.set(id, record);
+      return res.status(201).json({ 
+        message: 'Car created successfully',
+        data: record 
+      });
+    }
+  } catch (error) {
+    console.error('Error creating car:', error);
     res.status(400).json({ message: error.message });
   }
 });
@@ -526,6 +676,36 @@ app.put('/api/vehicles/:id', async (req, res) => {
   }
 });
 
+// PUT /api/cars/:id - Update car
+app.put('/api/cars/:id', async (req, res) => {
+  try {
+    let updated;
+    if (firestore) {
+      const ref = firestore.collection(VEHICLES_COLLECTION).doc(req.params.id);
+      const doc = await ref.get();
+      if (!doc.exists) return res.status(404).json({ message: 'Car not found' });
+      await ref.update({ ...req.body, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+      const after = await ref.get();
+      updated = { id: after.id, ...after.data() };
+    } else {
+      const existing = memoryVehicles.get(req.params.id);
+      if (!existing) return res.status(404).json({ message: 'Car not found' });
+      updated = { ...existing, ...req.body, updatedAt: Date.now() };
+      memoryVehicles.set(req.params.id, updated);
+    }
+    if (!updated) {
+      return res.status(404).json({ message: 'Car not found' });
+    }
+    res.json({
+      message: 'Car updated successfully',
+      data: updated
+    });
+  } catch (error) {
+    console.error('Error updating car:', error);
+    res.status(400).json({ message: error.message });
+  }
+});
+
 // DELETE /api/vehicles/:id - Delete vehicle
 app.delete('/api/vehicles/:id', async (req, res) => {
   try {
@@ -546,6 +726,30 @@ app.delete('/api/vehicles/:id', async (req, res) => {
     res.json({ message: 'Vehicle deleted successfully' });
   } catch (error) {
     console.error('Error deleting vehicle:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// DELETE /api/cars/:id - Delete car
+app.delete('/api/cars/:id', async (req, res) => {
+  try {
+    let existed = false;
+    if (firestore) {
+      const ref = firestore.collection(VEHICLES_COLLECTION).doc(req.params.id);
+      const doc = await ref.get();
+      if (!doc.exists) return res.status(404).json({ message: 'Car not found' });
+      await ref.delete();
+      existed = true;
+    } else {
+      existed = memoryVehicles.delete(req.params.id);
+      if (!existed) return res.status(404).json({ message: 'Car not found' });
+    }
+    if (!existed) {
+      return res.status(404).json({ message: 'Car not found' });
+    }
+    res.json({ message: 'Car deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting car:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });

@@ -1,109 +1,217 @@
-// Production Integration Test
-// Run this to verify backend connectivity
+#!/usr/bin/env node
+
+// Production Backend Integration Test
+// This script tests the CarHub frontend integration with the production backend
 
 const API_BASE = 'https://carhubconnect.onrender.com/api';
 const WS_URL = 'wss://carhubconnect.onrender.com/notifications';
 
+console.log('🚀 Testing CarHub Production Backend Integration\n');
+
 async function testAPI() {
-  console.log('🧪 Testing API Integration...\n');
+  console.log('📡 Testing API Endpoints...');
+  
+  const tests = [
+    {
+      name: 'Health Check',
+      url: `${API_BASE.replace('/api', '')}/health`,
+      method: 'GET'
+    },
+    {
+      name: 'Cars List (Page 1)',
+      url: `${API_BASE}/cars?page=1&limit=5`,
+      method: 'GET'
+    },
+    {
+      name: 'Cars Search',
+      url: `${API_BASE}/cars?q=toyota&page=1&limit=3`,
+      method: 'GET'
+    },
+    {
+      name: 'Cars Filter by Make',
+      url: `${API_BASE}/cars?make=toyota&page=1&limit=3`,
+      method: 'GET'
+    }
+  ];
+
+  for (const test of tests) {
+    try {
+      console.log(`  ⏳ ${test.name}...`);
+      const response = await fetch(test.url, { method: test.method });
+      const data = await response.json();
+      
+      if (response.ok) {
+        console.log(`  ✅ ${test.name} - OK (${response.status})`);
+        
+        // Show data structure for cars endpoints
+        if (test.name.includes('Cars') && data.data && data.data.items) {
+          console.log(`     📊 Found ${data.data.total} cars, showing ${data.data.items.length} items`);
+          console.log(`     📄 Page ${data.data.page} of ${data.data.totalPages}`);
+        } else if (data.status) {
+          console.log(`     📊 Status: ${data.status}`);
+        }
+      } else {
+        console.log(`  ❌ ${test.name} - Failed (${response.status}): ${data.message || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.log(`  ❌ ${test.name} - Network Error: ${error.message}`);
+    }
+  }
+}
+
+async function testWebSocket() {
+  console.log('\n🔌 Testing WebSocket Connection...');
+  
+  return new Promise((resolve) => {
+    try {
+      const ws = new WebSocket(WS_URL);
+      let connected = false;
+      
+      const timeout = setTimeout(() => {
+        if (!connected) {
+          console.log('  ⏰ WebSocket connection timeout');
+          ws.close();
+          resolve(false);
+        }
+      }, 10000);
+      
+      ws.onopen = () => {
+        connected = true;
+        clearTimeout(timeout);
+        console.log('  ✅ WebSocket Connected Successfully');
+        
+        // Send test authentication
+        ws.send(JSON.stringify({
+          type: 'auth',
+          userId: 'test-user',
+          token: 'test-token'
+        }));
+        
+        setTimeout(() => {
+          ws.close();
+          resolve(true);
+        }, 2000);
+      };
+      
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          console.log(`  📨 Received notification: ${data.type} - ${data.title}`);
+        } catch (e) {
+          console.log(`  📨 Received message: ${event.data}`);
+        }
+      };
+      
+      ws.onclose = () => {
+        console.log('  🔌 WebSocket connection closed');
+        if (connected) {
+          resolve(true);
+        }
+      };
+      
+      ws.onerror = (error) => {
+        console.log(`  ❌ WebSocket Error: ${error.message || 'Connection failed'}`);
+        clearTimeout(timeout);
+        resolve(false);
+      };
+      
+    } catch (error) {
+      console.log(`  ❌ WebSocket Setup Error: ${error.message}`);
+      resolve(false);
+    }
+  });
+}
+
+async function testAuthentication() {
+  console.log('\n🔐 Testing Authentication Endpoints...');
+  
+  // Test with demo credentials from backend
+  const loginTest = {
+    phone: '+250793373953',
+    password: 'carhub@1050'
+  };
   
   try {
-    // Test health endpoint
-    console.log('1. Testing API Health...');
-    const healthResponse = await fetch(`${API_BASE}/health`);
-    if (healthResponse.ok) {
-      console.log('✅ API Health: OK');
-    } else {
-      console.log('❌ API Health: Failed');
-    }
-  } catch (error) {
-    console.log('❌ API Health: Connection failed');
-  }
-
-  try {
-    // Test cars endpoint
-    console.log('2. Testing Cars Endpoint...');
-    const carsResponse = await fetch(`${API_BASE}/cars`);
-    if (carsResponse.ok) {
-      const carsData = await carsResponse.json();
-      console.log(`✅ Cars Endpoint: OK (${carsData.data?.items?.length || 0} cars found)`);
-    } else {
-      console.log('❌ Cars Endpoint: Failed');
-    }
-  } catch (error) {
-    console.log('❌ Cars Endpoint: Connection failed');
-  }
-
-  try {
-    // Test authentication
-    console.log('3. Testing Authentication...');
-    const authResponse = await fetch(`${API_BASE}/auth/login`, {
+    console.log('  ⏳ Testing login with demo credentials...');
+    const response = await fetch(`${API_BASE}/auth/login`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        phone: '+250788881400',
-        password: 'carhub@1050'
-      })
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(loginTest)
     });
     
-    if (authResponse.ok) {
-      const authData = await authResponse.json();
-      console.log(`✅ Authentication: OK (User: ${authData.user?.fullname})`);
+    const data = await response.json();
+    
+    if (response.ok && data.success) {
+      console.log(`  ✅ Authentication - Login successful`);
+      console.log(`     👤 User: ${data.user?.fullname} (${data.user?.role})`);
+      return data.user;
     } else {
-      console.log('❌ Authentication: Failed');
+      console.log(`  ❌ Authentication - Login failed: ${data.message}`);
+      return null;
     }
   } catch (error) {
-    console.log('❌ Authentication: Connection failed');
+    console.log(`  ❌ Authentication - Network error: ${error.message}`);
+    return null;
   }
 }
 
-function testWebSocket() {
-  console.log('\n🔌 Testing WebSocket Integration...\n');
+async function runTests() {
+  const startTime = Date.now();
   
-  try {
-    const ws = new WebSocket(WS_URL);
-    
-    ws.onopen = () => {
-      console.log('✅ WebSocket: Connected successfully');
-      setTimeout(() => ws.close(), 2000);
-    };
-    
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        console.log(`✅ WebSocket Message: ${data.title || 'Notification received'}`);
-      } catch (error) {
-        console.log('✅ WebSocket Message: Received (parsing failed)');
-      }
-    };
-    
-    ws.onerror = (error) => {
-      console.log('❌ WebSocket: Connection failed');
-    };
-    
-    ws.onclose = () => {
-      console.log('🔌 WebSocket: Connection closed');
-    };
-    
-  } catch (error) {
-    console.log('❌ WebSocket: Failed to initialize');
-  }
-}
-
-// Run tests
-console.log('🚀 CarHub Production Integration Test\n');
-console.log(`API Base: ${API_BASE}`);
-console.log(`WebSocket: ${WS_URL}\n`);
-
-testAPI().then(() => {
-  testWebSocket();
+  // Test API endpoints
+  await testAPI();
   
-  setTimeout(() => {
-    console.log('\n✅ Integration test completed!');
+  // Test Authentication
+  const user = await testAuthentication();
+  
+  // Test WebSocket
+  const wsConnected = await testWebSocket();
+  
+  const endTime = Date.now();
+  const duration = ((endTime - startTime) / 1000).toFixed(2);
+  
+  console.log('\n📊 Integration Test Summary:');
+  console.log(`   ⏱️  Duration: ${duration}s`);
+  console.log(`   🌐 API Base: ${API_BASE}`);
+  console.log(`   🔌 WebSocket: ${WS_URL}`);
+  console.log(`   🔐 Auth Test: ${user ? '✅ Passed' : '❌ Failed'}`);
+  console.log(`   🔌 WebSocket: ${wsConnected ? '✅ Connected' : '❌ Failed'}`);
+  
+  if (user && wsConnected) {
+    console.log('\n🎉 All systems ready for production deployment!');
     console.log('\n📋 Next Steps:');
-    console.log('1. Deploy frontend with production environment variables');
-    console.log('2. Update CLIENT_URL in backend to your domain');
-    console.log('3. Test authentication and WebSocket in browser');
-    console.log('4. Monitor logs for any issues');
-  }, 5000);
-}).catch(console.error);
+    console.log('   1. Deploy to Vercel with production environment variables');
+    console.log('   2. Set VITE_API_URL=https://carhubconnect.onrender.com/api');
+    console.log('   3. Set VITE_WS_URL=wss://carhubconnect.onrender.com/notifications');
+    console.log('   4. Verify deployment with real user testing');
+  } else {
+    console.log('\n⚠️  Some issues detected - check backend services');
+  }
+}
+
+// Handle Node.js vs Browser environment
+async function setupNodeEnvironment() {
+  if (typeof window === 'undefined') {
+    // Node.js environment - use dynamic imports for ES modules
+    try {
+      const { WebSocket } = await import('ws');
+      global.WebSocket = WebSocket;
+    } catch (e) {
+      console.log('⚠️  WebSocket module not available, WebSocket tests will be skipped');
+    }
+    
+    // Add fetch if not available
+    if (typeof fetch === 'undefined') {
+      try {
+        const fetch = await import('node-fetch');
+        global.fetch = fetch.default;
+      } catch (e) {
+        console.log('⚠️  node-fetch not available, using native fetch');
+      }
+    }
+  }
+}
+
+setupNodeEnvironment().then(() => runTests()).catch(console.error);

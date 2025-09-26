@@ -1,10 +1,12 @@
-// Vercel serverless function for vehicles API
+// Vercel serverless function for cars API
 const cors = require('cors');
 
-// Mock vehicle data
-const mockVehicles = [
+// Mock car data - same as vehicles but with car-specific fields
+const mockCars = [
   {
     _id: '1',
+    make: 'Ford',
+    model: 'Transit',
     name: 'Ford Transit',
     year: 2021,
     subtitle: '4.0 D5 PowerPulse Momentum 5dr AWD',
@@ -14,14 +16,16 @@ const mockVehicles = [
     fuelType: 'Diesel',
     transmission: 'Manual',
     badge: 'Great Price',
-    make: 'Ford',
     location: 'Kigali, Rwanda',
     seats: 5,
     condition: 'Used',
+    status: 'available',
     createdAt: new Date().toISOString()
   },
   {
     _id: '2',
+    make: 'Mercedes Benz',
+    model: 'GLC',
     name: 'New GLC',
     year: 2023,
     subtitle: '4.0 D5 PowerPulse Momentum 5dr AWD',
@@ -31,14 +35,16 @@ const mockVehicles = [
     fuelType: 'Petrol',
     transmission: 'Automatic',
     badge: 'Low Mileage',
-    make: 'Mercedes Benz',
     location: 'Kigali, Rwanda',
     seats: 5,
     condition: 'New',
+    status: 'available',
     createdAt: new Date().toISOString()
   },
   {
     _id: '3',
+    make: 'Audi',
+    model: 'A6',
     name: 'Audi A6 3.5',
     year: 2024,
     subtitle: '3.5 D5 PowerPulse Momentum 5dr AWD',
@@ -47,14 +53,16 @@ const mockVehicles = [
     mileage: 100,
     fuelType: 'Petrol',
     transmission: 'Automatic',
-    make: 'Audi',
     location: 'Kigali, Rwanda',
     seats: 5,
     condition: 'New',
+    status: 'available',
     createdAt: new Date().toISOString()
   },
   {
     _id: '4',
+    make: 'Toyota',
+    model: 'Corolla Altis',
     name: 'Corolla Altis',
     year: 2023,
     subtitle: '3.5 D5 PowerPulse Momentum 5dr AWD',
@@ -63,37 +71,53 @@ const mockVehicles = [
     mileage: 15000,
     fuelType: 'Petrol',
     transmission: 'Automatic',
-    make: 'Toyota',
     location: 'Kigali, Rwanda',
     seats: 5,
     condition: 'Used',
+    status: 'available',
     createdAt: new Date().toISOString()
   }
 ];
 
 // Helper function to apply filters
-function applyFilters(vehicles, search, make, year, sort) {
-  let filtered = [...vehicles];
+function applyFilters(cars, search, make, year, sort, status, minPrice, maxPrice) {
+  let filtered = [...cars];
 
   // Apply search filter
   if (search) {
-    filtered = filtered.filter(vehicle =>
-      vehicle.name.toLowerCase().includes(search.toLowerCase()) ||
-      vehicle.subtitle.toLowerCase().includes(search.toLowerCase()) ||
-      vehicle.make.toLowerCase().includes(search.toLowerCase())
+    filtered = filtered.filter(car =>
+      car.name.toLowerCase().includes(search.toLowerCase()) ||
+      car.subtitle.toLowerCase().includes(search.toLowerCase()) ||
+      car.make.toLowerCase().includes(search.toLowerCase()) ||
+      car.model.toLowerCase().includes(search.toLowerCase())
     );
   }
 
   // Apply make filter
   if (make) {
-    filtered = filtered.filter(vehicle =>
-      vehicle.make.toLowerCase().includes(make.toLowerCase())
+    filtered = filtered.filter(car =>
+      car.make.toLowerCase().includes(make.toLowerCase())
     );
   }
 
   // Apply year filter
   if (year) {
-    filtered = filtered.filter(vehicle => vehicle.year === parseInt(year));
+    filtered = filtered.filter(car => car.year === parseInt(year));
+  }
+
+  // Apply status filter
+  if (status) {
+    filtered = filtered.filter(car => 
+      car.status.toLowerCase() === status.toLowerCase()
+    );
+  }
+
+  // Apply price range filters
+  if (minPrice) {
+    filtered = filtered.filter(car => car.price >= parseInt(minPrice));
+  }
+  if (maxPrice) {
+    filtered = filtered.filter(car => car.price <= parseInt(maxPrice));
   }
 
   // Apply sorting
@@ -146,25 +170,37 @@ export default function handler(req, res) {
         sort, 
         page = 1, 
         limit = 10,
+        status,
+        minPrice,
+        maxPrice,
         q 
       } = req.query;
       
       // Apply filters and sorting
-      let filteredVehicles = applyFilters(mockVehicles, search || q, make, year, sort);
+      let filteredCars = applyFilters(
+        mockCars, 
+        search || q, 
+        make, 
+        year, 
+        sort, 
+        status, 
+        minPrice, 
+        maxPrice
+      );
       
       // Pagination
       const pageNum = Math.max(1, parseInt(String(page)));
       const limitNum = Math.max(1, Math.min(100, parseInt(String(limit))));
-      const total = filteredVehicles.length;
+      const total = filteredCars.length;
       const totalPages = Math.ceil(total / limitNum);
       const startIndex = (pageNum - 1) * limitNum;
       const endIndex = startIndex + limitNum;
-      const paginatedVehicles = filteredVehicles.slice(startIndex, endIndex);
+      const paginatedCars = filteredCars.slice(startIndex, endIndex);
       
       // Return paginated response
       res.status(200).json({
         data: {
-          items: paginatedVehicles,
+          items: paginatedCars,
           total,
           page: pageNum,
           limit: limitNum,
@@ -172,24 +208,34 @@ export default function handler(req, res) {
         }
       });
     } else if (req.method === 'POST') {
-      // Handle POST requests (create new vehicle)
-      const newVehicle = {
-        _id: (mockVehicles.length + 1).toString(),
+      // Handle POST requests (create new car)
+      const { make, model, year, price, transmission } = req.body;
+      
+      // Validate required fields
+      if (!make || !model || !year || !price || !transmission) {
+        return res.status(400).json({ 
+          message: 'Missing required fields: make, model, year, price, transmission' 
+        });
+      }
+
+      const newCar = {
+        _id: (mockCars.length + 1).toString(),
         ...req.body,
+        name: req.body.name || `${make} ${model}`,
         status: req.body.status || 'available',
         createdAt: new Date().toISOString()
       };
-      mockVehicles.push(newVehicle);
+      mockCars.push(newCar);
       res.status(201).json({
-        message: 'Vehicle created successfully',
-        data: newVehicle
+        message: 'Car created successfully',
+        data: newCar
       });
     } else {
       res.setHeader('Allow', ['GET', 'POST']);
       res.status(405).end(`Method ${req.method} Not Allowed`);
     }
   } catch (error) {
-    console.error('Error in vehicles API:', error);
+    console.error('Error in cars API:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 }

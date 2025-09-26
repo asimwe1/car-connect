@@ -40,13 +40,29 @@ class NotificationService {
     try {
       // Connect to production WebSocket server or development fallback
       const wsUrl = import.meta.env.VITE_WS_URL || 'wss://carhubconnect.onrender.com/notifications';
+      console.log(`Attempting to connect to WebSocket: ${wsUrl}`);
       this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = () => {
-        console.log('Notifications WebSocket connected');
+        console.log('Notifications WebSocket connected to:', wsUrl);
         this.state.isConnected = true;
         this.reconnectAttempts = 0;
         this.notifyListeners();
+        
+        // Send authentication if user is logged in
+        const user = localStorage.getItem('user');
+        if (user) {
+          try {
+            const userData = JSON.parse(user);
+            this.ws?.send(JSON.stringify({
+              type: 'auth',
+              userId: userData._id,
+              token: localStorage.getItem('token')
+            }));
+          } catch (e) {
+            console.warn('Failed to send auth data:', e);
+          }
+        }
       };
 
       this.ws.onmessage = (event) => {
@@ -58,13 +74,17 @@ class NotificationService {
         }
       };
 
-      this.ws.onclose = () => {
-        console.log('Notifications WebSocket disconnected');
+      this.ws.onclose = (event) => {
+        console.log('Notifications WebSocket disconnected:', event.code, event.reason);
         this.state.isConnected = false;
         this.notifyListeners();
-        // Don't attempt reconnect in development
-        if (import.meta.env.PROD) {
+        
+        // Always attempt reconnect in production, and in development if explicitly configured
+        if (import.meta.env.PROD || import.meta.env.VITE_WS_URL) {
           this.attemptReconnect();
+        } else {
+          console.log('WebSocket connection closed - using demo notifications in development');
+          this.addDemoNotifications();
         }
       };
 
@@ -72,16 +92,18 @@ class NotificationService {
         console.error('Notifications WebSocket error:', error);
         this.state.isConnected = false;
         this.notifyListeners();
-        // Don't attempt reconnect in development
-        if (!import.meta.env.PROD) {
+        
+        // In production, always try to reconnect. In development, use demo notifications
+        if (!import.meta.env.PROD && !import.meta.env.VITE_WS_URL) {
           console.log('WebSocket connection failed - using demo notifications in development');
           this.addDemoNotifications();
         }
       };
     } catch (error) {
       console.error('Failed to connect to notifications WebSocket:', error);
-      // Don't attempt reconnect in development
-      if (import.meta.env.PROD) {
+      
+      // In production, always try to reconnect. In development, use demo notifications
+      if (import.meta.env.PROD || import.meta.env.VITE_WS_URL) {
         this.attemptReconnect();
       } else {
         console.log('WebSocket connection failed - using demo notifications in development');

@@ -2,13 +2,24 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { User, Bell, Shield, CreditCard, Settings as SettingsIcon, Moon, Sun } from 'lucide-react';
+import { User, Bell, Shield, CreditCard, Settings as SettingsIcon, Moon, Sun, Trash2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { clearAllStorageAndCookies } from '@/utils/cookies';
+import { useToast } from '@/hooks/use-toast';
 
 const Settings = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleClearAllData = () => {
+    clearAllStorageAndCookies();
+    toast({
+      title: "Data Cleared",
+      description: "All cookies, local storage, and cached data have been cleared.",
+    });
+  };
 
   const settingSections = [
     {
@@ -53,6 +64,17 @@ const Settings = () => {
         "Billing information",
         "Transaction history",
         "Auto-pay settings"
+      ]
+    },
+    {
+      icon: <Trash2 className="h-6 w-6 text-destructive" />,
+      title: "Data & Privacy",
+      description: "Manage your data and clear stored information",
+      items: [
+        "Clear cookies and cache",
+        "Reset app preferences",
+        "Clear browsing data",
+        "Export personal data"
       ]
     }
   ];
@@ -120,7 +142,7 @@ const Settings = () => {
             {/* Quick Actions */}
             <div className="mt-12">
               <h2 className="text-2xl font-bold mb-6 animate-fade-in">Quick Actions</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <Card className="p-6 text-center hover:shadow-lg transition-all duration-300 hover:scale-[1.02] animate-slide-up">
                   <CardContent className="p-0">
                     <Moon className="h-8 w-8 text-primary mx-auto mb-3" />
@@ -155,6 +177,21 @@ const Settings = () => {
                       onClick={() => alert('Security center coming soon!')}
                     >
                       Review
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card className="p-6 text-center hover:shadow-lg transition-all duration-300 hover:scale-[1.02] animate-slide-up" style={{ animationDelay: '450ms' }}>
+                  <CardContent className="p-0">
+                    <Trash2 className="h-8 w-8 text-destructive mx-auto mb-3" />
+                    <h3 className="font-semibold mb-2">Clear Data</h3>
+                    <Button 
+                      size="sm" 
+                      variant="destructive" 
+                      className="transition-all duration-200"
+                      onClick={handleClearAllData}
+                    >
+                      Clear All
                     </Button>
                   </CardContent>
                 </Card>

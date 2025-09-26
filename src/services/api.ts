@@ -6,7 +6,8 @@ const RAW_API_BASE = import.meta.env.VITE_API_URL || 'https://carhubconnect.onre
 const API_BASE_URL = (() => {
   try {
     const url = new URL(RAW_API_BASE);
-    if (url.protocol === 'http:') {
+    // In production, always use HTTPS
+    if (import.meta.env.PROD && url.protocol === 'http:') {
       url.protocol = 'https:';
     }
     // Ensure trailing no slash beyond /api
@@ -16,6 +17,8 @@ const API_BASE_URL = (() => {
     return 'https://carhubconnect.onrender.com/api';
   }
 })();
+
+console.log('API Base URL:', API_BASE_URL);
 
 interface ApiResponse<T> {
   data?: T;
@@ -37,7 +40,8 @@ class ApiService {
 
   private async request<T = any>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    retries = 3
   ): Promise<{ data?: T; error?: string }> {
     const url = `${this.baseURL}${endpoint}`;
     
@@ -58,24 +62,66 @@ class ApiService {
         ...options.headers,
       },
       credentials: 'include', // For cookie-based auth
+      timeout: 30000, // 30 second timeout
     };
 
-    try {
-      const response = await fetch(url, config);
-      const data = await response.json();
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+        
+        const response = await fetch(url, {
+          ...config,
+          signal: controller.signal,
+        });
+        
+        clearTimeout(timeoutId);
+        
+        let data;
+        try {
+          data = await response.json();
+        } catch {
+          // Handle non-JSON responses
+          data = { message: response.statusText };
+        }
 
-      if (!response.ok) {
+        if (!response.ok) {
+          // Don't retry on client errors (4xx)
+          if (response.status >= 400 && response.status < 500) {
+            return {
+              error: data.message || `HTTP ${response.status}: ${response.statusText}`,
+            };
+          }
+          
+          // Retry on server errors (5xx) and network issues
+          if (attempt < retries) {
+            console.warn(`Request failed (attempt ${attempt + 1}/${retries + 1}):`, response.status);
+            await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+            continue;
+          }
+          
+          return {
+            error: data.message || `HTTP ${response.status}: ${response.statusText}`,
+          };
+        }
+
+        return { data };
+      } catch (error) {
+        if (attempt < retries) {
+          console.warn(`Request failed (attempt ${attempt + 1}/${retries + 1}):`, error);
+          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+          continue;
+        }
+        
         return {
-          error: data.message || `HTTP ${response.status}`,
+          error: error instanceof Error ? error.message : 'Network error',
         };
       }
-
-      return { data };
-    } catch (error) {
-      return {
-        error: error instanceof Error ? error.message : 'Network error',
-      };
     }
+    
+    return {
+      error: 'Maximum retry attempts exceeded',
+    };
   }
 
   private getToken(): string | null {

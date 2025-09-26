@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { api, User, AuthState, authStorage } from '../services/api';
 import { clearAllStorageAndCookies } from '../utils/cookies';
+import { sessionManager } from '../services/sessionManager';
 
 interface AuthContextType extends AuthState {
   login: (phone: string, password: string) => Promise<{ success: boolean; message?: string }>;
@@ -22,6 +23,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   const isAuthenticated = !!user;
+
+  // Setup session manager logout handler
+  useEffect(() => {
+    sessionManager.setLogoutHandler(() => {
+      console.log('Session timeout - forcing logout');
+      logout();
+    });
+  }, []);
 
   const checkAuth = async () => {
     try {
@@ -52,6 +61,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await api.login({ phone, password });
       
       if (response.data && typeof response.data === 'object' && 'success' in response.data && response.data.success) {
+        // Start session on successful login
+        sessionManager.startSession();
         return { 
           success: true, 
           message: 'message' in response.data ? String(response.data.message) : 'Login successful' 
@@ -114,6 +125,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
+      // End session
+      sessionManager.endSession();
       setUser(null);
       authStorage.clearUser();
       // Clear all cookies and storage
@@ -125,6 +138,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const setAuthenticatedUser = (nextUser: User) => {
     setUser(nextUser);
     authStorage.setUser(nextUser);
+    // Start session for authenticated user
+    sessionManager.startSession();
   };
 
   useEffect(() => {

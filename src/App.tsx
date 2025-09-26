@@ -39,6 +39,8 @@ import TestDriveBooking from "./pages/TestDriveBooking";
 import PageLoader from "./components/PageLoader";
 import ErrorBoundary from "./components/ErrorBoundary";
 import ListCar from "./pages/ListCar";
+import ProtectedRoute from "./components/ProtectedRoute";
+import SessionWarning from "./components/SessionWarning";
 
 const queryClient = new QueryClient();
 
@@ -58,36 +60,113 @@ const App = () => (
                 <meta name="description" content="Find, buy, sell, or rent premium cars in Rwanda. Browse verified listings with financing options and test drives." />
                 <link rel="canonical" href="https://carhub-rw.vercel.app/" />
               </Helmet>
+              <SessionWarning />
               <Routes>
                 <Route element={<Layout />}>
+                  {/* Public routes */}
                   <Route path="/" element={<Index />} />
-                  <Route path="/signup" element={<SignUp />} />
-                  <Route path="/signin" element={<SignIn />} />
-                  <Route path="/verify-otp" element={<VerifyOTP />} />
-                  <Route path="/contact" element={<Contact />} />
-                  <Route path="/buyer-dashboard" element={<BuyerDashboard />} />
-                  <Route path="/admin-dashboard" element={<AdminDashboard />} />
-                  <Route path="/admin/add-car" element={<AddCar />} />
-                  <Route path="/buy-cars" element={<BuyCars />} />
-                  <Route path="/wishlist" element={<Wishlist />} />
-                  <Route path="/bookings" element={<Bookings />} />
-                  <Route path="/orders" element={<Orders />} />
-                  <Route path="/support" element={<Support />} />
-                  <Route path="/list-car" element={<ListCar />} />
                   <Route path="/about" element={<About />} />
+                  <Route path="/contact" element={<Contact />} />
+                  <Route path="/buy-cars" element={<BuyCars />} />
+                  <Route path="/car/:id" element={<CarDetails />} />
                   <Route path="/terms" element={<Terms />} />
                   <Route path="/faq" element={<FAQ />} />
                   <Route path="/blog" element={<Blog />} />
                   <Route path="/services" element={<Services />} />
                   <Route path="/how-it-works" element={<HowItWorks />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/car/:id" element={<CarDetails />} />
-                  <Route path="/admin/cars" element={<AdminCars />} />
-                  <Route path="/admin/support-chat" element={<AdminSupportChat />} />
-                  <Route path="/admin/orders" element={<AdminOrders />} />
-                  <Route path="/admin/edit-car/:id" element={<EditCar />} />
-                  <Route path="/test-drive/:id" element={<TestDriveBooking />} />
-                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+
+                  {/* Auth routes - redirect if already authenticated */}
+                  <Route path="/signup" element={
+                    <ProtectedRoute requireAuth={false}>
+                      <SignUp />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/signin" element={
+                    <ProtectedRoute requireAuth={false}>
+                      <SignIn />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/verify-otp" element={
+                    <ProtectedRoute requireAuth={false}>
+                      <VerifyOTP />
+                    </ProtectedRoute>
+                  } />
+
+                  {/* Protected user routes */}
+                  <Route path="/buyer-dashboard" element={
+                    <ProtectedRoute>
+                      <BuyerDashboard />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/admin/add-car" element={
+                    <ProtectedRoute>
+                      <AddCar />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/list-car" element={
+                    <ProtectedRoute>
+                      <ListCar />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/wishlist" element={
+                    <ProtectedRoute>
+                      <Wishlist />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/bookings" element={
+                    <ProtectedRoute>
+                      <Bookings />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/orders" element={
+                    <ProtectedRoute>
+                      <Orders />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/support" element={
+                    <ProtectedRoute>
+                      <Support />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/settings" element={
+                    <ProtectedRoute>
+                      <Settings />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/test-drive/:id" element={
+                    <ProtectedRoute>
+                      <TestDriveBooking />
+                    </ProtectedRoute>
+                  } />
+
+                  {/* Admin-only routes */}
+                  <Route path="/admin-dashboard" element={
+                    <ProtectedRoute adminOnly>
+                      <AdminDashboard />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/admin/cars" element={
+                    <ProtectedRoute adminOnly>
+                      <AdminCars />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/admin/support-chat" element={
+                    <ProtectedRoute adminOnly>
+                      <AdminSupportChat />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/admin/orders" element={
+                    <ProtectedRoute adminOnly>
+                      <AdminOrders />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/admin/edit-car/:id" element={
+                    <ProtectedRoute adminOnly>
+                      <EditCar />
+                    </ProtectedRoute>
+                  } />
+
+                  {/* Catch-all route */}
                   <Route path="*" element={<NotFound />} />
                 </Route>
               </Routes>

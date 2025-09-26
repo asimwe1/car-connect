@@ -32,7 +32,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     });
   }, []);
 
-  const checkAuth = async () => {
+  const checkAuth = async (preserveExistingUser = false) => {
     try {
       setIsLoading(true);
       const response = await api.getMe();
@@ -48,23 +48,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       // If API call fails, check if we have a saved user and it's still valid
       const savedUser = authStorage.getUser();
-      if (savedUser) {
-        console.log('API auth check failed, but using saved user session');
-        setUser(savedUser);
+      if (savedUser && (preserveExistingUser || user)) {
+        console.log('API auth check failed, but keeping existing user session');
+        if (!user) setUser(savedUser);
         return;
       }
       
-      setUser(null);
-      authStorage.clearUser();
+      // Only clear user if we don't have an existing session to preserve
+      if (!preserveExistingUser && !user) {
+        setUser(null);
+        authStorage.clearUser();
+      }
     } catch (error) {
       console.error('Auth check failed:', error);
       
       // Fallback to saved user if API is unreachable
       const savedUser = authStorage.getUser();
-      if (savedUser) {
-        console.log('API unreachable, using saved user session');
-        setUser(savedUser);
-      } else {
+      if (savedUser && (preserveExistingUser || user)) {
+        console.log('API unreachable, keeping existing user session');
+        if (!user) setUser(savedUser);
+      } else if (!preserveExistingUser && !user) {
         setUser(null);
         authStorage.clearUser();
       }
@@ -164,8 +167,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const savedUser = authStorage.getUser();
     if (savedUser) {
       setUser(savedUser);
-      // Verify the session is still valid
-      checkAuth();
+      // Start session for restored user
+      sessionManager.startSession();
+      // Optionally verify the session is still valid (but don't clear user if it fails)
+      checkAuth(true).catch(() => {
+        // If auth check fails, keep the saved user but log the issue
+        console.log('Auth verification failed, but keeping saved user session');
+      }).finally(() => {
+        setIsLoading(false);
+      });
     } else {
       setIsLoading(false);
     }

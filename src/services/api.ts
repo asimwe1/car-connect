@@ -342,16 +342,70 @@ export interface AuthState {
   isAuthenticated: boolean;
 }
 
-// Auth storage helpers
+// Auth storage helpers with expiration
 export const authStorage = {
   setUser: (user: User) => {
-    localStorage.setItem('user', JSON.stringify(user));
+    const userData = {
+      user,
+      timestamp: Date.now(),
+      expires: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 days
+    };
+    localStorage.setItem('user', JSON.stringify(userData));
   },
   getUser: (): User | null => {
-    const user = localStorage.getItem('user');
-    return user ? JSON.parse(user) : null;
+    try {
+      const stored = localStorage.getItem('user');
+      if (!stored) return null;
+      
+      const userData = JSON.parse(stored);
+      
+      // Check if it's the old format (just user object)
+      if (userData.fullname && !userData.user) {
+        // Old format, migrate it
+        const migratedData = {
+          user: userData,
+          timestamp: Date.now(),
+          expires: Date.now() + (7 * 24 * 60 * 60 * 1000)
+        };
+        localStorage.setItem('user', JSON.stringify(migratedData));
+        return userData;
+      }
+      
+      // Check if expired
+      if (userData.expires && Date.now() > userData.expires) {
+        console.log('Stored user session expired, clearing...');
+        localStorage.removeItem('user');
+        return null;
+      }
+      
+      return userData.user || null;
+    } catch (error) {
+      console.error('Error parsing stored user:', error);
+      localStorage.removeItem('user');
+      return null;
+    }
   },
   clearUser: () => {
     localStorage.removeItem('user');
   },
+  refreshExpiration: () => {
+    const stored = localStorage.getItem('user');
+    if (stored) {
+      try {
+        const userData = JSON.parse(stored);
+        if (userData.user) {
+          userData.expires = Date.now() + (7 * 24 * 60 * 60 * 1000);
+          localStorage.setItem('user', JSON.stringify(userData));
+        }
+      } catch (error) {
+        console.error('Error refreshing user expiration:', error);
+      }
+    }
+  }
 };
+
+// Global access for debugging and cross-module access
+if (typeof window !== 'undefined') {
+  (window as any).authStorage = authStorage;
+  console.log('💡 Tip: Auth storage available globally for session management');
+}

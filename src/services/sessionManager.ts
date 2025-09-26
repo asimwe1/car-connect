@@ -64,6 +64,19 @@ class SessionManager {
     // Reset timeout
     if (this.state.isActive) {
       this.resetTimeout();
+      
+      // Refresh user session expiration on activity
+      if (typeof window !== 'undefined') {
+        try {
+          // Import authStorage dynamically to avoid circular dependency
+          const authStorageModule = (window as any).authStorage;
+          if (authStorageModule && authStorageModule.refreshExpiration) {
+            authStorageModule.refreshExpiration();
+          }
+        } catch (error) {
+          // Ignore errors - this is just a nice-to-have feature
+        }
+      }
     }
     
     this.notifyListeners();

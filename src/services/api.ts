@@ -179,7 +179,7 @@ class ApiService {
       headers: {
         'Content-Type': 'application/json',
       },
-    });
+    }, 1); // Only retry once for auth checks
   }
 
   // Car methods

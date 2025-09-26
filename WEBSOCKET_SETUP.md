@@ -46,7 +46,7 @@ npm run dev
 
 ```bash
 # Optional: Custom WebSocket URL
-VITE_WS_URL=ws://your-websocket-server.com/notifications
+VITE_WS_URL=ws://your-websocket-server.com/messages
 ```
 
 ### Notification Types

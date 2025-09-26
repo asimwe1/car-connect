@@ -24,7 +24,7 @@ Your CarHub frontend is now **fully integrated** with the production backend at 
 
 ### ⚠️ WebSocket Integration
 - **Status**: ⚠️ **CONFIGURED BUT SERVER NOT READY**
-- **WebSocket URL**: `wss://carhubconnect.onrender.com/notifications`
+- **WebSocket URL**: `wss://carhubconnect.onrender.com/messages`
 - **Issue**: Backend WebSocket server returns 502 (not implemented yet)
 - **Fallback**: App gracefully falls back to demo notifications
 
@@ -39,7 +39,7 @@ Your CarHub frontend is now **fully integrated** with the production backend at 
 ```bash
 # Set these environment variables in Vercel Dashboard:
 VITE_API_URL=https://carhubconnect.onrender.com/api
-VITE_WS_URL=wss://carhubconnect.onrender.com/notifications
+VITE_WS_URL=wss://carhubconnect.onrender.com/messages
 ```
 
 ### 2. Verify Deployment

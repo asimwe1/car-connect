@@ -4,7 +4,7 @@
 
 ### Production Backend
 - **API Base URL**: `https://carhubconnect.onrender.com/api`
-- **WebSocket URL**: `wss://carhubconnect.onrender.com/notifications`
+- **WebSocket URL**: `wss://carhubconnect.onrender.com/messages`
 
 ### Environment Configuration
 
@@ -14,7 +14,7 @@ Set these environment variables in your Vercel dashboard:
 ```bash
 # Required - Backend Integration
 VITE_API_URL=https://carhubconnect.onrender.com/api
-VITE_WS_URL=wss://carhubconnect.onrender.com/notifications
+VITE_WS_URL=wss://carhubconnect.onrender.com/messages
 
 # Optional - Firebase Configuration (if using Firebase features)
 VITE_FIREBASE_API_KEY=your_firebase_api_key
@@ -112,7 +112,7 @@ cp env.example .env
 
 # Update with production values
 VITE_API_URL=https://carhubconnect.onrender.com/api
-VITE_WS_URL=wss://carhubconnect.onrender.com/notifications
+VITE_WS_URL=wss://carhubconnect.onrender.com/messages
 ```
 
 ### 2. Build for Production

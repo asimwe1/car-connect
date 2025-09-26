@@ -4,7 +4,7 @@
 // This script tests the CarHub frontend integration with the production backend
 
 const API_BASE = 'https://carhubconnect.onrender.com/api';
-const WS_URL = 'wss://carhubconnect.onrender.com/notifications';
+const WS_URL = 'wss://carhubconnect.onrender.com/messages';
 
 console.log('🚀 Testing CarHub Production Backend Integration\n');
 

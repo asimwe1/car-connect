@@ -45,12 +45,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           return;
         }
       }
+      
+      // If API call fails, check if we have a saved user and it's still valid
+      const savedUser = authStorage.getUser();
+      if (savedUser) {
+        console.log('API auth check failed, but using saved user session');
+        setUser(savedUser);
+        return;
+      }
+      
       setUser(null);
       authStorage.clearUser();
     } catch (error) {
       console.error('Auth check failed:', error);
-      setUser(null);
-      authStorage.clearUser();
+      
+      // Fallback to saved user if API is unreachable
+      const savedUser = authStorage.getUser();
+      if (savedUser) {
+        console.log('API unreachable, using saved user session');
+        setUser(savedUser);
+      } else {
+        setUser(null);
+        authStorage.clearUser();
+      }
     } finally {
       setIsLoading(false);
     }

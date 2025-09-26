@@ -39,7 +39,7 @@ class NotificationService {
   private connect() {
     try {
       // Connect to production WebSocket server or development fallback
-      const wsUrl = import.meta.env.VITE_WS_URL || 'wss://carhubconnect.onrender.com/notifications';
+      const wsUrl = import.meta.env.VITE_WS_URL || 'wss://carhubconnect.onrender.com/messages';
       console.log(`Attempting to connect to WebSocket: ${wsUrl}`);
       this.ws = new WebSocket(wsUrl);
 
@@ -115,10 +115,14 @@ class NotificationService {
   private attemptReconnect() {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
+      const delay = Math.min(this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1), 30000); // Max 30 seconds
       setTimeout(() => {
-        console.log(`Attempting to reconnect... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
+        console.log(`Attempting to reconnect... (${this.reconnectAttempts}/${this.maxReconnectAttempts}) in ${delay}ms`);
         this.connect();
-      }, this.reconnectDelay * this.reconnectAttempts);
+      }, delay);
+    } else {
+      console.log('Max reconnection attempts reached. Using demo notifications.');
+      this.addDemoNotifications();
     }
   }
 

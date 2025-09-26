@@ -6,9 +6,9 @@ import { sessionManager } from '../services/sessionManager';
 interface AuthContextType extends AuthState {
   login: (phone: string, password: string) => Promise<{ success: boolean; message?: string }>;
   register: (fullname: string, phone: string, password: string) => Promise<{ success: boolean; message?: string }>;
-  verifyOtp: (phone: string, otp: string) => Promise<{ success: boolean; message?: string }>;
+  verifyOtp: (phone: string, otpCode: string) => Promise<{ success: boolean; message?: string }>;
   logout: () => Promise<void>;
-  checkAuth: () => Promise<void>;
+  checkAuth: (preserveExistingUser?: boolean) => Promise<void>;
   setAuthenticatedUser: (user: User) => void;
 }
 
@@ -36,7 +36,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setIsLoading(true);
       const response = await api.getMe();
-      
+
       if (response.data && typeof response.data === 'object' && 'success' in response.data && response.data.success) {
         const userData = (response.data as any).user as User | undefined;
         if (userData) {
@@ -45,7 +45,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           return;
         }
       }
-      
+
       // If API call fails, check if we have a saved user and it's still valid
       const savedUser = authStorage.getUser();
       if (savedUser && (preserveExistingUser || user)) {
@@ -53,7 +53,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (!user) setUser(savedUser);
         return;
       }
-      
+
       // Only clear user if we don't have an existing session to preserve
       if (!preserveExistingUser && !user) {
         setUser(null);
@@ -61,7 +61,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     } catch (error) {
       console.error('Auth check failed:', error);
-      
+
       // Fallback to saved user if API is unreachable
       const savedUser = authStorage.getUser();
       if (savedUser && (preserveExistingUser || user)) {
@@ -79,18 +79,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (phone: string, password: string) => {
     try {
       const response = await api.login({ phone, password });
-      
+
       if (response.data && typeof response.data === 'object' && 'success' in response.data && response.data.success) {
-        // Start session on successful login
-        sessionManager.startSession();
-        return { 
-          success: true, 
-          message: 'message' in response.data ? String(response.data.message) : 'Login successful' 
+        // Set user data from login response
+        const userData = response.data.user;
+        if (userData) {
+          setUser(userData);
+          authStorage.setUser(userData);
+          // Start session on successful login
+          sessionManager.startSession();
+        }
+        return {
+          success: true,
+          message: 'message' in response.data ? String(response.data.message) : 'Login successful',
+          user: userData
         };
       }
-      return { 
-        success: false, 
-        message: 'error' in response ? String(response.error) : 'Login failed' 
+      return {
+        success: false,
+        message: 'error' in response ? String(response.error) : 'Login failed'
       };
     } catch (error) {
       return { success: false, message: 'Network error' };
@@ -100,39 +107,39 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const register = async (fullname: string, phone: string, password: string) => {
     try {
       const response = await api.register({ fullname, phone, password });
-      
-      if (response.data && typeof response.data === 'object' && 'message' in response.data) {
-        if (response.data.message === 'Registration successful') {
-          return { 
-            success: true, 
-            message: String(response.data.message) 
-          };
-        }
+
+      if (response.data && typeof response.data === 'object' && 'success' in response.data && response.data.success) {
+        return {
+          success: true,
+          message: 'message' in response.data ? String(response.data.message) : 'Registration successful',
+          otpSent: response.data.otpSent || false
+        };
       }
-      return { 
-        success: false, 
-        message: 'error' in response ? String(response.error) : 'Registration failed' 
+      return {
+        success: false,
+        message: 'error' in response ? String(response.error) : 'Registration failed'
       };
     } catch (error) {
       return { success: false, message: 'Network error' };
     }
   };
 
-  const verifyOtp = async (phone: string, otp: string) => {
+  const verifyOtp = async (phone: string, otpCode: string) => {
     try {
-      const response = await api.verifyOtp({ phone, otp });
-      
+      const response = await api.verifyOtp({ phone, otpCode });
+
       if (response.data && typeof response.data === 'object' && 'success' in response.data && response.data.success) {
-        // After successful OTP verification, get user data
+        // After successful OTP verification, get user data from backend
         await checkAuth();
-        return { 
-          success: true, 
-          message: 'message' in response.data ? String(response.data.message) : 'Verification successful' 
+        return {
+          success: true,
+          message: 'message' in response.data ? String(response.data.message) : 'Verification successful',
+          otpVerified: response.data.otpVerified || false
         };
       }
-      return { 
-        success: false, 
-        message: 'error' in response ? String(response.error) : 'OTP verification failed' 
+      return {
+        success: false,
+        message: 'error' in response ? String(response.error) : 'OTP verification failed'
       };
     } catch (error) {
       return { success: false, message: 'Network error' };

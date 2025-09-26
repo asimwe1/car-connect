@@ -1,16 +1,5 @@
-import { db } from '@/lib/firebase';
-import {
-  collection,
-  addDoc,
-  serverTimestamp,
-  onSnapshot,
-  orderBy,
-  query,
-  doc,
-  setDoc,
-  getDoc,
-  updateDoc,
-} from 'firebase/firestore';
+// Mock chat service - Firebase functionality removed
+// This is a placeholder implementation for development
 
 export interface ChatMessage {
   id?: string;
@@ -29,49 +18,25 @@ export interface ChatRoom {
   updatedAt?: any;
 }
 
-const roomsCol = collection(db, 'supportRooms');
-
+// Mock implementations that do nothing
 export async function ensureUserRoom(userId: string): Promise<string> {
-  const roomRef = doc(db, 'supportRooms', userId);
-  const snap = await getDoc(roomRef);
-  if (!snap.exists()) {
-    await setDoc(roomRef, {
-      userId,
-      updatedAt: serverTimestamp(),
-    } as ChatRoom);
-  }
-  return roomRef.id;
+  console.log('Mock ensureUserRoom called for user:', userId);
+  return `mock-room-${userId}`;
 }
 
 export function subscribeToMessages(roomId: string, cb: (messages: ChatMessage[]) => void) {
-  const q = query(collection(db, 'supportRooms', roomId, 'messages'), orderBy('createdAt', 'asc'));
-  return onSnapshot(q, (snap) => {
-    const out: ChatMessage[] = [];
-    snap.forEach((d) => out.push({ id: d.id, ...(d.data() as ChatMessage) }));
-    cb(out);
-  });
+  console.log('Mock subscribeToMessages called for room:', roomId);
+  // Return a mock unsubscribe function
+  return () => console.log('Mock unsubscribe called');
 }
 
 export async function sendMessage(roomId: string, payload: Omit<ChatMessage, 'createdAt' | 'roomId'>) {
-  await addDoc(collection(db, 'supportRooms', roomId, 'messages'), {
-    ...payload,
-    roomId,
-    createdAt: serverTimestamp(),
-  } as ChatMessage);
-
-  await updateDoc(doc(db, 'supportRooms', roomId), {
-    lastMessage: payload.content,
-    updatedAt: serverTimestamp(),
-  });
+  console.log('Mock sendMessage called:', { roomId, payload });
+  // Mock implementation - does nothing
 }
 
 export function subscribeToAllRoomsForSupport(cb: (rooms: ChatRoom[]) => void) {
-  const q = query(roomsCol, orderBy('updatedAt', 'desc'));
-  return onSnapshot(q, (snap) => {
-    const out: ChatRoom[] = [];
-    snap.forEach((d) => out.push({ id: d.id, ...(d.data() as ChatRoom) }));
-    cb(out);
-  });
+  console.log('Mock subscribeToAllRoomsForSupport called');
+  // Return a mock unsubscribe function
+  return () => console.log('Mock unsubscribe called');
 }
-
-

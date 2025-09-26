@@ -7,14 +7,8 @@ import { componentTagger } from "lovable-tagger";
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
-    port: 8080,
-    proxy: mode === 'development' ? {
-      "/api": {
-        target: "http://localhost:5000",
-        changeOrigin: true,
-        secure: false,
-      },
-    } : {},
+    port: 3000,
+    // No proxy needed - using Vercel serverless functions
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {

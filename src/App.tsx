@@ -58,7 +58,7 @@ const App = () => (
                 <meta name="viewport" content="width=device-width, initial-scale=1" />
                 <title>CarHub Rwanda – Buy, Sell, Rent Premium Cars</title>
                 <meta name="description" content="Find, buy, sell, or rent premium cars in Rwanda. Browse verified listings with financing options and test drives." />
-                <link rel="canonical" href="https://carhub-rw.vercel.app/" />
+                <link rel="canonical" href="http://localhost:5000/" />
               </Helmet>
               <SessionWarning />
               <Routes>

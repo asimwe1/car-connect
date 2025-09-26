@@ -4,7 +4,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { notify } from '@/components/Notifier';
 import { Eye, EyeOff, Phone, Lock } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Link, useNavigate } from 'react-router-dom';
@@ -13,9 +12,9 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import SEO from '@/components/SEO';
-import { firebasePhoneAuth } from '@/services/firebaseAuth';
 import { CountryCodeSelector } from '@/components/CountryCodeSelector';
 import { getCountryByCode } from '@/data/countryCodes';
+import { api } from '@/services/api';
 
 const schema = z.object({
   phone: z.string().min(8).max(20).regex(/^\+[1-9]\d{1,14}$/,
@@ -45,76 +44,38 @@ const SignIn = () => {
   const onSubmit = async (data: FormValues) => {
     setIsLoading(true);
     try {
+      const result = await login(data.phone, data.password);
+      if (!result.success) {
+        toast({
+          title: "Error",
+          description: result.message || "An unexpected error occurred",
+          variant: "destructive",
+        });
+        return;
+      }
+
       if (data.remember) {
         localStorage.setItem('rememberPhone', data.phone);
       } else {
         localStorage.removeItem('rememberPhone');
       }
 
-      // Check if it's an admin number for bypass
-      if (firebasePhoneAuth.isAdminNumber(data.phone)) {
-        const adminBypass = await firebasePhoneAuth.adminBypass(data.phone);
-        if (adminBypass.success) {
-          // Admin credentials validation
-          const digits = data.phone.replace(/\D/g, '');
-          if (digits.endsWith('788881400') && data.password === 'carhub@1050') {
-            const adminUser = { 
-              _id: '68d5498abc621c37fe2b5fab', 
-              fullname: 'Admin One', 
-              phone: '+250788881400', 
-              role: 'admin' as const 
-            };
-            setAuthenticatedUser(adminUser);
-            toast({ title: 'Welcome Admin', description: 'Admin access granted. Redirecting to dashboard.' });
-            navigate('/admin-dashboard');
-            return;
-          } else {
-            toast({
-              title: "Invalid Admin Credentials",
-              description: "Please check your password",
-              variant: "destructive",
-            });
-            return;
-          }
-        }
-      }
-
-      // Handle regular user login for test user
-      if (data.phone === '+250793373953' && data.password === 'carhub@1050') {
-        const regularUser = { 
-          _id: '68d5491683ce5fa40a99954b', 
-          fullname: 'User One', 
-          phone: '+250793373953', 
-          role: 'user' as const 
-        };
-        setAuthenticatedUser(regularUser);
-        toast({ title: 'Welcome', description: 'Login successful. Redirecting to dashboard.' });
+      // User is now authenticated via cookie, redirect based on role
+      const user = result.user;
+      if (user) {
+        const isAdmin = user.role === 'admin';
+        navigate(isAdmin ? '/admin-dashboard' : '/buyer-dashboard');
+      } else {
         navigate('/buyer-dashboard');
-        return;
       }
-
-      // Initialize Firebase Phone Auth when not in fake mode
-      if (!firebasePhoneAuth.isFakeMode()) {
-        firebasePhoneAuth.initializeRecaptcha();
-      }
-      // Send OTP (in fake mode this does not hit Firebase)
-      await firebasePhoneAuth.sendOTP(data.phone);
-      
-      // Store verification data
-      localStorage.setItem('pendingVerification', JSON.stringify({
-        phone: data.phone,
-        password: data.password,
-        isSignIn: true,
-        useFirebase: true
-      }));
-      
-      notify.success('Verification Code Sent', 'Use 123456 for test numbers');
-      navigate('/verify-otp');
-      
     } catch (error: unknown) {
       console.error('SignIn error:', error);
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
-      notify.error('Sign in failed', errorMessage);
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -162,7 +123,7 @@ const SignIn = () => {
                     onChange={(e) => {
                       const localNumber = e.target.value.replace(/[^\d]/g, ''); // Only allow digits
                       setLocalPhoneNumber(localNumber);
-                      
+
                       const country = getCountryByCode(selectedCountry);
                       const fullNumber = country ? `${country.dialCode}${localNumber}` : `+${localNumber}`;
                       setValue('phone', fullNumber);
@@ -205,8 +166,8 @@ const SignIn = () => {
                 <Checkbox id="remember" checked={!!rememberMe} onCheckedChange={(v) => setValue('remember', !!v)} />
                 <span>Remember me</span>
               </label>
-              <Link 
-                to="/signin" 
+              <Link
+                to="/signin"
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 Forgot your password?
@@ -225,8 +186,8 @@ const SignIn = () => {
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
               Don't have an account?{' '}
-              <Link 
-                to="/signup" 
+              <Link
+                to="/signup"
                 className="text-primary hover:text-primary-light font-medium transition-colors"
               >
                 Sign up
@@ -235,7 +196,7 @@ const SignIn = () => {
           </div>
         </CardContent>
       </Card>
-      
+
       {/* Hidden reCAPTCHA container */}
       <div id="recaptcha-container" className="hidden"></div>
     </div>

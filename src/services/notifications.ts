@@ -39,7 +39,7 @@ class NotificationService {
   private connect() {
     try {
       // Connect to production WebSocket server or development fallback
-      const wsUrl = import.meta.env.VITE_WS_URL || 'wss://carhubconnect.onrender.com/messages';
+      const wsUrl = import.meta.env.VITE_WS_URL || 'wss://localhost:5000/messages';
       console.log(`Attempting to connect to WebSocket: ${wsUrl}`);
       this.ws = new WebSocket(wsUrl);
 

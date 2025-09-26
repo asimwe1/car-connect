@@ -11,7 +11,6 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import SEO from '@/components/SEO';
-import { firebasePhoneAuth } from '@/services/firebaseAuth';
 import { CountryCodeSelector } from '@/components/CountryCodeSelector';
 import { getCountryByCode } from '@/data/countryCodes';
 
@@ -45,27 +44,27 @@ const SignUp = () => {
     setIsLoading(true);
 
     try {
-      // Initialize Firebase Phone Auth
-      firebasePhoneAuth.initializeRecaptcha();
-      
-      // Send OTP using Firebase Phone Auth
-      await firebasePhoneAuth.sendOTP(data.phone);
-      
-      // Store verification data
+      const result = await register(data.fullname, data.phone, data.password);
+      if (!result.success) {
+        toast({
+          title: "Error",
+          description: result.message || "An unexpected error occurred",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Store phone number for OTP verification
       localStorage.setItem('pendingVerification', JSON.stringify({
         phone: data.phone,
-        fullname: data.fullname,
-        password: data.password,
-        isSignUp: true,
-        useFirebase: true
+        fullname: data.fullname
       }));
-      
-      toast({ 
-        title: 'Verification Code Sent', 
-        description: 'Please check your phone for the verification code' 
+
+      toast({
+        title: 'Verification Code Sent',
+        description: 'Please check your phone for the verification code'
       });
       navigate('/verify-otp');
-      
     } catch (error: any) {
       console.error('SignUp error:', error);
       toast({
@@ -138,7 +137,7 @@ const SignUp = () => {
                     onChange={(e) => {
                       const localNumber = e.target.value.replace(/[^\d]/g, ''); // Only allow digits
                       setLocalPhoneNumber(localNumber);
-                      
+
                       const country = getCountryByCode(selectedCountry);
                       const fullNumber = country ? `${country.dialCode}${localNumber}` : `+${localNumber}`;
                       setValue('phone', fullNumber);
@@ -213,8 +212,8 @@ const SignUp = () => {
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
               Already have an account?{' '}
-              <Link 
-                to="/signin" 
+              <Link
+                to="/signin"
                 className="text-primary hover:text-primary-light font-medium transition-colors"
               >
                 Sign in
@@ -223,7 +222,7 @@ const SignUp = () => {
           </div>
         </CardContent>
       </Card>
-      
+
       {/* Hidden reCAPTCHA container */}
       <div id="recaptcha-container" className="hidden"></div>
     </div>

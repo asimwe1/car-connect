@@ -4,7 +4,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { notify } from '@/components/Notifier';
 import { Eye, EyeOff, Phone, Lock } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Link, useNavigate } from 'react-router-dom';
@@ -13,10 +12,9 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import SEO from '@/components/SEO';
-// NOTE: We will remove firebasePhoneAuth from the primary login flow
-// import { firebasePhoneAuth } from '@/services/firebaseAuth'; 
 import { CountryCodeSelector } from '@/components/CountryCodeSelector';
 import { getCountryByCode } from '@/data/countryCodes';
+import { api } from '@/services/api';
 
 // --- Simulation of a real backend authentication API call ---
 // NOTE: This function simulates a call to your backend /api/login endpoint
@@ -121,45 +119,38 @@ const SignIn = () => {
   const onSubmit = async (data: FormValues) => {
     setIsLoading(true);
     try {
+      const result = await login(data.phone, data.password);
+      if (!result.success) {
+        toast({
+          title: "Error",
+          description: result.message || "An unexpected error occurred",
+          variant: "destructive",
+        });
+        return;
+      }
+
       if (data.remember) {
         localStorage.setItem('rememberPhone', data.phone);
       } else {
         localStorage.removeItem('rememberPhone');
       }
 
-      // --- New Backend-Only Authentication Logic ---
-      const authResult = await simulateBackendLogin(data.phone, data.password);
-
-      if (authResult.success) {
-        const user = authResult.user;
-        setAuthenticatedUser(user);
-        toast({ title: 'Welcome', description: 'Login successful. Redirecting to dashboard.' });
-        
-        // Redirect based on user role
-        if (user.role === 'admin') {
-          navigate('/admin-dashboard');
-        } else {
-          navigate('/buyer-dashboard');
-        }
-        return;
-
+      // User is now authenticated via cookie, redirect based on role
+      const user = result.user;
+      if (user) {
+        const isAdmin = user.role === 'admin';
+        navigate(isAdmin ? '/admin-dashboard' : '/buyer-dashboard');
       } else {
-        // Handle login failure from the simulated backend
-        toast({
-          title: "Login Failed",
-          description: authResult.message || "Invalid phone number or password.",
-          variant: "destructive",
-        });
-        return;
+        navigate('/buyer-dashboard');
       }
-      // --- End of New Authentication Logic ---
-      
-      // NOTE: All previous Firebase OTP and test user bypass logic has been removed.
-
     } catch (error: unknown) {
       console.error('SignIn error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred during login';
-      notify.error('Sign in failed', errorMessage);
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -222,7 +213,14 @@ const SignIn = () => {
                     value={localPhoneNumber}
                     className={`search-input pl-8 ${errors.phone ? 'border-destructive' : ''}`}
                     required
-                    onChange={handleLocalNumberChange}
+                    onChange={(e) => {
+                      const localNumber = e.target.value.replace(/[^\d]/g, ''); // Only allow digits
+                      setLocalPhoneNumber(localNumber);
+
+                      const country = getCountryByCode(selectedCountry);
+                      const fullNumber = country ? `${country.dialCode}${localNumber}` : `+${localNumber}`;
+                      setValue('phone', fullNumber);
+                    }}
                   />
                   {/* NOTE: Hidden input to hold the full validated number for react-hook-form/zod */}
                   <input type="hidden" {...rhfRegister('phone')} />
@@ -283,8 +281,8 @@ const SignIn = () => {
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
               Don't have an account?{' '}
-              <Link 
-                to="/signup" 
+              <Link
+                to="/signup"
                 className="text-primary hover:text-primary-light font-medium transition-colors"
               >
                 Sign up
@@ -293,8 +291,8 @@ const SignIn = () => {
           </div>
         </CardContent>
       </Card>
-      
-      {/* Hidden reCAPTCHA container is no longer needed but kept for safety if you reintroduce Firebase */}
+
+      {/* Hidden reCAPTCHA container */}
       <div id="recaptcha-container" className="hidden"></div>
     </div>
   );

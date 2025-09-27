@@ -18,24 +18,11 @@ const API_BASE_URL = (() => {
   }
 })();
 
-console.log('API Base URL:', API_BASE_URL);
-
-interface ApiResponse<T> {
-  data?: T;
-  error?: string;
-  message?: string;
-}
-
 class ApiService {
   private baseURL: string;
 
   constructor(baseURL: string) {
     this.baseURL = baseURL;
-  }
-
-  // --- Support Chat: REST fallbacks (not used when Firestore available) ---
-  async listSupportAgents() {
-    return this.request('/support/agents');
   }
 
   private async request<T = any>(
@@ -44,7 +31,7 @@ class ApiService {
     retries = 3
   ): Promise<{ data?: T; error?: string }> {
     const url = `${this.baseURL}${endpoint}`;
-    
+
     const defaultHeaders: HeadersInit = {
       'Content-Type': 'application/json',
     };
@@ -61,23 +48,22 @@ class ApiService {
         ...defaultHeaders,
         ...options.headers,
       },
-      credentials: 'include', // For cookie-based auth
-      timeout: 30000, // 30 second timeout
+      credentials: 'include' // For cookie-based auth
     };
 
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 30000);
-        
+
         const response = await fetch(url, {
           ...config,
           signal: controller.signal,
         });
-        
+
         clearTimeout(timeoutId);
-        
-        let data;
+
+        let data: any;
         try {
           data = await response.json();
         } catch {
@@ -92,14 +78,14 @@ class ApiService {
               error: data.message || `HTTP ${response.status}: ${response.statusText}`,
             };
           }
-          
+
           // Retry on server errors (5xx) and network issues
           if (attempt < retries) {
             console.warn(`Request failed (attempt ${attempt + 1}/${retries + 1}):`, response.status);
             await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
             continue;
           }
-          
+
           return {
             error: data.message || `HTTP ${response.status}: ${response.statusText}`,
           };
@@ -112,13 +98,13 @@ class ApiService {
           await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
           continue;
         }
-        
+
         return {
           error: error instanceof Error ? error.message : 'Network error',
         };
       }
     }
-    
+
     return {
       error: 'Maximum retry attempts exceeded',
     };
@@ -131,7 +117,11 @@ class ApiService {
 
   // Authentication methods
   async register(userData: { fullname: string; phone: string; password: string }) {
-    return this.request<{ message: string; success: boolean }>('/auth/register', {
+    return this.request<{
+      message: string;
+      success: boolean;
+      otpSent: boolean
+    }>('/auth/register', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -141,10 +131,10 @@ class ApiService {
   }
 
   async login(credentials: { phone: string; password: string }) {
-    return this.request<{ 
-      message: string; 
-      success: boolean; 
-      user?: User 
+    return this.request<{
+      message: string;
+      success: boolean;
+      user: User
     }>('/auth/login', {
       method: 'POST',
       headers: {
@@ -154,11 +144,11 @@ class ApiService {
     });
   }
 
-  async verifyOtp(data: { phone: string; otp: string }) {
-    return this.request<{ 
-      message: string; 
-      success: boolean; 
-      user?: User 
+  async verifyOtp(data: { phone: string; otpCode: string }) {
+    return this.request<{
+      message: string;
+      success: boolean;
+      otpVerified: boolean
     }>('/auth/verify-otp', {
       method: 'POST',
       headers: {
@@ -179,7 +169,7 @@ class ApiService {
       headers: {
         'Content-Type': 'application/json',
       },
-    }, 1); // Only retry once for auth checks
+    }, 1);
   }
 
   // Car methods
@@ -330,7 +320,7 @@ export const api = new ApiService(API_BASE_URL);
 
 // Auth context helper
 export interface User {
-  _id: string;
+  id: string;
   fullname: string;
   phone: string;
   role: 'user' | 'admin';
@@ -356,9 +346,9 @@ export const authStorage = {
     try {
       const stored = localStorage.getItem('user');
       if (!stored) return null;
-      
+
       const userData = JSON.parse(stored);
-      
+
       // Check if it's the old format (just user object)
       if (userData.fullname && !userData.user) {
         // Old format, migrate it
@@ -370,14 +360,14 @@ export const authStorage = {
         localStorage.setItem('user', JSON.stringify(migratedData));
         return userData;
       }
-      
+
       // Check if expired
       if (userData.expires && Date.now() > userData.expires) {
         console.log('Stored user session expired, clearing...');
         localStorage.removeItem('user');
         return null;
       }
-      
+
       return userData.user || null;
     } catch (error) {
       console.error('Error parsing stored user:', error);

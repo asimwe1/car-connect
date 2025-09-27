@@ -41,7 +41,7 @@ const PopularMakesSection = () => {
   const makes = [
     { id: 'audi', label: 'Audi' },
     { id: 'ford', label: 'Ford' },
-    { id: 'mercedes-benz', label: 'Mercedes Benz' },
+    { id: 'mercedes', label: 'Mercedes Benz' },
   ];
 
   useEffect(() => {

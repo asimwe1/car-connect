@@ -31,7 +31,6 @@ class ApiService {
     retries = 3
   ): Promise<{ data?: T; error?: string }> {
     const url = `${this.baseURL}${endpoint}`;
-
     const defaultHeaders: HeadersInit = {
       'Content-Type': 'application/json',
     };
@@ -52,10 +51,13 @@ class ApiService {
     };
 
     for (let attempt = 0; attempt <= retries; attempt++) {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+        console.warn(`Request to ${url} timed out after 60 seconds (attempt ${attempt + 1}/${retries + 1})`);
+      }, 60000); // Increased to 60 seconds
 
+      try {
         const response = await fetch(url, {
           ...config,
           signal: controller.signal,
@@ -72,42 +74,44 @@ class ApiService {
         }
 
         if (!response.ok) {
+          const errorMessage = data.message || `HTTP ${response.status}: ${response.statusText}`;
           // Don't retry on client errors (4xx)
           if (response.status >= 400 && response.status < 500) {
-            return {
-              error: data.message || `HTTP ${response.status}: ${response.statusText}`,
-            };
+            console.error(`Client error for ${url}: ${errorMessage}`);
+            return { error: errorMessage };
           }
 
           // Retry on server errors (5xx) and network issues
           if (attempt < retries) {
-            console.warn(`Request failed (attempt ${attempt + 1}/${retries + 1}):`, response.status);
+            console.warn(`Request to ${url} failed (attempt ${attempt + 1}/${retries + 1}): ${errorMessage}`);
             await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
             continue;
           }
 
-          return {
-            error: data.message || `HTTP ${response.status}: ${response.statusText}`,
-          };
+          console.error(`Max retries reached for ${url}: ${errorMessage}`);
+          return { error: errorMessage };
         }
 
         return { data };
       } catch (error) {
-        if (attempt < retries) {
-          console.warn(`Request failed (attempt ${attempt + 1}/${retries + 1}):`, error);
-          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
-          continue;
+        clearTimeout(timeoutId);
+
+        if (error instanceof Error && error.name === 'AbortError') {
+          if (attempt < retries) {
+            console.warn(`Request to ${url} aborted (attempt ${attempt + 1}/${retries + 1}): ${error.message}`);
+            await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+            continue;
+          }
+          return { error: 'Request timed out after multiple attempts' };
         }
 
-        return {
-          error: error instanceof Error ? error.message : 'Network error',
-        };
+        const errorMessage = error instanceof Error ? error.message : 'Network error';
+        console.error(`Request to ${url} failed: ${errorMessage}`);
+        return { error: errorMessage };
       }
     }
 
-    return {
-      error: 'Maximum retry attempts exceeded',
-    };
+    return { error: 'Maximum retry attempts exceeded' };
   }
 
   private getToken(): string | null {

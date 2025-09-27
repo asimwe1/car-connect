@@ -211,7 +211,7 @@ const CarDetails = () => {
               </div>
               <div className="pt-2 space-y-2">
                 <Button className="w-full" disabled={car.status !== 'available'}>
-                  {car.status !== 'available' ? 'Not Available' : 'Buy Now'}
+                  {car.status !== 'available' ? 'Not Available' : 'Chat with us'}
                 </Button>
                 {car.rentEnabled && (
                   <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">

@@ -143,7 +143,7 @@ const AdminCars = () => {
                   className="pl-10"
                 />
               </div>
-              <Button onClick={() => navigate('/add-car')} className="btn-hero">
+              <Button onClick={() => navigate('/admin/add-car')} className="btn-hero">
                 <Plus className="h-4 w-4 mr-2" />
                 Add New Vehicle
               </Button>

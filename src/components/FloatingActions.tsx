@@ -15,7 +15,7 @@ const FloatingActions: React.FC = () => {
       </a>
       {/* Phone icon removed as requested */}
       <a
-        href="https://www.facebook.com/"
+        href="https://www.facebook.com/haruna.nyamushanja/"
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Facebook"

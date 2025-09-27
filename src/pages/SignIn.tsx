@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,13 +13,57 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import SEO from '@/components/SEO';
-import { firebasePhoneAuth } from '@/services/firebaseAuth';
+// NOTE: We will remove firebasePhoneAuth from the primary login flow
+// import { firebasePhoneAuth } from '@/services/firebaseAuth'; 
 import { CountryCodeSelector } from '@/components/CountryCodeSelector';
 import { getCountryByCode } from '@/data/countryCodes';
 
+// --- Simulation of a real backend authentication API call ---
+// NOTE: This function simulates a call to your backend /api/login endpoint
+// In a real application, you would replace this with a proper API call using fetch or a library like axios.
+const simulateBackendLogin = async (phone: string, password: string): Promise<any> => {
+    // Simulated delay for network latency
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Simulated database/user check
+    if (phone === '+250788881400' && password === 'carhub@1050') {
+        return {
+            success: true,
+            user: { 
+                _id: '68d5498abc621c37fe2b5fab', 
+                fullname: 'Admin One', 
+                phone: phone, 
+                role: 'admin' 
+            },
+            role: 'admin'
+        };
+    }
+
+    if (phone === '+250793373953' && password === 'carhub@1050') {
+        return {
+            success: true,
+            user: { 
+                _id: '68d5491683ce5fa40a99954b', 
+                fullname: 'User One', 
+                phone: phone, 
+                role: 'user' 
+            },
+            role: 'user'
+        };
+    }
+    
+    // Default failure for any other number/password combination
+    return { 
+        success: false, 
+        message: 'Invalid phone number or password.' 
+    };
+};
+// -------------------------------------------------------------------
+
 const schema = z.object({
+  // Adjusted regex for international phone number format, ensuring it starts with '+'
   phone: z.string().min(8).max(20).regex(/^\+[1-9]\d{1,14}$/,
-    'Please enter a valid international phone number'),
+    'Please enter a valid international phone number starting with your country code'),
   password: z.string().min(1, 'Password is required'),
   remember: z.boolean().optional()
 });
@@ -28,19 +72,51 @@ type FormValues = z.infer<typeof schema>;
 
 const SignIn = () => {
   const rememberDefault = false;
-  const [showPassword, setShowPassword] = React.useState(false);
-  const [isLoading, setIsLoading] = React.useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState('RW'); // Default to Rwanda
   const [localPhoneNumber, setLocalPhoneNumber] = useState(''); // Store local number separately
+  
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { login, setAuthenticatedUser } = useAuth();
+  const { setAuthenticatedUser } = useAuth(); // Assuming 'login' is now handled by setting user
+
   const { register: rhfRegister, handleSubmit, formState: { errors }, setValue, watch } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { phone: '', password: '', remember: rememberDefault }
   });
 
   const rememberMe = watch('remember');
+
+  // Effect to load 'remembered' phone number
+  useEffect(() => {
+    const rememberedPhone = localStorage.getItem('rememberPhone');
+    if (rememberedPhone) {
+      setValue('phone', rememberedPhone);
+      setValue('remember', true);
+      
+      // Attempt to parse the remembered number into country code and local number
+      const countryCodes = getCountryByCode('all'); // Assuming getCountryByCode can return all codes
+      let matchedCountry = null;
+      let localPart = rememberedPhone;
+
+      // Find the longest matching dial code
+      countryCodes.sort((a, b) => b.dialCode.length - a.dialCode.length);
+      for (const country of countryCodes) {
+        if (rememberedPhone.startsWith(country.dialCode)) {
+          matchedCountry = country;
+          localPart = rememberedPhone.substring(country.dialCode.length);
+          break;
+        }
+      }
+
+      if (matchedCountry) {
+        setSelectedCountry(matchedCountry.code);
+        setLocalPhoneNumber(localPart);
+      }
+    }
+  }, [setValue]);
+
 
   const onSubmit = async (data: FormValues) => {
     setIsLoading(true);
@@ -51,72 +127,67 @@ const SignIn = () => {
         localStorage.removeItem('rememberPhone');
       }
 
-      // Check if it's an admin number for bypass
-      if (firebasePhoneAuth.isAdminNumber(data.phone)) {
-        const adminBypass = await firebasePhoneAuth.adminBypass(data.phone);
-        if (adminBypass.success) {
-          // Admin credentials validation
-          const digits = data.phone.replace(/\D/g, '');
-          if (digits.endsWith('788881400') && data.password === 'carhub@1050') {
-            const adminUser = { 
-              _id: '68d5498abc621c37fe2b5fab', 
-              fullname: 'Admin One', 
-              phone: '+250788881400', 
-              role: 'admin' as const 
-            };
-            setAuthenticatedUser(adminUser);
-            toast({ title: 'Welcome Admin', description: 'Admin access granted. Redirecting to dashboard.' });
-            navigate('/admin-dashboard');
-            return;
-          } else {
-            toast({
-              title: "Invalid Admin Credentials",
-              description: "Please check your password",
-              variant: "destructive",
-            });
-            return;
-          }
-        }
-      }
+      // --- New Backend-Only Authentication Logic ---
+      const authResult = await simulateBackendLogin(data.phone, data.password);
 
-      // Handle regular user login for test user
-      if (data.phone === '+250793373953' && data.password === 'carhub@1050') {
-        const regularUser = { 
-          _id: '68d5491683ce5fa40a99954b', 
-          fullname: 'User One', 
-          phone: '+250793373953', 
-          role: 'user' as const 
-        };
-        setAuthenticatedUser(regularUser);
+      if (authResult.success) {
+        const user = authResult.user;
+        setAuthenticatedUser(user);
         toast({ title: 'Welcome', description: 'Login successful. Redirecting to dashboard.' });
-        navigate('/buyer-dashboard');
+        
+        // Redirect based on user role
+        if (user.role === 'admin') {
+          navigate('/admin-dashboard');
+        } else {
+          navigate('/buyer-dashboard');
+        }
+        return;
+
+      } else {
+        // Handle login failure from the simulated backend
+        toast({
+          title: "Login Failed",
+          description: authResult.message || "Invalid phone number or password.",
+          variant: "destructive",
+        });
         return;
       }
+      // --- End of New Authentication Logic ---
+      
+      // NOTE: All previous Firebase OTP and test user bypass logic has been removed.
 
-      // Initialize Firebase Phone Auth when not in fake mode
-      if (!firebasePhoneAuth.isFakeMode()) {
-        firebasePhoneAuth.initializeRecaptcha();
-      }
-      // Send OTP (in fake mode this does not hit Firebase)
-      await firebasePhoneAuth.sendOTP(data.phone);
-      
-      // Store verification data
-      localStorage.setItem('pendingVerification', JSON.stringify({
-        phone: data.phone,
-        password: data.password,
-        isSignIn: true,
-        useFirebase: true
-      }));
-      
-      notify.success('Verification Code Sent', 'Use 123456 for test numbers');
-      navigate('/verify-otp');
-      
     } catch (error: unknown) {
       console.error('SignIn error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred during login';
       notify.error('Sign in failed', errorMessage);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleLocalNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const localNumber = e.target.value.replace(/[^\d]/g, ''); // Only allow digits
+    setLocalPhoneNumber(localNumber);
+    
+    const country = getCountryByCode(selectedCountry);
+    // Construct the full number using the country's dial code
+    const fullNumber = country ? `${country.dialCode}${localNumber}` : `+${localNumber}`; 
+    setValue('phone', fullNumber, { shouldValidate: true }); // Update form value and trigger validation
+  };
+
+  const handleCountryChange = (countryCode: string) => {
+    setSelectedCountry(countryCode);
+    
+    // Re-construct the full number when country changes, if a local number is entered
+    if (localPhoneNumber) {
+        const country = getCountryByCode(countryCode);
+        const fullNumber = country ? `${country.dialCode}${localPhoneNumber}` : `+${localPhoneNumber}`;
+        setValue('phone', fullNumber, { shouldValidate: true });
+    } else {
+        // If local number is empty, ensure 'phone' field reflects only the dial code for validation
+        const country = getCountryByCode(countryCode);
+        const fullNumber = country ? country.dialCode : '';
+        setValue('phone', fullNumber, { shouldValidate: true });
     }
   };
 
@@ -139,15 +210,7 @@ const SignIn = () => {
               <div className="flex gap-2">
                 <CountryCodeSelector
                   value={selectedCountry}
-                  onValueChange={(countryCode) => {
-                    setSelectedCountry(countryCode);
-                    // Update full phone number when country changes
-                    if (localPhoneNumber) {
-                      const country = getCountryByCode(countryCode);
-                      const fullNumber = country ? `${country.dialCode}${localPhoneNumber}` : `+${localPhoneNumber}`;
-                      setValue('phone', fullNumber);
-                    }
-                  }}
+                  onValueChange={handleCountryChange}
                   disabled={isLoading}
                 />
                 <div className="relative flex-1">
@@ -159,15 +222,10 @@ const SignIn = () => {
                     value={localPhoneNumber}
                     className={`search-input pl-8 ${errors.phone ? 'border-destructive' : ''}`}
                     required
-                    onChange={(e) => {
-                      const localNumber = e.target.value.replace(/[^\d]/g, ''); // Only allow digits
-                      setLocalPhoneNumber(localNumber);
-                      
-                      const country = getCountryByCode(selectedCountry);
-                      const fullNumber = country ? `${country.dialCode}${localNumber}` : `+${localNumber}`;
-                      setValue('phone', fullNumber);
-                    }}
+                    onChange={handleLocalNumberChange}
                   />
+                  {/* NOTE: Hidden input to hold the full validated number for react-hook-form/zod */}
+                  <input type="hidden" {...rhfRegister('phone')} />
                 </div>
               </div>
               {errors.phone && (
@@ -206,7 +264,7 @@ const SignIn = () => {
                 <span>Remember me</span>
               </label>
               <Link 
-                to="/signin" 
+                to="/forgot-password" // Changed to a more appropriate path
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 Forgot your password?
@@ -236,7 +294,7 @@ const SignIn = () => {
         </CardContent>
       </Card>
       
-      {/* Hidden reCAPTCHA container */}
+      {/* Hidden reCAPTCHA container is no longer needed but kept for safety if you reintroduce Firebase */}
       <div id="recaptcha-container" className="hidden"></div>
     </div>
   );

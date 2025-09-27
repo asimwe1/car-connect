@@ -4,11 +4,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ArrowUpRight, Bookmark, Gauge, Fuel, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useInView } from 'react-intersection-observer';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { api } from '@/services/api';
 import LazyImage from '@/components/LazyImage';
-import { localCars } from '@/data/localCars';
 
 interface Car {
   _id: string;
@@ -54,29 +53,39 @@ const PopularMakesSection = () => {
       setLoading(true);
       const response = await api.getCars({
         status: 'available',
+        make: activeMake === 'mercedes-benz' ? 'Mercedes Benz' : activeMake, // Adjust for backend compatibility
         page: 1,
-        limit: 20
+        limit: 20,
       });
 
-      if (response.data?.items && response.data.items.length > 0) {
+      if (response.data?.items && Array.isArray(response.data.items)) {
         setCars(response.data.items);
       } else {
-        setCars(localCars as unknown as Car[]);
+        setCars([]);
       }
       setCurrentPage(0);
     } catch (error) {
       console.error('Error fetching cars:', error);
-      setCars(localCars as unknown as Car[]);
+      setCars([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const formatPrice = (price: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(price);
+  const formatPrice = (price: number) =>
+    new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+    }).format(price);
 
   const currentCars = useMemo(() => {
-    return cars.filter(car => car.make.toLowerCase().includes(activeMake.replace('-', ' ')));
+    // Fallback client-side filtering in case backend filtering fails
+    return cars.filter((car) =>
+      car.make.toLowerCase().includes(activeMake.replace('-', ' '))
+    );
   }, [cars, activeMake]);
+
   const carsPerPage = 2;
   const totalPages = Math.max(1, Math.ceil(currentCars.length / carsPerPage));
   const displayedCars = currentCars.slice(currentPage * carsPerPage, (currentPage + 1) * carsPerPage);
@@ -84,22 +93,38 @@ const PopularMakesSection = () => {
   return (
     <section ref={ref} className="px-6 py-8 bg-muted/30">
       <div className="container mx-auto px-4">
-        <div className={`flex items-center justify-between mb-8 transition-all duration-700 ${inView ? 'animate-fade-in' : 'opacity-0'}`}>
+        <div
+          className={cn(
+            'flex items-center justify-between mb-8 transition-all duration-700',
+            inView ? 'animate-fade-in' : 'opacity-0'
+          )}
+        >
           <h2 className="text-3xl font-bold text-foreground">Popular Makes</h2>
-          <Button variant="ghost" onClick={() => navigate('/buy-cars')} className="text-primary hover:text-primary-hover flex items-center gap-2">
+          <Button
+            variant="ghost"
+            onClick={() => navigate('/buy-cars')}
+            className="text-primary hover:text-primary-hover flex items-center gap-2"
+          >
             View All
             <ArrowUpRight className="h-4 w-4" />
           </Button>
         </div>
 
-        <div className={`flex space-x-8 mb-8 transition-all duration-700 delay-200 ${inView ? 'animate-slide-up' : 'opacity-0'}`}>
+        <div
+          className={cn(
+            'flex space-x-8 mb-8 transition-all duration-700 delay-200',
+            inView ? 'animate-slide-up' : 'opacity-0'
+          )}
+        >
           {makes.map((make) => (
             <button
               key={make.id}
               onClick={() => setActiveMake(make.id)}
               className={cn(
                 'pb-3 border-b-2 font-medium transition-colors',
-                activeMake === make.id ? 'border-foreground text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'
+                activeMake === make.id
+                  ? 'border-foreground text-foreground'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
               )}
             >
               {make.label}
@@ -113,8 +138,20 @@ const PopularMakesSection = () => {
               <div key={i} className="h-64 bg-muted rounded-lg animate-pulse"></div>
             ))}
           </div>
+        ) : displayedCars.length === 0 ? (
+          <div className="text-center w-full py-8">
+            <h3 className="text-lg font-semibold mb-2">No Cars Found</h3>
+            <p className="text-muted-foreground">
+              No {activeMake.replace('-', ' ').toUpperCase()} vehicles available at the moment.
+            </p>
+          </div>
         ) : (
-          <div className={`grid grid-cols-1 md:grid-cols-2 gap-8 transition-all duration-700 delay-400 ${inView ? 'animate-zoom-in' : 'opacity-0'}`}>
+          <div
+            className={cn(
+              'grid grid-cols-1 md:grid-cols-2 gap-8 transition-all duration-700 delay-400',
+              inView ? 'animate-zoom-in' : 'opacity-0'
+            )}
+          >
             {displayedCars.map((car) => (
               <Card key={car._id} className="overflow-hidden group cursor-pointer">
                 <div className="flex">
@@ -133,7 +170,11 @@ const PopularMakesSection = () => {
                       </div>
                     )}
                     <div className="absolute top-4 right-4">
-                      <Button variant="ghost" size="icon" className="h-8 w-8 bg-background/80 hover:bg-background">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 bg-background/80 hover:bg-background"
+                      >
                         <Bookmark className="h-4 w-4" />
                       </Button>
                     </div>
@@ -141,8 +182,12 @@ const PopularMakesSection = () => {
                   <CardContent className="flex-1 p-6 flex flex-col justify-between">
                     <div className="space-y-4">
                       <div>
-                        <h3 className="text-xl font-semibold text-foreground">{car.make} {car.model} – {car.year}</h3>
-                        <p className="text-sm text-muted-foreground mt-1">{car.bodyType || 'Vehicle'}</p>
+                        <h3 className="text-xl font-semibold text-foreground">
+                          {car.make} {car.model} – {car.year}
+                        </h3>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {car.bodyType || 'Vehicle'}
+                        </p>
                       </div>
                       <div className="space-y-2">
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -161,9 +206,15 @@ const PopularMakesSection = () => {
                     </div>
                     <div className="pt-4 space-y-3">
                       <div className="flex items-center gap-2">
-                        <span className="text-2xl font-bold text-foreground">{formatPrice(car.price)}</span>
+                        <span className="text-2xl font-bold text-foreground">
+                          {formatPrice(car.price)}
+                        </span>
                       </div>
-                      <Button variant="ghost" onClick={() => navigate(`/car/${car._id}`)} className="text-primary hover:text-primary-hover flex items-center gap-2 p-0">
+                      <Button
+                        variant="ghost"
+                        onClick={() => navigate(`/car/${car._id}`)}
+                        className="text-primary hover:text-primary-hover flex items-center gap-2 p-0"
+                      >
                         View Details
                         <ArrowUpRight className="h-4 w-4" />
                       </Button>
@@ -176,11 +227,26 @@ const PopularMakesSection = () => {
         )}
 
         {totalPages > 1 && (
-          <div className={`flex justify-center gap-4 mt-8 transition-all duration-700 delay-600 ${inView ? 'animate-fade-in' : 'opacity-0'}`}>
-            <Button variant="outline" size="icon" onClick={() => setCurrentPage((p) => (p - 1 + totalPages) % totalPages)} className="rounded-full">
+          <div
+            className={cn(
+              'flex justify-center gap-4 mt-8 transition-all duration-700 delay-600',
+              inView ? 'animate-fade-in' : 'opacity-0'
+            )}
+          >
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setCurrentPage((p) => (p - 1 + totalPages) % totalPages)}
+              className="rounded-full"
+            >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <Button variant="outline" size="icon" onClick={() => setCurrentPage((p) => (p + 1) % totalPages)} className="rounded-full">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setCurrentPage((p) => (p + 1) % totalPages)}
+              className="rounded-full"
+            >
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>

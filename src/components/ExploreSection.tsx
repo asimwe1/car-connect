@@ -4,11 +4,10 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { ArrowUpRight, Bookmark, Gauge, Fuel, Settings } from 'lucide-react';
 import { useInView } from 'react-intersection-observer';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { api } from '@/services/api';
 import LazyImage from '@/components/LazyImage';
-import { localCars } from '@/data/localCars';
 
 interface Car {
   _id: string;
@@ -45,27 +44,45 @@ const ExploreSection = () => {
   const fetchCars = async () => {
     try {
       setLoading(true);
-      const response = await api.getCars({
+      const params: {
+        status: string;
+        page: number;
+        limit: number;
+        year?: string;
+      } = {
         status: 'available',
         page: 1,
-        limit: 8
-      });
+        limit: 8,
+      };
 
-      if (response.data?.items && response.data.items.length > 0) {
+      // Adjust query parameters based on activeTab
+      if (activeTab === 'new-cars') {
+        params.year = `gte:${new Date().getFullYear()}`; // Assuming new cars are from the current year or later
+      } else if (activeTab === 'used-cars') {
+        params.year = `lt:${new Date().getFullYear()}`; // Assuming used cars are older than the current year
+      }
+
+      const response = await api.getCars(params);
+
+      if (response.data?.items && Array.isArray(response.data.items)) {
         setCars(response.data.items);
       } else {
-        // Fallback to local data
-        setCars(localCars as unknown as Car[]);
+        setCars([]);
       }
     } catch (error) {
       console.error('Error fetching cars:', error);
-      setCars(localCars as unknown as Car[]);
+      setCars([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const formatPrice = (price: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(price);
+  const formatPrice = (price: number) =>
+    new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+    }).format(price);
 
   if (loading) {
     return (
@@ -101,7 +118,7 @@ const ExploreSection = () => {
         </div>
 
         <div className="flex space-x-8 mb-8">
-          {['in-stock', 'new-cars', 'used-cars'].map(tab => (
+          {['in-stock', 'new-cars', 'used-cars'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -116,62 +133,71 @@ const ExploreSection = () => {
         </div>
 
         <div className={`flex gap-6 overflow-x-auto pb-4 transition-all duration-700 delay-200 ${inView ? 'animate-slide-up' : 'opacity-0'}`}>
-          {cars.map((car) => (
-            <Card key={car._id} className="flex-shrink-0 w-80 overflow-hidden group cursor-pointer">
-              <div className="relative">
-                <LazyImage
-                  src={car.primaryImage || car.images[0]}
-                  alt={`${car.make} ${car.model}`}
-                  containerClassName="w-full h-48"
-                  className="group-hover:scale-105"
-                />
-                {car.status === 'available' && (
-                  <div className="absolute top-4 left-4">
-                    <Badge className="text-xs bg-green-500 text-white">
-                      Available
-                    </Badge>
-                  </div>
-                )}
-                <div className="absolute top-4 right-4">
-                  <Button variant="ghost" size="icon" className="h-8 w-8 bg-background/80 hover:bg-background">
-                    <Bookmark className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-
-              <CardContent className="p-6">
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="text-xl font-semibold text-foreground">
-                      {car.make} {car.model} – {car.year}
-                    </h3>
-                    <p className="text-sm text-muted-foreground mt-1">{car.bodyType || 'Vehicle'}</p>
-                  </div>
-                  <div className="flex items-center justify-between text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Gauge className="h-4 w-4" />
-                      <span>{car.mileage.toLocaleString()} Miles</span>
+          {cars.length === 0 ? (
+            <div className="text-center w-full py-8">
+              <h3 className="text-lg font-semibold mb-2">No Cars Found</h3>
+              <p className="text-muted-foreground">No vehicles match the selected criteria.</p>
+            </div>
+          ) : (
+            cars.map((car) => (
+              <Card key={car._id} className="flex-shrink-0 w-80 overflow-hidden group cursor-pointer">
+                <div className="relative">
+                  <LazyImage
+                    src={car.primaryImage || car.images[0]}
+                    alt={`${car.make} ${car.model}`}
+                    containerClassName="w-full h-48"
+                    className="group-hover:scale-105"
+                  />
+                  {car.status === 'available' && (
+                    <div className="absolute top-4 left-4">
+                      <Badge className="text-xs bg-green-500 text-white">Available</Badge>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Fuel className="h-4 w-4" />
-                      <span>{car.fuelType}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Settings className="h-4 w-4" />
-                      <span>{car.transmission}</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between pt-2">
-                    <div className="text-2xl font-bold text-foreground">{formatPrice(car.price)}</div>
-                    <Button variant="ghost" onClick={() => navigate(`/car/${car._id}`)} className="text-primary hover:text-primary-hover flex items-center gap-2">
-                      View Details
-                      <ArrowUpRight className="h-4 w-4" />
+                  )}
+                  <div className="absolute top-4 right-4">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 bg-background/80 hover:bg-background">
+                      <Bookmark className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
+
+                <CardContent className="p-6">
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-xl font-semibold text-foreground">
+                        {car.make} {car.model} – {car.year}
+                      </h3>
+                      <p className="text-sm text-muted-foreground mt-1">{car.bodyType || 'Vehicle'}</p>
+                    </div>
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Gauge className="h-4 w-4" />
+                        <span>{car.mileage.toLocaleString()} Miles</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Fuel className="h-4 w-4" />
+                        <span>{car.fuelType}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Settings className="h-4 w-4" />
+                        <span>{car.transmission}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between pt-2">
+                      <div className="text-2xl font-bold text-foreground">{formatPrice(car.price)}</div>
+                      <Button
+                        variant="ghost"
+                        onClick={() => navigate(`/car/${car._id}`)}
+                        className="text-primary hover:text-primary-hover flex items-center gap-2"
+                      >
+                        View Details
+                        <ArrowUpRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
         </div>
       </div>
     </section>

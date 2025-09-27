@@ -11,7 +11,6 @@ import { useToast } from "@/hooks/use-toast";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { api } from "@/services/api";
 import LazyImage from "@/components/LazyImage";
-import { localCars } from "@/data/localCars";
 
 interface Car {
   _id: string;
@@ -48,66 +47,41 @@ const BuyCars = () => {
 
   useEffect(() => {
     fetchCars();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchTerm, selectedMake, selectedYear, sortBy]);
 
   const fetchCars = async () => {
     try {
       setLoading(true);
-      const response = await api.getCars({
+      const params = {
         q: searchTerm || undefined,
-        status: 'available',
+        status: "available",
         sellEnabled: true,
+        make: selectedMake === "all" ? undefined : selectedMake,
+        year: selectedYear === "all" ? undefined : selectedYear,
+        sortBy: sortBy,
         page: 1,
-        limit: 50
-      });
+        limit: 50,
+      };
 
-      if (response.data?.items && response.data.items.length > 0) {
-        let filteredCars = response.data.items;
+      const response = await api.getCars(params);
 
-        // Apply client-side filtering for make and year
-        if (selectedMake && selectedMake !== "all") {
-          filteredCars = filteredCars.filter(car => 
-            car.make.toLowerCase().includes(selectedMake.toLowerCase())
-          );
-        }
-
-        if (selectedYear && selectedYear !== "all") {
-          filteredCars = filteredCars.filter(car => 
-            car.year === parseInt(selectedYear)
-          );
-        }
-
-        // Apply client-side sorting
-        switch (sortBy) {
-          case 'price_low':
-            filteredCars.sort((a, b) => a.price - b.price);
-            break;
-          case 'price_high':
-            filteredCars.sort((a, b) => b.price - a.price);
-            break;
-          case 'year_new':
-            filteredCars.sort((a, b) => b.year - a.year);
-            break;
-          case 'mileage':
-            filteredCars.sort((a, b) => a.mileage - b.mileage);
-            break;
-          case 'newest':
-          default:
-            // Already sorted by creation date from backend
-            break;
-        }
-
-        setCars(filteredCars);
+      if (response.data?.items && Array.isArray(response.data.items)) {
+        setCars(response.data.items);
       } else {
-        // Use local fallback data
-        setCars(localCars as unknown as Car[]);
+        setCars([]);
+        toast({
+          title: "No Data",
+          description: "No cars found from the server. Try adjusting your filters.",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error("Error fetching cars:", error);
-      setCars(localCars as unknown as Car[]);
+      setCars([]);
       toast({
         title: "Error",
-        description: "Failed to load cars. Please try again.",
+        description: "Failed to load cars from the server. Please try again later.",
         variant: "destructive",
       });
     } finally {
@@ -116,7 +90,6 @@ const BuyCars = () => {
   };
 
   const handleAddToWishlist = (carId: string) => {
-    // TODO: Implement wishlist functionality with backend API
     toast({
       title: "Feature Coming Soon",
       description: "Wishlist functionality will be available soon.",
@@ -124,7 +97,11 @@ const BuyCars = () => {
   };
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(price);
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 0,
+    }).format(price);
   };
 
   const makes = ["All", "Toyota", "Ford", "Mercedes Benz", "Audi", "BMW", "Nissan", "Honda"];
@@ -155,7 +132,7 @@ const BuyCars = () => {
                   className="pl-10"
                 />
               </div>
-              
+
               <Select value={selectedMake} onValueChange={setSelectedMake}>
                 <SelectTrigger>
                   <SelectValue placeholder="Make" />
@@ -168,7 +145,7 @@ const BuyCars = () => {
                   ))}
                 </SelectContent>
               </Select>
-              
+
               <Select value={selectedYear} onValueChange={setSelectedYear}>
                 <SelectTrigger>
                   <SelectValue placeholder="Year" />
@@ -181,7 +158,7 @@ const BuyCars = () => {
                   ))}
                 </SelectContent>
               </Select>
-              
+
               <Select value={sortBy} onValueChange={setSortBy}>
                 <SelectTrigger>
                   <SelectValue placeholder="Sort by" />
@@ -194,7 +171,7 @@ const BuyCars = () => {
                   <SelectItem value="mileage">Mileage: Low to High</SelectItem>
                 </SelectContent>
               </Select>
-              
+
               <Button variant="outline" className="flex items-center gap-2">
                 <Filter className="h-4 w-4" />
                 More Filters
@@ -212,7 +189,7 @@ const BuyCars = () => {
                 Loading cars...
               </div>
             ) : (
-              `${cars.length} car${cars.length !== 1 ? 's' : ''} found`
+              `${cars.length} car${cars.length !== 1 ? "s" : ""} found`
             )}
           </p>
         </div>
@@ -240,17 +217,19 @@ const BuyCars = () => {
             <p className="text-muted-foreground mb-6">
               Try adjusting your search criteria or filters.
             </p>
-            <Button onClick={() => {
-              setSearchTerm("");
-              setSelectedMake("all");
-              setSelectedYear("all");
-              setSortBy("newest");
-            }}>
+            <Button
+              onClick={() => {
+                setSearchTerm("");
+                setSelectedMake("all");
+                setSelectedYear("all");
+                setSortBy("newest");
+              }}
+            >
               Clear Filters
             </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg-grid-cols-3 gap-6">
             {cars.map((car) => (
               <Card key={car._id} className="overflow-hidden hover:shadow-lg transition-shadow group">
                 <div className="relative">
@@ -260,13 +239,13 @@ const BuyCars = () => {
                     containerClassName="w-full h-48"
                     className="group-hover:scale-105"
                   />
-                  
+
                   {car.status === "available" && (
                     <Badge className="absolute top-2 left-2 bg-green-500">
                       Available
                     </Badge>
                   )}
-                  
+
                   {car.status === "reserved" && (
                     <Badge className="absolute top-2 left-2 bg-yellow-500">
                       Reserved
@@ -286,7 +265,7 @@ const BuyCars = () => {
                 <CardContent className="p-4">
                   <h3 className="font-semibold text-lg mb-2">{car.make} {car.model}</h3>
                   <p className="text-sm text-muted-foreground mb-3">
-                    {car.year} • {car.bodyType || 'Vehicle'}
+                    {car.year} • {car.bodyType || "Vehicle"}
                   </p>
 
                   <div className="grid grid-cols-2 gap-2 mb-4 text-xs">
@@ -304,25 +283,20 @@ const BuyCars = () => {
                     </div>
                     <div className="flex items-center gap-1">
                       <Users className="h-3 w-3" />
-                      <span>{car.color || 'N/A'}</span>
+                      <span>{car.color || "N/A"}</span>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2 mb-3 text-xs">
                     <MapPin className="h-3 w-3" />
-                    <span>{car.location || 'Location not specified'}</span>
+                    <span>{car.location || "Location not specified"}</span>
                   </div>
 
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-lg font-bold text-primary">
-                        {formatPrice(car.price)}
-                      </p>
+                      <p className="text-lg font-bold text-primary">{formatPrice(car.price)}</p>
                     </div>
-                    <Button 
-                      size="sm"
-                      onClick={() => navigate(`/car/${car._id}`)}
-                    >
+                    <Button size="sm" onClick={() => navigate(`/car/${car._id}`)}>
                       View Details
                     </Button>
                   </div>

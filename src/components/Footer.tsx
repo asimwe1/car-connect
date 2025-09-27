@@ -6,7 +6,7 @@ import { FaWhatsapp, FaFacebookF, FaInstagram, FaXTwitter } from 'react-icons/fa
 
 const Footer = () => {
   return (
-    <footer className="bg-[#0B2559] text-white py-16">
+    <footer className="bg-[#0B2559] text-white py-8">
       <div className="container mx-auto px-4">
         {/* Newsletter Section */}
         <div className="bg-[#12306E]/60 rounded-lg p-8 mb-12 text-center">
@@ -27,7 +27,7 @@ const Footer = () => {
         </div>
 
         {/* Footer Links */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-2">
           {/* Company */}
           <div>
             <h3 className="font-semibold text-lg mb-4">Company</h3>
@@ -87,7 +87,7 @@ const Footer = () => {
         </div>
 
         {/* Bottom Bar */}
-        <div className="border-t border-white/20 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="border-t h-4 border-white/20 pt-8 flex flex-col md:flex-row items-center justify-between">
           <p className="text-blue-200">© 2025 car.connect.rw. All rights reserved.</p>
 
           <div className="flex items-center gap-4">

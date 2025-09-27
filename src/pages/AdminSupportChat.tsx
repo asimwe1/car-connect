@@ -3,11 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { 
-  ArrowLeft, 
-  Send, 
-  User, 
-  MessageCircle, 
+import {
+  ArrowLeft,
+  Send,
+  User,
+  MessageCircle,
   Users,
   Search,
   Clock,
@@ -16,22 +16,27 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { 
-  subscribeToAllRoomsForSupport, 
-  subscribeToMessages, 
-  sendMessage, 
-  ChatRoom, 
-  ChatMessage 
-} from '@/services/chat';
+import { useChat } from '@/contexts/ChatContext';
 import { api } from '@/services/api';
 import { boltAI } from '@/services/boltAI';
 
 const AdminSupportChat = () => {
   const { user } = useAuth();
+  const {
+    isConnected,
+    conversations,
+    currentConversation,
+    messages,
+    typingUsers,
+    sendMessage: sendChatMessage,
+    startTyping,
+    stopTyping,
+    loadConversations,
+    loadMessages,
+    setCurrentConversation
+  } = useChat();
+
   const navigate = useNavigate();
-  const [rooms, setRooms] = useState<ChatRoom[]>([]);
-  const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [systemStats, setSystemStats] = useState({
@@ -41,6 +46,7 @@ const AdminSupportChat = () => {
     activeBookings: 0
   });
   const [isTyping, setIsTyping] = useState(false);
+  const [isUserTyping, setIsUserTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -49,25 +55,25 @@ const AdminSupportChat = () => {
       return;
     }
     fetchSystemStats();
+    loadConversations();
   }, [user, navigate]);
 
   useEffect(() => {
-    // Auto-select first room if available
-    if (rooms.length > 0 && !selectedRoom) {
-      setSelectedRoom(rooms[0].id || null);
+    // Auto-select first conversation if available
+    if (conversations.length > 0 && !currentConversation) {
+      const firstConversation = conversations[0];
+      setCurrentConversation(firstConversation);
+      loadMessages(firstConversation.carId, firstConversation.userId);
     }
-  }, [rooms, selectedRoom]);
+  }, [conversations, currentConversation]);
 
+  // Monitor typing indicators
   useEffect(() => {
-    const unsubscribe = subscribeToAllRoomsForSupport(setRooms);
-    return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    if (!selectedRoom) return;
-    const unsubscribe = subscribeToMessages(selectedRoom, setMessages);
-    return () => unsubscribe();
-  }, [selectedRoom]);
+    if (currentConversation) {
+      const isTyping = typingUsers.has(currentConversation.userId);
+      setIsUserTyping(isTyping);
+    }
+  }, [typingUsers, currentConversation]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -99,44 +105,54 @@ const AdminSupportChat = () => {
   };
 
   const handleSendMessage = async () => {
-    if (!selectedRoom || !user || !inputMessage.trim()) return;
+    if (!currentConversation || !user || !inputMessage.trim()) return;
 
     const userMessage = inputMessage.trim();
     setInputMessage('');
     setIsTyping(true);
 
-    // Send admin message
-    await sendMessage(selectedRoom, {
-      content: userMessage,
-      senderId: user._id,
-      senderName: `Admin: ${user.fullname}`,
-    });
-
-    // Generate AI response with system context
     try {
+      // Send admin message
+      await sendChatMessage(
+        currentConversation.userId,
+        currentConversation.carId,
+        userMessage
+      );
+
+      // Generate AI response with system context
       const aiResponse = await boltAI.generateResponse(userMessage, systemStats, true);
-      
+
       // Send AI response
       setTimeout(async () => {
-        await sendMessage(selectedRoom, {
-          content: aiResponse.response,
-          senderId: 'ai-assistant',
-          senderName: 'AI Assistant',
-        });
+        await sendChatMessage(
+          currentConversation.userId,
+          currentConversation.carId,
+          aiResponse.response
+        );
         setIsTyping(false);
       }, 1000);
     } catch (error) {
-      console.error('AI response error:', error);
+      console.error('Failed to send message:', error);
       setIsTyping(false);
     }
   };
 
-  const filteredRooms = rooms.filter(room => 
-    room.userId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    room.lastMessage?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleTyping = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputMessage(e.target.value);
 
-  const selectedRoomData = rooms.find(room => room.id === selectedRoom);
+    if (currentConversation) {
+      if (e.target.value.length > 0) {
+        startTyping(currentConversation.userId, currentConversation.carId);
+      } else {
+        stopTyping(currentConversation.userId, currentConversation.carId);
+      }
+    }
+  };
+
+  const filteredConversations = conversations.filter(conversation =>
+    conversation.otherUser.fullname.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    conversation.lastMessage?.content.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -195,24 +211,34 @@ const AdminSupportChat = () => {
             <div className="p-4">
               <h3 className="text-sm font-medium mb-3 text-white">Active Conversations</h3>
               <div className="space-y-2">
-                {filteredRooms.map((room) => (
-                  <div 
-                    key={room.id}
-                    className={`cursor-pointer transition-all duration-200 hover:bg-primary-foreground/10 rounded-lg p-3 ${
-                      selectedRoom === room.id ? 'bg-primary-foreground/20' : ''
-                    }`}
-                    onClick={() => setSelectedRoom(room.id || null)}
+                {filteredConversations.map((conversation) => (
+                  <div
+                    key={`${conversation.userId}-${conversation.carId}`}
+                    className={`cursor-pointer transition-all duration-200 hover:bg-primary-foreground/10 rounded-lg p-3 ${currentConversation?.userId === conversation.userId &&
+                        currentConversation?.carId === conversation.carId
+                        ? 'bg-primary-foreground/20'
+                        : ''
+                      }`}
+                    onClick={() => {
+                      setCurrentConversation(conversation);
+                      loadMessages(conversation.carId, conversation.userId);
+                    }}
                   >
                     <div className="flex items-center gap-2 mb-1">
                       <User className="h-4 w-4 text-primary-foreground/80" />
-                      <span className="text-sm font-medium text-white">User {room.userId.slice(-6)}</span>
-                      <Badge variant="secondary" className="text-xs bg-primary-foreground/20 text-white">Active</Badge>
+                      <span className="text-sm font-medium text-white">{conversation.otherUser.fullname}</span>
+                      {conversation.unreadCount > 0 && (
+                        <Badge variant="secondary" className="text-xs bg-red-500 text-white">
+                          {conversation.unreadCount}
+                        </Badge>
+                      )}
                     </div>
-                    {room.lastMessage && (
-                      <p className="text-xs text-primary-foreground/70 truncate">
-                        {room.lastMessage}
-                      </p>
-                    )}
+                    <div className="text-xs text-primary-foreground/70 truncate">
+                      <p className="font-medium">{conversation.car.make} {conversation.car.model} {conversation.car.year}</p>
+                      {conversation.lastMessage && (
+                        <p className="truncate">{conversation.lastMessage.content}</p>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -248,7 +274,7 @@ const AdminSupportChat = () => {
             </div>
           </div>
 
-          {selectedRoom ? (
+          {currentConversation ? (
             <>
               {/* Chat Header */}
               <div className="border-b p-4 bg-white">
@@ -257,52 +283,60 @@ const AdminSupportChat = () => {
                     <span className="text-primary-foreground font-bold text-sm">S</span>
                   </div>
                   <div>
-                    <h2 className="font-semibold">Support Team</h2>
-                    <p className="text-sm text-muted-foreground">Chat with User {selectedRoomData?.userId.slice(-6)}</p>
+                    <h2 className="font-semibold">{currentConversation.otherUser.fullname}</h2>
+                    <p className="text-sm text-muted-foreground">
+                      {currentConversation.car.make} {currentConversation.car.model} {currentConversation.car.year}
+                    </p>
                   </div>
-                  <Badge variant="outline" className="ml-auto">
-                    <Shield className="h-3 w-3 mr-1" />
-                    Admin View
-                  </Badge>
+                  <div className="ml-auto flex items-center gap-2">
+                    {isConnected ? (
+                      <Badge variant="outline" className="text-green-600 border-green-600">
+                        <Wifi className="h-3 w-3 mr-1" />
+                        Connected
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-red-600 border-red-600">
+                        <WifiOff className="h-3 w-3 mr-1" />
+                        Disconnected
+                      </Badge>
+                    )}
+                    <Badge variant="outline">
+                      <Shield className="h-3 w-3 mr-1" />
+                      Admin View
+                    </Badge>
+                  </div>
                 </div>
               </div>
 
               {/* Messages */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
                 {messages.map((message) => (
-                  <div key={message.id} className={`flex ${message.senderId === user?._id ? 'justify-end' : 'justify-start'} items-end gap-2`}>
-                    {message.senderId !== user?._id && (
+                  <div key={message._id} className={`flex ${message.sender._id === user?.id ? 'justify-end' : 'justify-start'} items-end gap-2`}>
+                    {message.sender._id !== user?.id && (
                       <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
                         <span className="text-primary-foreground font-bold text-xs">S</span>
                       </div>
                     )}
-                    <div className={`max-w-[70%] rounded-2xl px-4 py-3 ${
-                      message.senderId === user?._id 
-                        ? 'bg-primary text-primary-foreground' 
+                    <div className={`max-w-[70%] rounded-2xl px-4 py-3 ${message.sender._id === user?.id
+                        ? 'bg-primary text-primary-foreground'
                         : 'bg-white border'
-                    }`}>
-                      <div className="text-sm whitespace-pre-wrap">{message.content}</div>
-                      <div className={`text-xs mt-1 ${
-                        message.senderId === user?._id 
-                          ? 'text-primary-foreground/70' 
-                          : 'text-muted-foreground'
                       }`}>
-                        {(() => {
-                          const created = (message as any).createdAt;
-                          // Firestore Timestamp support and fallback
-                          const date = created?.toDate ? created.toDate() : (created ? new Date(created) : new Date());
-                          return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                        })()}
+                      <div className="text-sm whitespace-pre-wrap">{message.content}</div>
+                      <div className={`text-xs mt-1 ${message.sender._id === user?.id
+                          ? 'text-primary-foreground/70'
+                          : 'text-muted-foreground'
+                        }`}>
+                        {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>
                     </div>
-                    {message.senderId === user?._id && (
+                    {message.sender._id === user?.id && (
                       <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
                         <User className="h-3 w-3 text-white" />
                       </div>
                     )}
                   </div>
                 ))}
-                {isTyping && (
+                {(isTyping || isUserTyping) && (
                   <div className="flex justify-start items-end gap-2">
                     <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
                       <span className="text-primary-foreground font-bold text-xs">S</span>
@@ -325,19 +359,19 @@ const AdminSupportChat = () => {
                   <Input
                     placeholder="Ask any question..."
                     value={inputMessage}
-                    onChange={(e) => setInputMessage(e.target.value)}
+                    onChange={handleTyping}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault();
                         handleSendMessage();
                       }
                     }}
-                    disabled={isTyping}
+                    disabled={!isConnected || isTyping}
                     className="flex-1"
                   />
-                  <Button 
-                    onClick={handleSendMessage} 
-                    disabled={!inputMessage.trim() || isTyping}
+                  <Button
+                    onClick={handleSendMessage}
+                    disabled={!inputMessage.trim() || !isConnected || isTyping}
                     className="bg-primary hover:bg-primary/90 transition-all duration-200 hover:scale-105"
                     size="icon"
                   >

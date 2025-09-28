@@ -216,9 +216,6 @@ const BuyerDashboard = () => {
               </div>
               <div className="flex items-center gap-2">
                 <NotificationBell />
-                <Button variant="ghost" size="icon">
-                  <Bell className="w-5 h-5" />
-                </Button>
               </div>
             </div>
           </div>

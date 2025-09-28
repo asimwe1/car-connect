@@ -238,9 +238,6 @@ const AdminDashboard = () => {
               </div>
               <div className="flex items-center gap-2">
                 <NotificationBell />
-                <Button variant="ghost" size="icon" onClick={fetchDashboardData} disabled={loading} title="Refresh">
-                  <Bell className="w-5 h-5" />
-                </Button>
                 {errorMessage && (
                   <Button variant="destructive" onClick={fetchDashboardData} disabled={loading} className="text-xs md:text-sm">
                     Retry Sync

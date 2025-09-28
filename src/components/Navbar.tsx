@@ -51,9 +51,9 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/90 h-[4rem] backdrop-blur-md border-b border-border supports-[backdrop-filter]:bg-background/60">
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/90 h-[4rem] backdrop-blur-md border-b border-border supports-[backdrop-filter]:bg-background/60 safe-area-top">
+      <div className="max-w-7xl mx-auto px-4 safe-area-left safe-area-right">
+        <div className="flex items-center justify-between h-16 touch-action-manipulation">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2 focus:outline-none focus:ring-2 focus:ring-primary rounded-md">
             <span className="text-xl font-bold bg-gradient-to-r from-primary to-primary-light bg-clip-text text-transparent">
@@ -120,7 +120,8 @@ const Navbar = () => {
           {/* Mobile menu button */}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden p-2 rounded-lg hover:bg-accent transition-colors"
+            className="md:hidden p-3 rounded-lg hover:bg-accent transition-colors touch-action-manipulation mobile-tap-highlight-transparent"
+            aria-label={isOpen ? "Close menu" : "Open menu"}
           >
             {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
@@ -128,19 +129,22 @@ const Navbar = () => {
 
         {/* Mobile Navigation */}
         {isOpen && (
-          <div className="md:hidden pb-4 border-t border-border">
-            <div className="flex flex-col space-y-2 pt-4">
+          <div className="md:hidden pb-4 border-t border-border safe-area-bottom">
+            <div className="flex flex-col space-y-1 pt-4">
               {navLinks.map((link) => (
                 <NavLink
                   key={link.name}
                   to={link.path}
-                  onClick={(e) => handleProtectedClick(e, link.path, link.protected)}
+                  onClick={(e) => {
+                    handleProtectedClick(e, link.path, link.protected);
+                    setIsOpen(false);
+                  }}
                   className={() => {
                     const active = isActiveLink(link);
-                    return `relative px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      active ? 'text-primary' : 'text-muted-foreground hover:text-primary hover:bg-accent'
-                    } after:content-[''] after:absolute after:left-3 after:bottom-1 after:h-0.5 after:bg-primary after:transition-transform after:duration-300 after:origin-left ${
-                      active ? 'after:w-10 after:scale-x-100' : 'after:w-10 after:scale-x-0 group-hover:after:scale-x-100'
+                    return `relative px-4 py-3 rounded-lg text-sm font-medium transition-colors touch-action-manipulation mobile-tap-highlight-transparent ${
+                      active ? 'text-primary bg-primary/5' : 'text-muted-foreground hover:text-primary hover:bg-accent'
+                    } after:content-[''] after:absolute after:left-4 after:bottom-2 after:h-0.5 after:bg-primary after:transition-transform after:duration-300 after:origin-left ${
+                      active ? 'after:w-8 after:scale-x-100' : 'after:w-8 after:scale-x-0 group-hover:after:scale-x-100'
                     }`;
                   }}
                 >
@@ -153,7 +157,7 @@ const Navbar = () => {
                     <Link
                       to="/buyer-dashboard"
                       onClick={() => setIsOpen(false)}
-                      className="flex items-center px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-primary hover:bg-accent"
+                      className="flex items-center px-4 py-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-primary hover:bg-accent touch-action-manipulation mobile-tap-highlight-transparent"
                     >
                       <User className="w-4 h-4 mr-2" />
                       Dashboard
@@ -162,7 +166,7 @@ const Navbar = () => {
                       <Link
                         to="/admin-dashboard"
                         onClick={() => setIsOpen(false)}
-                        className="flex items-center px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-primary hover:bg-accent"
+                        className="flex items-center px-4 py-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-primary hover:bg-accent touch-action-manipulation mobile-tap-highlight-transparent"
                       >
                         <Settings className="w-4 h-4 mr-2" />
                         Admin
@@ -174,14 +178,14 @@ const Navbar = () => {
                     <Link
                       to="/signin"
                       onClick={() => setIsOpen(false)}
-                      className="block px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-primary hover:bg-accent"
+                      className="block px-4 py-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-primary hover:bg-accent touch-action-manipulation mobile-tap-highlight-transparent"
                     >
                       Sign In
                     </Link>
                     <Link
                       to="/signup"
                       onClick={() => setIsOpen(false)}
-                      className="block px-3 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary-light"
+                      className="block px-4 py-3 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary-light touch-action-manipulation mobile-tap-highlight-transparent"
                     >
                       Sign Up
                     </Link>

@@ -28,7 +28,8 @@ import {
   Calendar,
   DollarSign,
   Eye,
-  MessageCircle
+  MessageCircle,
+  ArrowLeft
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -103,7 +104,6 @@ const AdminDashboard = () => {
     { icon: BarChart3, label: 'Dashboard', href: '/admin-dashboard', active: true },
     { icon: Car, label: 'Manage Cars', href: '/admin/cars' },
     { icon: Plus, label: 'Add New Car', href: '/admin/add-car' },
-    { icon: Car, label: 'Sell/Rent Cars', href: '/list-car' },
     { icon: Calendar, label: 'Bookings', href: '/admin/orders' },
     { icon: DollarSign, label: 'Orders', href: '/admin/orders' },
     // Settings and Support moved to bottom section
@@ -111,9 +111,47 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-accent/20 to-primary/10">
-      <div className="flex">
+      <div className="flex flex-col md:flex-row">
+        {/* Mobile Header */}
+        <div className="md:hidden bg-card/80 backdrop-blur-sm border-b border-border p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary-light bg-clip-text text-transparent">
+                CarConnect
+              </h1>
+              <p className="text-xs text-muted-foreground">Admin Dashboard</p>
+            </div>
+            <Button variant="ghost" size="sm" onClick={() => navigate('/')}>
+              <ArrowLeft className="w-4 h-4 mr-1" />
+              Home
+            </Button>
+          </div>
+        </div>
+
+        {/* Mobile Navigation */}
+        <div className="md:hidden bg-card/80 backdrop-blur-sm border-b border-border">
+          <div className="px-4 py-2">
+            <div className="flex space-x-1 overflow-x-auto scrollbar-hide">
+              {menuItems.map((item) => (
+                <Link
+                  key={item.label}
+                  to={item.href}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${
+                    item.active 
+                      ? 'bg-primary/10 text-primary border border-primary/20' 
+                      : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+                  }`}
+                >
+                  <item.icon className="w-3 h-3" />
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+
         {/* Sidebar */}
-        <div className="w-64 bg-card/80 backdrop-blur-sm border-r border-border min-h-screen">
+        <div className="hidden md:block w-64 bg-card/80 backdrop-blur-sm border-r border-border min-h-screen">
           <div className="p-6">
             <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary-light bg-clip-text text-transparent">
               CarConnect
@@ -180,33 +218,35 @@ const AdminDashboard = () => {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 p-8">
+        <div className="flex-1 p-4 md:p-8">
           {/* Header */}
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0 mb-6 md:mb-8">
             <div>
-              <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-              <p className="text-muted-foreground">Welcome back, {user?.fullname || 'Admin'}</p>
+              <h1 className="text-2xl md:text-3xl font-bold">Admin Dashboard</h1>
+              <p className="text-sm md:text-base text-muted-foreground">Welcome back, {user?.fullname || 'Admin'}</p>
             </div>
             
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col space-y-3 md:flex-row md:items-center md:space-y-0 md:gap-4">
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="search-input pl-10 w-80"
+                  className="search-input pl-10 w-full md:w-80"
                 />
               </div>
-              <NotificationBell />
-              <Button variant="ghost" size="icon" onClick={fetchDashboardData} disabled={loading} title="Refresh">
-                <Bell className="w-5 h-5" />
-              </Button>
-              {errorMessage && (
-                <Button variant="destructive" onClick={fetchDashboardData} disabled={loading}>
-                  Retry Sync
+              <div className="flex items-center gap-2">
+                <NotificationBell />
+                <Button variant="ghost" size="icon" onClick={fetchDashboardData} disabled={loading} title="Refresh">
+                  <Bell className="w-5 h-5" />
                 </Button>
-              )}
+                {errorMessage && (
+                  <Button variant="destructive" onClick={fetchDashboardData} disabled={loading} className="text-xs md:text-sm">
+                    Retry Sync
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
 
@@ -219,7 +259,7 @@ const AdminDashboard = () => {
           )}
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 md:gap-6 mb-6 md:mb-8">
             <Card className="bg-card/80 backdrop-blur-sm border border-border">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Cars</CardTitle>
@@ -277,7 +317,7 @@ const AdminDashboard = () => {
           </div>
 
           {/* Quick Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6 md:mb-8">
             <Link to="/admin/add-car">
               <Card className="bg-card/80 backdrop-blur-sm border border-border hover:shadow-card transition-shadow cursor-pointer">
                 <CardContent className="p-6 text-center">
@@ -312,7 +352,7 @@ const AdminDashboard = () => {
           </div>
 
           {/* Recent Activity */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
             <Card className="bg-card/80 backdrop-blur-sm border border-border">
               <CardHeader>
                 <CardTitle>Recent Activity</CardTitle>

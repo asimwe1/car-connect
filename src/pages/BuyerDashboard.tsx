@@ -75,15 +75,52 @@ const BuyerDashboard = () => {
     { icon: Heart, label: 'Wishlist', href: '/wishlist' },
     { icon: Calendar, label: 'Bookings', href: '/bookings' },
     { icon: Car, label: 'Buy Cars', href: '/buy-cars' },
-    { icon: Car, label: 'Sell/Rent Cars', href: '/list-car' },
     { icon: MessageCircle, label: 'Support', href: '/support' },
   ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-accent/20 to-primary/10">
-      <div className="flex">
+      <div className="flex flex-col md:flex-row">
+        {/* Mobile Header */}
+        <div className="md:hidden bg-card/80 backdrop-blur-sm border-b border-border p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary-light bg-clip-text text-transparent">
+                CarConnect
+              </h1>
+              <p className="text-xs text-muted-foreground">Buyer Dashboard</p>
+            </div>
+            <Button variant="ghost" size="sm" onClick={() => navigate('/')}>
+              <ArrowLeft className="w-4 h-4 mr-1" />
+              Home
+            </Button>
+          </div>
+        </div>
+
+        {/* Mobile Navigation */}
+        <div className="md:hidden bg-card/80 backdrop-blur-sm border-b border-border">
+          <div className="px-4 py-2">
+            <div className="flex space-x-1 overflow-x-auto scrollbar-hide">
+              {menuItems.map((item) => (
+                <Link
+                  key={item.label}
+                  to={item.href}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${
+                    item.active 
+                      ? 'bg-primary/10 text-primary border border-primary/20' 
+                      : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+                  }`}
+                >
+                  <item.icon className="w-3 h-3" />
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+
         {/* Sidebar */}
-        <div className="w-64 bg-card/80 backdrop-blur-sm border-r border-border min-h-screen relative">
+        <div className="hidden md:block w-64 bg-card/80 backdrop-blur-sm border-r border-border min-h-screen relative">
           <div className="p-6">
             <div className="flex items-center gap-2 mb-4">
               <button
@@ -159,33 +196,35 @@ const BuyerDashboard = () => {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 p-8">
+        <div className="flex-1 p-4 md:p-8">
           {/* Header */}
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0 mb-6 md:mb-8">
             <div>
-              <h1 className="text-3xl font-bold">Welcome back, {user?.fullname || 'User'}!</h1>
-              <p className="text-muted-foreground">Here's what's happening with your car search</p>
+              <h1 className="text-2xl md:text-3xl font-bold">Welcome back, {user?.fullname || 'User'}!</h1>
+              <p className="text-sm md:text-base text-muted-foreground">Here's what's happening with your car search</p>
             </div>
             
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col space-y-3 md:flex-row md:items-center md:space-y-0 md:gap-4">
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search cars..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="search-input pl-10 w-80"
+                  className="search-input pl-10 w-full md:w-80"
                 />
               </div>
-              <NotificationBell />
-              <Button variant="ghost" size="icon">
-                <Bell className="w-5 h-5" />
-              </Button>
+              <div className="flex items-center gap-2">
+                <NotificationBell />
+                <Button variant="ghost" size="icon">
+                  <Bell className="w-5 h-5" />
+                </Button>
+              </div>
             </div>
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
 
             <Card className="bg-card/80 backdrop-blur-sm border border-border">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

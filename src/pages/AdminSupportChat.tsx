@@ -466,15 +466,10 @@ Just ask me anything!`,
                     </p>
                   </div>
                   <div className="ml-auto flex items-center gap-2">
-                    {isConnected ? (
+                    {isConnected && (
                       <Badge variant="outline" className="text-green-600 border-green-600">
                         <Wifi className="h-3 w-3 mr-1" />
                         Connected
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-red-600 border-red-600">
-                        <WifiOff className="h-3 w-3 mr-1" />
-                        Disconnected
                       </Badge>
                     )}
                     <Badge variant="outline">
@@ -569,15 +564,10 @@ Just ask me anything!`,
                             <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                             System Chat Active
                           </span>
-                        ) : isConnected ? (
+                        ) : isConnected && (
                           <span className="flex items-center gap-1">
                             <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                             Connected
-                          </span>
-                        ) : (
-                          <span className="flex items-center gap-1">
-                            <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                            Disconnected
                           </span>
                         )}
                         {isTyping && <span className="text-blue-500">{isSystemChatMode ? 'System AI is typing...' : 'AI is typing...'}</span>}

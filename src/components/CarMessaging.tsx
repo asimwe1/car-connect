@@ -154,15 +154,10 @@ const CarMessaging: React.FC<CarMessagingProps> = ({
                 </div>
               </CardTitle>
               <div className="flex items-center gap-2">
-                {isConnected ? (
+                {isConnected && (
                   <Badge variant="outline" className="text-green-600 border-green-600 text-xs">
                     <Wifi className="h-2 w-2 mr-1" />
                     Online
-                  </Badge>
-                ) : (
-                  <Badge variant="outline" className="text-red-600 border-red-600 text-xs">
-                    <WifiOff className="h-2 w-2 mr-1" />
-                    Offline
                   </Badge>
                 )}
                 <Button

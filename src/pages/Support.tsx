@@ -169,17 +169,12 @@ How can I assist you today?`,
             </div>
           </div>
 
-          {/* Connection Status */}
+          {/* Connection Status - Only show when connected */}
           <div className="flex items-center gap-2">
-            {isConnected ? (
+            {isConnected && (
               <Badge variant="outline" className="text-green-600 border-green-600">
                 <Wifi className="h-3 w-3 mr-1" />
                 Connected
-              </Badge>
-            ) : (
-              <Badge variant="outline" className="text-red-600 border-red-600">
-                <WifiOff className="h-3 w-3 mr-1" />
-                Disconnected
               </Badge>
             )}
           </div>
@@ -258,15 +253,10 @@ How can I assist you today?`,
                 />
                 <div className="flex justify-between items-center mt-2">
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    {isConnected ? (
+                    {isConnected && (
                       <span className="flex items-center gap-1">
                         <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                         Connected
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-1">
-                        <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                        Disconnected
                       </span>
                     )}
                     {isTyping && <span className="text-blue-500">Support is typing...</span>}

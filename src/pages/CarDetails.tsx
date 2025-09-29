@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Car, Fuel, Settings, MapPin, Play } from 'lucide-react';
 import { api } from '@/services/api';
 import LazyImage from '@/components/LazyImage';
+import CarMessaging from '@/components/CarMessaging';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface CarData {
   _id: string;
@@ -71,11 +73,12 @@ const createFallbackCar = (id: string): CarData => ({
 });
 
 const CarDetails = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const [car, setCar] = useState<CarData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [activeImageIdx, setActiveImageIdx] = useState(0);
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [car, setCar] = useState<CarData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [activeImageIdx, setActiveImageIdx] = useState(0);
 
   useEffect(() => {
     if (!id) {
@@ -345,10 +348,26 @@ const CarDetails = () => {
               </div>
             </CardContent>
           </Card>
-        </div>
-      </div>
-    </div>
-  );
+        </div>
+      </div>
+
+      {/* Car Messaging Component */}
+      {user && car && user.id !== car.owner._id && (
+        <CarMessaging
+          carId={car._id}
+          sellerId={car.owner._id}
+          sellerName={car.owner.fullname}
+          carDetails={{
+            make: car.make,
+            model: car.model,
+            year: car.year,
+            price: car.price,
+            primaryImage: car.primaryImage
+          }}
+        />
+      )}
+    </div>
+  );
 };
 
 export default CarDetails;

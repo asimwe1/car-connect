@@ -143,35 +143,24 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
 
   const loadConversations = async (): Promise<void> => {
     try {
-      // Use your existing API to get conversations
-      const response = await fetch('/api/messages/conversations', {
-        credentials: 'include'
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setConversations(data);
+      const result = await api.getConversations();
+      if (result.data) {
+        setConversations(result.data);
       } else {
-        // Fallback to mock data for development
-        console.log('Using mock conversations data');
+        console.error('Failed to load conversations:', result.error);
         setConversations([]);
       }
     } catch (error) {
       console.error('Failed to load conversations:', error);
-      // Use empty array as fallback
       setConversations([]);
     }
   };
 
   const loadMessages = async (carId: string, recipientId: string): Promise<void> => {
     try {
-      const response = await fetch(`/api/messages/${carId}/${recipientId}`, {
-        credentials: 'include'
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setMessages(data);
+      const result = await api.getMessages(carId, recipientId);
+      if (result.data) {
+        setMessages(result.data);
 
         // Find the conversation
         const conversation = conversations.find(conv =>
@@ -179,8 +168,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
         );
         setCurrentConversation(conversation || null);
       } else {
-        // Fallback to mock data
-        console.log('Using mock messages data');
+        console.error('Failed to load messages:', result.error);
         setMessages([]);
         setCurrentConversation(null);
       }
@@ -192,18 +180,33 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   };
 
   const sendMessage = async (recipientId: string, carId: string, content: string): Promise<void> => {
-    if (!isConnected) {
-      throw new Error('Not connected to chat service');
-    }
-
     try {
-      const message = await realTimeChatService.sendMessage(recipientId, carId, content);
+      // Send via API first (persistent storage)
+      const result = await api.sendMessage({ recipientId, carId, content });
+      
+      if (result.data && result.data.message) {
+        const message = result.data.message;
 
-      // Add message to current conversation if it matches
-      if (currentConversation &&
-        carId === currentConversation.carId &&
-        recipientId === currentConversation.userId) {
-        setMessages(prev => [...prev, message]);
+        // Add message to current conversation if it matches
+        if (currentConversation &&
+          carId === currentConversation.carId &&
+          recipientId === currentConversation.userId) {
+          setMessages(prev => [...prev, message]);
+        }
+
+        // Also send via real-time service for instant delivery (if connected)
+        if (isConnected) {
+          try {
+            await realTimeChatService.sendMessage(recipientId, carId, content);
+          } catch (realTimeError) {
+            console.warn('Real-time message failed, but message was saved:', realTimeError);
+          }
+        }
+
+        // Refresh conversations to update last message
+        await loadConversations();
+      } else {
+        throw new Error(result.error || 'Failed to send message');
       }
     } catch (error) {
       console.error('Failed to send message:', error);
@@ -223,9 +226,26 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     }
   };
 
-  const markAsRead = (messageIds: string[], recipientId: string): void => {
-    if (isConnected) {
-      realTimeChatService.markAsRead(messageIds, recipientId);
+  const markAsRead = async (messageIds: string[], recipientId: string): Promise<void> => {
+    try {
+      // Mark as read via API
+      const result = await api.markMessagesAsRead(messageIds);
+      
+      if (result.data) {
+        // Update local message state
+        setMessages(prev => prev.map(msg =>
+          messageIds.includes(msg._id)
+            ? { ...msg, isRead: true }
+            : msg
+        ));
+
+        // Also mark via real-time service if connected
+        if (isConnected) {
+          realTimeChatService.markAsRead(messageIds, recipientId);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to mark messages as read:', error);
     }
   };
 

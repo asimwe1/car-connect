@@ -55,8 +55,23 @@ const AdminSupportChat = () => {
       return;
     }
     fetchSystemStats();
-    loadConversations();
+    loadAdminConversations();
   }, [user, navigate]);
+
+  const loadAdminConversations = async () => {
+    try {
+      const result = await api.getAdminConversations();
+      if (result.data) {
+        // Update the conversations in the chat context
+        // For admin, we want to see all conversations
+        loadConversations();
+      } else {
+        console.error('Failed to load admin conversations:', result.error);
+      }
+    } catch (error) {
+      console.error('Failed to load admin conversations:', error);
+    }
+  };
 
   useEffect(() => {
     // Auto-select first conversation if available

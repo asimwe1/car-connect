@@ -317,6 +317,34 @@ class ApiService {
       body: JSON.stringify({ role }),
     });
   }
+
+  // Messaging methods
+  async getConversations() {
+    return this.request('/messages/conversations');
+  }
+
+  async getMessages(carId: string, recipientId: string) {
+    return this.request(`/messages/${carId}/${recipientId}`);
+  }
+
+  async sendMessage(data: { recipientId: string; carId: string; content: string }) {
+    return this.request('/messages', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async markMessagesAsRead(messageIds: string[]) {
+    return this.request('/messages/mark-read', {
+      method: 'POST',
+      body: JSON.stringify({ messageIds }),
+    });
+  }
+
+  // Admin messaging methods
+  async getAdminConversations() {
+    return this.request('/messages/admin/conversations');
+  }
 }
 
 // Create singleton instance

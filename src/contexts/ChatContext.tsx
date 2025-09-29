@@ -134,11 +134,15 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     }
 
     try {
-      // For now, we'll use a mock token since your backend expects JWT
-      // In production, you'd get this from your auth system
-      const mockToken = `mock-token-${user.id}`;
+      // Get the actual auth token from localStorage
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error('No auth token found');
+        setIsConnected(false);
+        return;
+      }
 
-      await realTimeChatService.connect(mockToken);
+      await realTimeChatService.connect(token);
       setIsConnected(true);
       console.log('✅ Chat service connected');
 

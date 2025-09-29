@@ -212,10 +212,27 @@ const CarDetails = () => {
                 <div className="flex items-center gap-2"><Settings className="h-4 w-4" />{car.transmission.charAt(0).toUpperCase() + car.transmission.slice(1)}</div>
                 <div className="flex items-center gap-2"><MapPin className="h-4 w-4" />{car.location || '—'}</div>
               </div>
-              <div className="pt-2 space-y-2">
-                <Button className="w-full" disabled={car.status !== 'available'}>
-                  {car.status !== 'available' ? 'Not Available' : 'Chat with us'}
-                </Button>
+              <div className="pt-2 space-y-2">
+                <Button 
+                  className="w-full" 
+                  disabled={car.status !== 'available' || !user}
+                  onClick={() => {
+                    if (user && car.status === 'available') {
+                      // Scroll to messaging component
+                      const messagingElement = document.querySelector('#car-messaging');
+                      if (messagingElement) {
+                        messagingElement.scrollIntoView({ behavior: 'smooth' });
+                        // Trigger the messaging component to expand
+                        const messagingButton = messagingElement.querySelector('button');
+                        if (messagingButton) {
+                          messagingButton.click();
+                        }
+                      }
+                    }
+                  }}
+                >
+                  {car.status !== 'available' ? 'Not Available' : user ? 'Chat with Seller' : 'Login to Chat'}
+                </Button>
                 {car.rentEnabled && (
                   <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
                     <div>Per day: <span className="font-medium text-foreground">{car.rentPricePerDay ? `$${car.rentPricePerDay.toLocaleString()}` : '—'}</span></div>
@@ -353,18 +370,20 @@ const CarDetails = () => {
 
       {/* Car Messaging Component */}
       {user && car && user.id !== car.owner._id && (
-        <CarMessaging
-          carId={car._id}
-          sellerId={car.owner._id}
-          sellerName={car.owner.fullname}
-          carDetails={{
-            make: car.make,
-            model: car.model,
-            year: car.year,
-            price: car.price,
-            primaryImage: car.primaryImage
-          }}
-        />
+        <div id="car-messaging">
+          <CarMessaging
+            carId={car._id}
+            sellerId={car.owner._id}
+            sellerName={car.owner.fullname}
+            carDetails={{
+              make: car.make,
+              model: car.model,
+              year: car.year,
+              price: car.price,
+              primaryImage: car.primaryImage
+            }}
+          />
+        </div>
       )}
     </div>
   );

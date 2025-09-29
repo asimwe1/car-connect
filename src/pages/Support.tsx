@@ -1,10 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Send, User, MessageCircle, Wifi, WifiOff } from "lucide-react";
+import { ArrowLeft, Send, User, MessageCircle, Wifi, WifiOff, Bot } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useChat } from "@/contexts/ChatContext";
@@ -13,37 +12,56 @@ import { api } from "@/services/api";
 import { notificationService } from "@/services/notifications";
 import { notify } from "@/components/Notifier";
 
+interface SupportMessage {
+  id: string;
+  content: string;
+  sender: 'user' | 'support';
+  timestamp: Date;
+  isTyping?: boolean;
+}
+
 const Support = () => {
   const { user } = useAuth();
-  const {
-    isConnected,
-    messages,
-    currentConversation,
-    sendMessage: sendChatMessage,
-    startTyping,
-    stopTyping,
-    typingUsers,
-    loadConversations,
-    loadMessages
-  } = useChat();
-
+  const { isConnected } = useChat();
+  
   const [inputMessage, setInputMessage] = useState("");
+  const [supportMessages, setSupportMessages] = useState<SupportMessage[]>([]);
+  const [isTyping, setIsTyping] = useState(false);
   const [systemContext, setSystemContext] = useState<SystemContext>({
     totalUsers: 0,
     totalCars: 0,
     totalOrders: 0,
     activeBookings: 0
   });
-  const [isTyping, setIsTyping] = useState(false);
-  const [isUserTyping, setIsUserTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!user) return;
     fetchSystemContext();
-    loadConversations();
+    initializeSupport();
   }, [user]);
+
+  const initializeSupport = () => {
+    const welcomeMessage: SupportMessage = {
+      id: '1',
+      content: `Hello ${user?.fullname || 'there'}! 👋
+
+Welcome to CarHub Support! I'm your AI assistant and I'm here to help you with:
+
+• Questions about buying or selling cars
+• Account and profile assistance  
+• Booking and order inquiries
+• Technical support and troubleshooting
+• General platform guidance
+
+How can I assist you today?`,
+      sender: 'support',
+      timestamp: new Date()
+    };
+
+    setSupportMessages([welcomeMessage]);
+  };
 
   const fetchSystemContext = async () => {
     try {
@@ -70,20 +88,12 @@ const Support = () => {
     }
   };
 
-  // Monitor typing indicators
-  useEffect(() => {
-    if (currentConversation) {
-      const isTyping = typingUsers.has(currentConversation.userId);
-      setIsUserTyping(isTyping);
-    }
-  }, [typingUsers, currentConversation]);
-
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [supportMessages]);
 
   const handleSend = async () => {
-    if (!currentConversation || !user || !inputMessage.trim()) return;
+    if (!user || !inputMessage.trim()) return;
 
     const userMessage = inputMessage.trim();
     
@@ -93,65 +103,56 @@ const Support = () => {
       return;
     }
 
+    // Add user message
+    const userMsg: SupportMessage = {
+      id: Date.now().toString(),
+      content: userMessage,
+      sender: 'user',
+      timestamp: new Date()
+    };
+
+    setSupportMessages(prev => [...prev, userMsg]);
     setInputMessage("");
     setIsTyping(true);
 
     try {
-      // Send user message to support
-      await sendChatMessage(
-        'support-user-id', // Support user ID - you'll need to configure this
-        currentConversation.carId,
-        userMessage
-      );
-
+      // Simulate sending to backend (you can integrate real API here)
       notify.success('Message sent', 'Your message has been sent to support.');
 
       // Generate AI response
       const aiResponse = await boltAI.generateResponse(userMessage, systemContext, false);
 
-      // Send AI response after a delay
-      setTimeout(async () => {
-        try {
-          await sendChatMessage(
-            'support-user-id',
-            currentConversation.carId,
-            aiResponse.response
-          );
-          
-          // Trigger notification for AI response
-          notificationService.simulateNotification(
-            'success',
-            'chat',
-            'Support Response',
-            'You received a response from our support team'
-          );
-          
-        } catch (aiError) {
-          console.error('Failed to send AI response:', aiError);
-          notify.error('Support Response Failed', 'Failed to get response from support.');
-        }
+      // Add AI response after delay
+      setTimeout(() => {
+        const supportMsg: SupportMessage = {
+          id: (Date.now() + 1).toString(),
+          content: aiResponse.response,
+          sender: 'support',
+          timestamp: new Date()
+        };
+
+        setSupportMessages(prev => [...prev, supportMsg]);
         setIsTyping(false);
+
+        // Trigger notification for support response
+        notificationService.simulateNotification(
+          'success',
+          'chat',
+          'Support Response',
+          'You received a response from our support team'
+        );
       }, 1500 + Math.random() * 1000);
+
     } catch (error) {
-      console.error('Failed to send message:', error);
-      notify.error('Message Failed', 'Failed to send your message. Please try again.');
+      console.error('Failed to get support response:', error);
+      notify.error('Support Error', 'Failed to get response from support. Please try again.');
       setIsTyping(false);
     }
   };
 
   const handleTyping = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInputMessage(e.target.value);
-
-    if (currentConversation) {
-      if (e.target.value.length > 0) {
-        startTyping(currentConversation.userId, currentConversation.carId);
-      } else {
-        stopTyping(currentConversation.userId, currentConversation.carId);
-      }
-    }
   };
-
-  const isMine = (m: any) => m.sender._id === user?.id;
 
   return (
     <div className="min-h-screen bg-background">
@@ -194,36 +195,40 @@ const Support = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.map((m) => (
-              <div key={m.id} className={`flex ${isMine(m) ? 'justify-end' : 'justify-start'} items-end gap-2`}>
-                {!isMine(m) && (
+            {supportMessages.map((message) => (
+              <div key={message.id} className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'} items-end gap-2`}>
+                {message.sender === 'support' && (
                   <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-primary-foreground font-bold text-xs">S</span>
+                    <Bot className="h-3 w-3 text-primary-foreground" />
                   </div>
                 )}
-                <div className={`max-w-[70%] rounded-2xl px-4 py-3 ${isMine(m) ? 'bg-primary text-primary-foreground' : 'bg-accent'}`}>
-                  <div className="text-sm whitespace-pre-wrap">{m.content}</div>
-                  <div className={`text-xs mt-1 ${isMine(m) ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
-                    {(() => {
-                      const created = (m as any).createdAt;
-                      const date = created?.toDate ? created.toDate() : (created ? new Date(created) : new Date());
-                      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                    })()}
+                <div className={`max-w-[70%] rounded-2xl px-4 py-3 ${
+                  message.sender === 'user' 
+                    ? 'bg-primary text-primary-foreground' 
+                    : 'bg-white border shadow-sm'
+                }`}>
+                  <div className="text-sm whitespace-pre-wrap">{message.content}</div>
+                  <div className={`text-xs mt-1 ${
+                    message.sender === 'user' 
+                      ? 'text-primary-foreground/70' 
+                      : 'text-muted-foreground'
+                  }`}>
+                    {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </div>
                 </div>
-                {isMine(m) && (
+                {message.sender === 'user' && (
                   <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
                     <User className="h-3 w-3 text-white" />
                   </div>
                 )}
               </div>
             ))}
-            {(isTyping || isUserTyping) && (
+            {isTyping && (
               <div className="flex justify-start items-end gap-2">
                 <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-primary-foreground font-bold text-xs">S</span>
+                  <Bot className="h-3 w-3 text-primary-foreground" />
                 </div>
-                <div className="bg-accent rounded-2xl px-4 py-3">
+                <div className="bg-white border shadow-sm rounded-2xl px-4 py-3">
                   <div className="flex gap-1">
                     <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"></div>
                     <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></div>
@@ -247,7 +252,7 @@ const Support = () => {
                       handleSend();
                     }
                   }}
-                  disabled={!isConnected || !currentConversation || isTyping}
+                  disabled={isTyping}
                   className="min-h-[60px] max-h-[120px] resize-none"
                   rows={2}
                 />
@@ -273,7 +278,7 @@ const Support = () => {
               </div>
               <Button
                 onClick={handleSend}
-                disabled={!inputMessage.trim() || !isConnected || !currentConversation || isTyping || inputMessage.length > 1000}
+                disabled={!inputMessage.trim() || isTyping || inputMessage.length > 1000}
                 className="bg-primary hover:bg-primary/90 transition-all duration-200 hover:scale-105 h-[60px] w-[60px]"
                 size="icon"
               >

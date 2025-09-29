@@ -4,6 +4,7 @@ import { Menu, X, User, Settings } from 'lucide-react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthPrompt } from '@/contexts/AuthPromptContext';
 import { useAuth } from '@/contexts/AuthContext';
+import NotificationBell from '@/components/NotificationBell';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -86,6 +87,7 @@ const Navbar = () => {
           <div className="hidden md:flex items-center space-x-4">
             {isAuthenticated ? (
               <>
+                <NotificationBell />
                 <Link to="/buyer-dashboard">
                   <Button variant="ghost" size="sm">
                     <User className="w-4 h-4 mr-2" />

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import {
   ArrowLeft,
@@ -12,13 +13,17 @@ import {
   Search,
   Clock,
   Shield,
-  Bell
+  Bell,
+  Wifi,
+  WifiOff
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useChat } from '@/contexts/ChatContext';
 import { api } from '@/services/api';
 import { boltAI } from '@/services/boltAI';
+import { notificationService } from '@/services/notifications';
+import { notify } from '@/components/Notifier';
 
 const AdminSupportChat = () => {
   const { user } = useAuth();
@@ -94,6 +99,25 @@ const AdminSupportChat = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Notification integration for new messages
+  useEffect(() => {
+    if (messages.length > 0) {
+      const latestMessage = messages[messages.length - 1];
+      
+      // Only notify for messages from other users (not admin's own messages)
+      if (latestMessage.sender._id !== user?.id) {
+        // Trigger notification service
+        notificationService.notifyNewChatMessage(latestMessage.sender._id);
+        
+        // Show toast notification
+        notify.info(
+          'New Message',
+          `${latestMessage.sender.fullname}: ${latestMessage.content.substring(0, 50)}${latestMessage.content.length > 50 ? '...' : ''}`
+        );
+      }
+    }
+  }, [messages, user?.id]);
+
   const fetchSystemStats = async () => {
     try {
       const [carsRes, usersRes, ordersRes, bookingsRes] = await Promise.all([
@@ -123,6 +147,13 @@ const AdminSupportChat = () => {
     if (!currentConversation || !user || !inputMessage.trim()) return;
 
     const userMessage = inputMessage.trim();
+    
+    // Validate message length
+    if (userMessage.length > 1000) {
+      notify.error('Message too long', 'Please keep your message under 1000 characters.');
+      return;
+    }
+
     setInputMessage('');
     setIsTyping(true);
 
@@ -134,25 +165,42 @@ const AdminSupportChat = () => {
         userMessage
       );
 
+      notify.success('Message sent', 'Your message has been delivered successfully.');
+
       // Generate AI response with system context
       const aiResponse = await boltAI.generateResponse(userMessage, systemStats, true);
 
-      // Send AI response
+      // Send AI response after a brief delay
       setTimeout(async () => {
-        await sendChatMessage(
-          currentConversation.userId,
-          currentConversation.carId,
-          aiResponse.response
-        );
+        try {
+          await sendChatMessage(
+            currentConversation.userId,
+            currentConversation.carId,
+            aiResponse.response
+          );
+          
+          // Trigger notification for AI response
+          notificationService.simulateNotification(
+            'info',
+            'system',
+            'AI Response Generated',
+            `AI responded to ${currentConversation.otherUser.fullname}'s conversation`
+          );
+          
+        } catch (aiError) {
+          console.error('Failed to send AI response:', aiError);
+          notify.error('AI Response Failed', 'Failed to generate AI response.');
+        }
         setIsTyping(false);
-      }, 1000);
+      }, 1500);
     } catch (error) {
       console.error('Failed to send message:', error);
+      notify.error('Message Failed', 'Failed to send your message. Please try again.');
       setIsTyping(false);
     }
   };
 
-  const handleTyping = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleTyping = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInputMessage(e.target.value);
 
     if (currentConversation) {
@@ -368,29 +416,51 @@ const AdminSupportChat = () => {
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Input */}
+              {/* Message Input */}
               <div className="border-t p-4 bg-white">
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Ask any question..."
-                    value={inputMessage}
-                    onChange={handleTyping}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSendMessage();
-                      }
-                    }}
-                    disabled={!isConnected || isTyping}
-                    className="flex-1"
-                  />
+                <div className="flex gap-3 items-end">
+                  <div className="flex-1">
+                    <Textarea
+                      placeholder="Type your message here... (Press Enter to send, Shift+Enter for new line)"
+                      value={inputMessage}
+                      onChange={handleTyping}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage();
+                        }
+                      }}
+                      disabled={!isConnected || isTyping}
+                      className="min-h-[60px] max-h-[120px] resize-none"
+                      rows={2}
+                    />
+                    <div className="flex justify-between items-center mt-2">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        {isConnected ? (
+                          <span className="flex items-center gap-1">
+                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                            Connected
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1">
+                            <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                            Disconnected
+                          </span>
+                        )}
+                        {isTyping && <span className="text-blue-500">AI is typing...</span>}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {inputMessage.length}/1000
+                      </div>
+                    </div>
+                  </div>
                   <Button
                     onClick={handleSendMessage}
-                    disabled={!inputMessage.trim() || !isConnected || isTyping}
-                    className="bg-primary hover:bg-primary/90 transition-all duration-200 hover:scale-105"
+                    disabled={!inputMessage.trim() || !isConnected || isTyping || inputMessage.length > 1000}
+                    className="bg-primary hover:bg-primary/90 transition-all duration-200 hover:scale-105 h-[60px] w-[60px]"
                     size="icon"
                   >
-                    <Send className="h-4 w-4" />
+                    <Send className="h-5 w-5" />
                   </Button>
                 </div>
               </div>

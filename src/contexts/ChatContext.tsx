@@ -2,6 +2,8 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 import { realTimeChatService, ChatMessage, Conversation, TypingIndicator } from '../services/realTimeChat';
 import { useAuth } from './AuthContext';
 import { api } from '../services/api';
+import { notificationService } from '../services/notifications';
+import { notify } from '../components/Notifier';
 
 interface ChatContextType {
   // Connection status
@@ -70,6 +72,22 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
         message.car._id === currentConversation.carId &&
         message.sender._id === currentConversation.userId) {
         setMessages(prev => [...prev, message]);
+      }
+
+      // Trigger notifications for new messages (only if not from current user)
+      if (user && message.sender._id !== user.id) {
+        // Add to notification service
+        notificationService.notifyNewChatMessage(message.sender._id);
+        
+        // Show toast notification if not in current conversation
+        if (!currentConversation || 
+            message.car._id !== currentConversation.carId || 
+            message.sender._id !== currentConversation.userId) {
+          notify.info(
+            'New Message',
+            `${message.sender.fullname}: ${message.content.substring(0, 50)}${message.content.length > 50 ? '...' : ''}`
+          );
+        }
       }
     });
 
@@ -200,7 +218,10 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
             await realTimeChatService.sendMessage(recipientId, carId, content);
           } catch (realTimeError) {
             console.warn('Real-time message failed, but message was saved:', realTimeError);
+            notify.info('Message Sent', 'Your message was saved but may not be delivered instantly.');
           }
+        } else {
+          notify.info('Message Saved', 'Your message was saved and will be delivered when connection is restored.');
         }
 
         // Refresh conversations to update last message
@@ -210,6 +231,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       }
     } catch (error) {
       console.error('Failed to send message:', error);
+      notify.error('Message Failed', 'Failed to send your message. Please try again.');
       throw error;
     }
   };

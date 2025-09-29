@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Send, User, MessageCircle, Wifi, WifiOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -9,6 +10,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useChat } from "@/contexts/ChatContext";
 import { boltAI, SystemContext } from "@/services/boltAI";
 import { api } from "@/services/api";
+import { notificationService } from "@/services/notifications";
+import { notify } from "@/components/Notifier";
 
 const Support = () => {
   const { user } = useAuth();
@@ -83,6 +86,13 @@ const Support = () => {
     if (!currentConversation || !user || !inputMessage.trim()) return;
 
     const userMessage = inputMessage.trim();
+    
+    // Validate message length
+    if (userMessage.length > 1000) {
+      notify.error('Message too long', 'Please keep your message under 1000 characters.');
+      return;
+    }
+
     setInputMessage("");
     setIsTyping(true);
 
@@ -94,25 +104,42 @@ const Support = () => {
         userMessage
       );
 
+      notify.success('Message sent', 'Your message has been sent to support.');
+
       // Generate AI response
       const aiResponse = await boltAI.generateResponse(userMessage, systemContext, false);
 
-      // Send AI response
+      // Send AI response after a delay
       setTimeout(async () => {
-        await sendChatMessage(
-          'support-user-id',
-          currentConversation.carId,
-          aiResponse.response
-        );
+        try {
+          await sendChatMessage(
+            'support-user-id',
+            currentConversation.carId,
+            aiResponse.response
+          );
+          
+          // Trigger notification for AI response
+          notificationService.simulateNotification(
+            'success',
+            'chat',
+            'Support Response',
+            'You received a response from our support team'
+          );
+          
+        } catch (aiError) {
+          console.error('Failed to send AI response:', aiError);
+          notify.error('Support Response Failed', 'Failed to get response from support.');
+        }
         setIsTyping(false);
-      }, 1000 + Math.random() * 1000);
+      }, 1500 + Math.random() * 1000);
     } catch (error) {
       console.error('Failed to send message:', error);
+      notify.error('Message Failed', 'Failed to send your message. Please try again.');
       setIsTyping(false);
     }
   };
 
-  const handleTyping = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleTyping = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInputMessage(e.target.value);
 
     if (currentConversation) {
@@ -208,25 +235,49 @@ const Support = () => {
             <div ref={messagesEndRef} />
           </CardContent>
           <div className="border-t p-4">
-            <div className="flex gap-2">
-              <Input
-                placeholder="Ask any question..."
-                value={inputMessage}
-                onChange={handleTyping}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSend();
-                  }
-                }}
-                disabled={!isConnected || !currentConversation}
-              />
+            <div className="flex gap-3 items-end">
+              <div className="flex-1">
+                <Textarea
+                  placeholder="Type your message here... (Press Enter to send, Shift+Enter for new line)"
+                  value={inputMessage}
+                  onChange={handleTyping}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSend();
+                    }
+                  }}
+                  disabled={!isConnected || !currentConversation || isTyping}
+                  className="min-h-[60px] max-h-[120px] resize-none"
+                  rows={2}
+                />
+                <div className="flex justify-between items-center mt-2">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    {isConnected ? (
+                      <span className="flex items-center gap-1">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        Connected
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1">
+                        <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                        Disconnected
+                      </span>
+                    )}
+                    {isTyping && <span className="text-blue-500">Support is typing...</span>}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {inputMessage.length}/1000
+                  </div>
+                </div>
+              </div>
               <Button
                 onClick={handleSend}
-                disabled={!inputMessage.trim() || !isConnected || !currentConversation || isTyping}
-                className="bg-primary hover:bg-primary/90 transition-all duration-200 hover:scale-105"
+                disabled={!inputMessage.trim() || !isConnected || !currentConversation || isTyping || inputMessage.length > 1000}
+                className="bg-primary hover:bg-primary/90 transition-all duration-200 hover:scale-105 h-[60px] w-[60px]"
+                size="icon"
               >
-                <Send className="h-4 w-4" />
+                <Send className="h-5 w-5" />
               </Button>
             </div>
           </div>

@@ -76,7 +76,7 @@ const CarMessaging: React.FC<CarMessagingProps> = ({
       
       if (unreadMessages.length > 0) {
         const messageIds = unreadMessages.map(msg => msg._id);
-        markAsRead(messageIds, sellerId);
+        markAsRead(messageIds, sellerId).catch(console.error);
       }
     }
   }, [isExpanded, messages, user, sellerId, markAsRead]);

@@ -21,7 +21,7 @@ interface ChatContextType {
   sendMessage: (recipientId: string, carId: string, content: string) => Promise<void>;
   startTyping: (recipientId: string, carId: string) => void;
   stopTyping: (recipientId: string, carId: string) => void;
-  markAsRead: (messageIds: string[], recipientId: string) => void;
+  markAsRead: (messageIds: string[], recipientId: string) => Promise<void>;
 
   // UI state
   setCurrentConversation: (conversation: Conversation | null) => void;

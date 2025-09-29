@@ -5,13 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Car, Upload, Save, ArrowLeft, X } from 'lucide-react';
+import { Car, Save, ArrowLeft, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '@/services/api';
-import { uploadImages } from '@/services/upload';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { uploadImagesToCloudinary } from '@/services/cloudinaryUpload';
 
 // Schema based on the backend carSchema
 const carSchema = z.object({
@@ -49,7 +49,6 @@ const AddCar = () => {
       mileage: 0,
       fuelType: 'petrol',
       transmission: 'automatic',
-      status: 'available',
       description: '',
       images: [],
       primaryImage: '',
@@ -70,22 +69,10 @@ const AddCar = () => {
       return;
     }
     setImageFiles((prev) => [...prev, ...files]);
-    const newImageUrls = files.map((file) => URL.createObjectURL(file));
-    const updatedImages = [...watch('images'), ...newImageUrls];
-    setValue('images', updatedImages);
-    if (!watch('primaryImage') && updatedImages.length > 0) {
-      setValue('primaryImage', updatedImages[0]);
-    }
   };
 
   const removeImage = (index: number) => {
-    const updatedImageFiles = imageFiles.filter((_, i) => i !== index);
-    setImageFiles(updatedImageFiles);
-    const updatedImages = updatedImageFiles.map((file) => URL.createObjectURL(file));
-    setValue('images', updatedImages);
-    if (watch('primaryImage') === URL.createObjectURL(imageFiles[index])) {
-      setValue('primaryImage', updatedImages.length > 0 ? updatedImages[0] : '');
-    }
+    setImageFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
   const onSubmit = async (data: FormValues) => {
@@ -93,7 +80,7 @@ const AddCar = () => {
     try {
       let imageUrls: string[] = [];
       if (imageFiles.length > 0) {
-        imageUrls = await uploadImages(imageFiles);
+        imageUrls = await uploadImagesToCloudinary(imageFiles);
       }
 
       const carData = {
@@ -318,11 +305,11 @@ const AddCar = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="vin">Plate Number</Label>
+                    <Label htmlFor="vin">VIN</Label>
                     <Input
                       id="vin"
                       {...register('vin')}
-                      placeholder="Enter Vehicle Plate Number"
+                      placeholder="Vehicle Identification Number"
                       className={errors.vin ? 'border-destructive' : ''}
                     />
                     {errors.vin && <p className="text-sm text-destructive">{errors.vin.message}</p>}

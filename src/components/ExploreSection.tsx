@@ -78,9 +78,9 @@ const ExploreSection = () => {
   };
 
   const formatPrice = (price: number) =>
-    new Intl.NumberFormat('en-US', {
+    new Intl.NumberFormat('en-RW', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'RWF',
       minimumFractionDigits: 0,
     }).format(price);
 

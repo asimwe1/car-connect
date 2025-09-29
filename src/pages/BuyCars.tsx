@@ -6,11 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Search, Filter, Car, Fuel, Settings, Users, MapPin, Heart } from "lucide-react";
+import { Search, Filter, Car, Fuel, Settings, Palette, MapPin, Heart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { api } from "@/services/api";
-import LazyImage from "@/components/LazyImage";
 
 interface Car {
   _id: string;
@@ -21,18 +20,14 @@ interface Car {
   mileage: number;
   fuelType: string;
   transmission: string;
-  status: string;
+  status: "available" | "reserved" | "sold";
   description?: string;
   images: string[];
   primaryImage: string;
   location?: string;
   bodyType?: string;
   color?: string;
-  owner: {
-    _id: string;
-    fullname: string;
-    email: string;
-  };
+  owner: string; // ObjectId as string
 }
 
 const BuyCars = () => {
@@ -41,28 +36,40 @@ const BuyCars = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedMake, setSelectedMake] = useState("all");
   const [selectedYear, setSelectedYear] = useState("all");
+  const [selectedFuelType, setSelectedFuelType] = useState("all");
+  const [selectedTransmission, setSelectedTransmission] = useState("all");
+  const [selectedBodyType, setSelectedBodyType] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
+  const [wishlist, setWishlist] = useState<string[]>([]);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
+    // Load wishlist from localStorage
+    const savedWishlist = localStorage.getItem("wishlist");
+    if (savedWishlist) {
+      setWishlist(JSON.parse(savedWishlist));
+    }
     fetchCars();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchTerm, selectedMake, selectedYear, sortBy]);
+  }, [searchTerm, selectedMake, selectedYear, selectedFuelType, selectedTransmission, selectedBodyType, sortBy]);
 
   const fetchCars = async () => {
     try {
       setLoading(true);
-      const params = {
+      const params: any = {
         q: searchTerm || undefined,
         status: "available",
-        sellEnabled: true,
-        make: selectedMake === "all" ? undefined : selectedMake,
-        year: selectedYear === "all" ? undefined : selectedYear,
-        sortBy: sortBy,
         page: 1,
         limit: 50,
       };
+
+      if (selectedMake !== "all") params.make = selectedMake;
+      if (selectedYear !== "all") params.year = parseInt(selectedYear);
+      if (selectedFuelType !== "all") params.fuelType = selectedFuelType;
+      if (selectedTransmission !== "all") params.transmission = selectedTransmission;
+      if (selectedBodyType !== "all") params.bodyType = selectedBodyType;
+      if (sortBy) params.sortBy = sortBy;
 
       const response = await api.getCars(params);
 
@@ -72,7 +79,7 @@ const BuyCars = () => {
         setCars([]);
         toast({
           title: "No Data",
-          description: "No cars found from the server. Try adjusting your filters.",
+          description: "No cars found. Try adjusting your filters.",
           variant: "destructive",
         });
       }
@@ -81,7 +88,9 @@ const BuyCars = () => {
       setCars([]);
       toast({
         title: "Error",
-        description: "Failed to load cars from the server. Please try again later.",
+        description: error instanceof Error && error.message.includes("timed out")
+          ? "Request timed out. Please check your network and try again."
+          : "Failed to load cars. Please try again later.",
         variant: "destructive",
       });
     } finally {
@@ -90,26 +99,41 @@ const BuyCars = () => {
   };
 
   const handleAddToWishlist = (carId: string) => {
-    toast({
-      title: "Feature Coming Soon",
-      description: "Wishlist functionality will be available soon.",
-    });
+    let updatedWishlist: string[];
+    if (wishlist.includes(carId)) {
+      updatedWishlist = wishlist.filter((id) => id !== carId);
+      toast({
+        title: "Removed from Wishlist",
+        description: "Car removed from your wishlist.",
+      });
+    } else {
+      updatedWishlist = [...wishlist, carId];
+      toast({
+        title: "Added to Wishlist",
+        description: "Car added to your wishlist.",
+      });
+    }
+    setWishlist(updatedWishlist);
+    localStorage.setItem("wishlist", JSON.stringify(updatedWishlist));
   };
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat("en-RW", {
       style: "currency",
-      currency: "USD",
+      currency: "RWF",
       minimumFractionDigits: 0,
     }).format(price);
   };
 
-  const makes = ["All", "Toyota", "Ford", "Mercedes Benz", "Audi", "BMW", "Nissan", "Honda"];
-  const years = ["All", "2024", "2023", "2022", "2021", "2020", "2019", "2018"];
+  const makes = ["all", "Toyota", "Ford", "Mercedes Benz", "Audi", "BMW", "Nissan", "Honda"];
+  const years = ["all", "2025", "2024", "2023", "2022", "2021", "2020", "2019", "2018"];
+  const fuelTypes = ["all", "petrol", "diesel", "electric", "hybrid", "other"];
+  const transmissions = ["all", "automatic", "manual"];
+  const bodyTypes = ["all", "SUV", "Sedan", "Hatchback", "Coupe", "Pickup", "Wagon", "Convertible", "Other"];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-accent/20 to-primary/10 p-8">
-      <SEO title="Buy Cars – CarHub Rwanda" description="Browse verified cars for sale in Rwanda. Filter by make, model, year, mileage, and condition." />
+      <SEO title="Buy Cars – CarHub Rwanda" description="Browse verified cars for sale in Rwanda. Filter by make, model, year, fuel type, transmission, and more." />
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
@@ -122,11 +146,11 @@ const BuyCars = () => {
         {/* Filters */}
         <Card className="mb-8">
           <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
               <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search cars..."
+                  placeholder="Search by make, model..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -139,8 +163,8 @@ const BuyCars = () => {
                 </SelectTrigger>
                 <SelectContent>
                   {makes.map((make) => (
-                    <SelectItem key={make} value={make === "All" ? "all" : make}>
-                      {make}
+                    <SelectItem key={make} value={make}>
+                      {make.charAt(0).toUpperCase() + make.slice(1)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -152,36 +176,57 @@ const BuyCars = () => {
                 </SelectTrigger>
                 <SelectContent>
                   {years.map((year) => (
-                    <SelectItem key={year} value={year === "All" ? "all" : year}>
+                    <SelectItem key={year} value={year}>
                       {year}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
 
-              <Select value={sortBy} onValueChange={setSortBy}>
+              <Select value={selectedFuelType} onValueChange={setSelectedFuelType}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Sort by" />
+                  <SelectValue placeholder="Fuel Type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="newest">Newest First</SelectItem>
-                  <SelectItem value="price_low">Price: Low to High</SelectItem>
-                  <SelectItem value="price_high">Price: High to Low</SelectItem>
-                  <SelectItem value="year_new">Year: Newest</SelectItem>
-                  <SelectItem value="mileage">Mileage: Low to High</SelectItem>
+                  {fuelTypes.map((fuel) => (
+                    <SelectItem key={fuel} value={fuel}>
+                      {fuel.charAt(0).toUpperCase() + fuel.slice(1)}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
 
-              <Button variant="outline" className="flex items-center gap-2">
-                <Filter className="h-4 w-4" />
-                More Filters
-              </Button>
+              <Select value={selectedTransmission} onValueChange={setSelectedTransmission}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Transmission" />
+                </SelectTrigger>
+                <SelectContent>
+                  {transmissions.map((trans) => (
+                    <SelectItem key={trans} value={trans}>
+                      {trans.charAt(0).toUpperCase() + trans.slice(1)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={selectedBodyType} onValueChange={setSelectedBodyType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Body Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {bodyTypes.map((body) => (
+                    <SelectItem key={body} value={body}>
+                      {body.charAt(0).toUpperCase() + body.slice(1)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
         </Card>
 
-        {/* Results Count */}
-        <div className="mb-6">
+        {/* Sort and Results */}
+        <div className="flex justify-between items-center mb-6">
           <p className="text-sm text-muted-foreground">
             {loading ? (
               <div className="flex items-center gap-2">
@@ -192,6 +237,18 @@ const BuyCars = () => {
               `${cars.length} car${cars.length !== 1 ? "s" : ""} found`
             )}
           </p>
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="newest">Newest First</SelectItem>
+              <SelectItem value="price_low">Price: Low to High</SelectItem>
+              <SelectItem value="price_high">Price: High to Low</SelectItem>
+              <SelectItem value="year_new">Year: Newest</SelectItem>
+              <SelectItem value="mileage_low">Mileage: Low to High</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Cars Grid */}
@@ -222,6 +279,9 @@ const BuyCars = () => {
                 setSearchTerm("");
                 setSelectedMake("all");
                 setSelectedYear("all");
+                setSelectedFuelType("all");
+                setSelectedTransmission("all");
+                setSelectedBodyType("all");
                 setSortBy("newest");
               }}
             >
@@ -229,73 +289,72 @@ const BuyCars = () => {
             </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg-grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {cars.map((car) => (
               <Card key={car._id} className="overflow-hidden hover:shadow-lg transition-shadow group">
                 <div className="relative">
-                  <LazyImage
-                    src={car.primaryImage || car.images?.[0]}
+                  <img
+                    src={car.primaryImage || car.images?.[0] || "/placeholder-car.jpg"}
                     alt={`${car.make} ${car.model}`}
-                    containerClassName="w-full h-48"
-                    className="group-hover:scale-105"
+                    className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                    loading="lazy"
+                    onError={(e) => (e.currentTarget.src = "/placeholder-car.jpg")}
                   />
-
                   {car.status === "available" && (
                     <Badge className="absolute top-2 left-2 bg-green-500">
                       Available
                     </Badge>
                   )}
-
                   {car.status === "reserved" && (
                     <Badge className="absolute top-2 left-2 bg-yellow-500">
                       Reserved
                     </Badge>
                   )}
-
+                  {car.status === "sold" && (
+                    <Badge className="absolute top-2 left-2 bg-red-500">
+                      Sold
+                    </Badge>
+                  )}
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="absolute top-2 right-2 bg-white/80 hover:bg-white text-red-500 hover:text-red-600"
+                    className={`absolute top-2 right-2 bg-white/80 hover:bg-white ${
+                      wishlist.includes(car._id) ? "text-red-500" : "text-gray-500"
+                    } hover:text-red-600`}
                     onClick={() => handleAddToWishlist(car._id)}
                   >
-                    <Heart className="h-4 w-4" />
+                    <Heart className={`h-4 w-4 ${wishlist.includes(car._id) ? "fill-red-500" : ""}`} />
                   </Button>
                 </div>
-
                 <CardContent className="p-4">
                   <h3 className="font-semibold text-lg mb-2">{car.make} {car.model}</h3>
                   <p className="text-sm text-muted-foreground mb-3">
-                    {car.year} • {car.bodyType || "Vehicle"}
+                    {car.year} • {car.bodyType || "N/A"}
                   </p>
-
                   <div className="grid grid-cols-2 gap-2 mb-4 text-xs">
                     <div className="flex items-center gap-1">
                       <Car className="h-3 w-3" />
-                      <span>{car.mileage.toLocaleString()} Miles</span>
+                      <span>{car.mileage ? `${car.mileage.toLocaleString()} km` : "N/A"}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Fuel className="h-3 w-3" />
-                      <span>{car.fuelType}</span>
+                      <span>{car.fuelType ? car.fuelType.charAt(0).toUpperCase() + car.fuelType.slice(1) : "N/A"}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Settings className="h-3 w-3" />
-                      <span>{car.transmission}</span>
+                      <span>{car.transmission ? car.transmission.charAt(0).toUpperCase() + car.transmission.slice(1) : "N/A"}</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <Users className="h-3 w-3" />
+                      <Palette className="h-3 w-3" />
                       <span>{car.color || "N/A"}</span>
                     </div>
                   </div>
-
                   <div className="flex items-center gap-2 mb-3 text-xs">
                     <MapPin className="h-3 w-3" />
-                    <span>{car.location || "Location not specified"}</span>
+                    <span>{car.location || "N/A"}</span>
                   </div>
-
                   <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-lg font-bold text-primary">{formatPrice(car.price)}</p>
-                    </div>
+                    <p className="text-lg font-bold text-primary">{formatPrice(car.price)}</p>
                     <Button size="sm" onClick={() => navigate(`/car/${car._id}`)}>
                       View Details
                     </Button>

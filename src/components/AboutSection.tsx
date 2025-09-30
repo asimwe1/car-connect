@@ -1,5 +1,7 @@
 import React from 'react';
 import { useInView } from 'react-intersection-observer';
+import carConnect from '@/assets/carconnect.png';
+import carconnect from '@/assets/car-connect.png';
 
 const AboutSection = () => {
   const { ref, inView } = useInView({
@@ -28,14 +30,14 @@ const AboutSection = () => {
             <div className={`relative transition-all duration-700 delay-400 ${inView ? 'animate-zoom-in' : 'opacity-0'}`}>
               <div className="grid grid-cols-2 gap-4">
                 <img
-                  src="/placeholder.svg"
-                  alt="Premium car 1"
-                  className="w-full h-32 object-cover rounded-lg"
+                  src={carConnect}
+                  alt="carconnect"
+                  className="w-full h-64 object-cover rounded-lg"
                 />
                 <img
-                  src="/placeholder.svg"
-                  alt="Premium car 2"
-                  className="w-full h-32 object-cover rounded-lg mt-8"
+                  src={ carconnect }
+                  alt="carconnect"
+                  className="w-full h-40 object-cover rounded-lg mt-8"
                 />
               </div>
             </div>

@@ -7,6 +7,10 @@ import mercedesLogo from '@/assets/brands/mercedes-logo.png';
 import bmwLogo from '@/assets/brands/bmw-logo.png';
 import landroverLogo from '@/assets/brands/landrover-logo.png';
 import dodgeLogo from '@/assets/brands/dodge-logo.png';
+import audiLogo from '@/assets/brands/audi-logo.png';
+import fordLogo from '@/assets/brands/ford-logo.png';
+import rangeRoverLogo from '@/assets/brands/range-rover.png';
+import chevroletLogo from '@/assets/brands/chevrolet-logo.png';
 
 const brands = [
   { name: 'Toyota', logo: toyotaLogo, count: '120+ Models' },
@@ -17,6 +21,10 @@ const brands = [
   { name: 'BMW', logo: bmwLogo, count: '60+ Models' },
   { name: 'Land Rover', logo: landroverLogo, count: '25+ Models' },
   { name: 'Dodge', logo: dodgeLogo, count: '40+ Models' },
+  { name: 'Audi', logo: audiLogo, count: '50+ Models' },
+  { name: 'Ford', logo: fordLogo, count: '110+ Models' },
+  { name: 'Chevrolet', logo: chevroletLogo, count: '20+ Models' },
+  { name: 'Range Rover', logo: rangeRoverLogo, count: '10+ Models' },
 ];
 
 const BrandSection = () => {

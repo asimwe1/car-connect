@@ -54,7 +54,7 @@ const HeroSection = () => {
               <div className="text-white/80">Premium Cars</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-white">8</div>
+              <div className="text-3xl font-bold text-white">10+</div>
               <div className="text-white/80">Luxury Brands</div>
             </div>
             <div className="text-center">

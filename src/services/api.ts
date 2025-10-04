@@ -287,7 +287,7 @@ class ApiService {
     if (params?.q) searchParams.append('q', params.q);
     if (params?.status) searchParams.append('status', params.status);
     const qs = searchParams.toString();
-    return this.request(`/admin/orders${qs ? `?${qs}` : ''}`);
+    return this.request(`/orders${qs ? `?${qs}` : ''}`);
   }
 
   async getAdminBookings(params?: { page?: number; limit?: number; q?: string; status?: string }) {
@@ -297,7 +297,7 @@ class ApiService {
     if (params?.q) searchParams.append('q', params.q);
     if (params?.status) searchParams.append('status', params.status);
     const qs = searchParams.toString();
-    return this.request(`/admin/bookings${qs ? `?${qs}` : ''}`);
+    return this.request(`/bookings${qs ? `?${qs}` : ''}`);
   }
 
   // User methods (admin only)

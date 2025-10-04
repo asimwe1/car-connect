@@ -10,7 +10,7 @@ export default defineConfig(({ mode }) => ({
     port: 3000,
     proxy: mode === 'development' ? {
       "/api": {
-        target: "http://localhost:5000",
+        target: "https://carhubconnect.onrender.com",
         changeOrigin: true,
         secure: false,
       },

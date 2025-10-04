@@ -4,6 +4,9 @@ const RAW_API_BASE = import.meta.env.VITE_API_URL || 'https://carhubconnect.onre
 
 // Normalize to HTTPS to avoid "mixed content" in production
 const API_BASE_URL = (() => {
+  if  (import.meta.env.DEV) {
+    return '/api';
+  }
   try {
     const url = new URL(RAW_API_BASE);
     // In production, always use HTTPS
@@ -34,12 +37,6 @@ class ApiService {
     const defaultHeaders: HeadersInit = {
       'Content-Type': 'application/json',
     };
-
-    // Add auth token if available
-    const token = this.getToken();
-    if (token) {
-      defaultHeaders.Authorization = `Bearer ${token}`;
-    }
 
     const config: RequestInit = {
       ...options,

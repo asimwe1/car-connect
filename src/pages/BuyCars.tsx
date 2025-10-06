@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import SEO from "@/components/SEO";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,8 +43,14 @@ const BuyCars = () => {
   const [wishlist, setWishlist] = useState<string[]>([]);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
 
+  // Initialize filters from URL query params
   useEffect(() => {
+    const brandFromUrl = searchParams.get("brand");
+    if (brandFromUrl && brandFromUrl !== "all") {
+      setSelectedMake(brandFromUrl);
+    }
     // Load wishlist from localStorage
     const savedWishlist = localStorage.getItem("wishlist");
     if (savedWishlist) {
@@ -52,7 +58,7 @@ const BuyCars = () => {
     }
     fetchCars();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchTerm, selectedMake, selectedYear, selectedFuelType, selectedTransmission, selectedBodyType, sortBy]);
+  }, [searchParams, searchTerm, selectedYear, selectedFuelType, selectedTransmission, selectedBodyType, sortBy]);
 
   const fetchCars = async () => {
     try {
@@ -125,11 +131,23 @@ const BuyCars = () => {
     }).format(price);
   };
 
-  const makes = ["all", "Toyota", "Ford", "Mercedes Benz", "Audi", "BMW", "Nissan", "Honda"];
+  const makes = ["all", "Toyota", "Ford", "Mercedes-Benz", "Audi", "BMW", "Nissan", "Honda"];
   const years = ["all", "2025", "2024", "2023", "2022", "2021", "2020", "2019", "2018"];
   const fuelTypes = ["all", "petrol", "diesel", "electric", "hybrid", "other"];
   const transmissions = ["all", "automatic", "manual"];
   const bodyTypes = ["all", "SUV", "Sedan", "Hatchback", "Coupe", "Pickup", "Wagon", "Convertible", "Other"];
+
+  // Update URL params when filters change
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (selectedMake !== "all") params.set("brand", selectedMake);
+    if (selectedYear !== "all") params.set("year", selectedYear);
+    if (selectedFuelType !== "all") params.set("fuelType", selectedFuelType);
+    if (selectedTransmission !== "all") params.set("transmission", selectedTransmission);
+    if (selectedBodyType !== "all") params.set("bodyType", selectedBodyType);
+    if (sortBy !== "newest") params.set("sortBy", sortBy);
+    setSearchParams(params);
+  }, [selectedMake, selectedYear, selectedFuelType, selectedTransmission, selectedBodyType, sortBy, setSearchParams]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-accent/20 to-primary/10 p-8">
@@ -283,6 +301,7 @@ const BuyCars = () => {
                 setSelectedTransmission("all");
                 setSelectedBodyType("all");
                 setSortBy("newest");
+                setSearchParams({}); // Clear URL params
               }}
             >
               Clear Filters

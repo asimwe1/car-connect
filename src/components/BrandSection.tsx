@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import toyotaLogo from '@/assets/brands/toyota-logo.png';
 import porscheLogo from '@/assets/brands/porsche-logo.png';
 import kiaLogo from '@/assets/brands/kia-logo.png';
@@ -28,6 +29,12 @@ const brands = [
 ];
 
 const BrandSection = () => {
+  const navigate = useNavigate();
+
+  const handleBrandClick = (brandName) => {
+    navigate(`/buy-cars?brand=${encodeURIComponent(brandName)}`);
+  };
+
   return (
     <section className="py-20 bg-gradient-to-b from-background to-accent/10">
       <div className="max-w-7xl mx-auto px-4">
@@ -45,6 +52,7 @@ const BrandSection = () => {
             <div
               key={brand.name}
               className={`brand-card group cursor-pointer fade-in-up stagger-delay-${(index % 4) + 1}`}
+              onClick={() => handleBrandClick(brand.name)}
             >
               <div className="flex flex-col items-center space-y-4">
                 <div className="w-20 h-20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">

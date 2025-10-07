@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import SEO from "@/components/SEO";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Search, Filter, Car, Fuel, Settings, Palette, MapPin, Heart } from "lucide-react";
+import { Search, Car, Fuel, Settings, Palette, MapPin, Heart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { api } from "@/services/api";
@@ -32,6 +32,7 @@ interface Car {
 
 const BuyCars = () => {
   const [cars, setCars] = useState<Car[]>([]);
+  const [allCars, setAllCars] = useState<Car[]>([]); // Store unfiltered cars
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedMake, setSelectedMake] = useState("all");
@@ -43,46 +44,38 @@ const BuyCars = () => {
   const [wishlist, setWishlist] = useState<string[]>([]);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
 
-  // Initialize filters from URL query params
+  // Initialize state from URL and fetch cars
   useEffect(() => {
     const brandFromUrl = searchParams.get("brand");
     if (brandFromUrl && brandFromUrl !== "all") {
-      setSelectedMake(brandFromUrl);
+      const adjustedMake = brandFromUrl === "mercedes-benz" ? "Mercedes Benz" : brandFromUrl;
+      setSelectedMake(adjustedMake);
     }
-    // Load wishlist from localStorage
     const savedWishlist = localStorage.getItem("wishlist");
     if (savedWishlist) {
       setWishlist(JSON.parse(savedWishlist));
     }
     fetchCars();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, searchTerm, selectedYear, selectedFuelType, selectedTransmission, selectedBodyType, sortBy]);
+  }, []);
 
   const fetchCars = async () => {
     try {
       setLoading(true);
-      const params: any = {
-        q: searchTerm || undefined,
+      const params = {
         status: "available",
         page: 1,
-        limit: 50,
+        limit: 1000, // Increase limit to fetch more cars for filtering
       };
-
-      if (selectedMake !== "all") params.make = selectedMake;
-      if (selectedYear !== "all") params.year = parseInt(selectedYear);
-      if (selectedFuelType !== "all") params.fuelType = selectedFuelType;
-      if (selectedTransmission !== "all") params.transmission = selectedTransmission;
-      if (selectedBodyType !== "all") params.bodyType = selectedBodyType;
-      if (sortBy) params.sortBy = sortBy;
-
+      console.log("API call with params:", params);
       const response = await api.getCars(params);
 
       if (response.data?.items && Array.isArray(response.data.items)) {
-        setCars(response.data.items);
+        setAllCars(response.data.items);
       } else {
-        setCars([]);
+        setAllCars([]);
         toast({
           title: "No Data",
           description: "No cars found. Try adjusting your filters.",
@@ -91,7 +84,7 @@ const BuyCars = () => {
       }
     } catch (error) {
       console.error("Error fetching cars:", error);
-      setCars([]);
+      setAllCars([]);
       toast({
         title: "Error",
         description: error instanceof Error && error.message.includes("timed out")
@@ -103,6 +96,92 @@ const BuyCars = () => {
       setLoading(false);
     }
   };
+
+  // Update URL params when filters change
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (selectedMake !== "all") {
+      const urlMake = selectedMake === "Mercedes Benz" ? "mercedes-benz" : selectedMake.toLowerCase();
+      params.set("brand", urlMake);
+    }
+    if (selectedYear !== "all") params.set("year", selectedYear);
+    if (selectedFuelType !== "all") params.set("fuelType", selectedFuelType);
+    if (selectedTransmission !== "all") params.set("transmission", selectedTransmission);
+    if (selectedBodyType !== "all") params.set("bodyType", selectedBodyType);
+    if (sortBy !== "newest") params.set("sortBy", sortBy);
+    const currentParams = new URLSearchParams(window.location.search);
+    let shouldUpdate = false;
+    params.forEach((value, key) => {
+      if (currentParams.get(key) !== value) shouldUpdate = true;
+    });
+    if (shouldUpdate) window.history.pushState({}, "", `${window.location.pathname}?${params.toString()}`);
+  }, [selectedMake, selectedYear, selectedFuelType, selectedTransmission, selectedBodyType, sortBy]);
+
+  // Filter and sort cars on the frontend
+  const filteredCars = useMemo(() => {
+    let result = [...allCars];
+
+    // Apply search term (case-insensitive regex-like filtering)
+    if (searchTerm) {
+      const searchRegex = new RegExp(searchTerm, "i");
+      result = result.filter((car) =>
+        searchRegex.test(car.make) ||
+        searchRegex.test(car.model) ||
+        (car.description && searchRegex.test(car.description))
+      );
+    }
+
+    // Apply make filter (case-insensitive exact match)
+    if (selectedMake !== "all") {
+      const makeRegex = new RegExp(`^${selectedMake}$`, "i");
+      result = result.filter((car) => makeRegex.test(car.make));
+    }
+
+    // Apply year filter (exact match)
+    if (selectedYear !== "all") {
+      result = result.filter((car) => car.year === parseInt(selectedYear));
+    }
+
+    // Apply fuelType filter (case-insensitive exact match)
+    if (selectedFuelType !== "all") {
+      const fuelRegex = new RegExp(`^${selectedFuelType}$`, "i");
+      result = result.filter((car) => car.fuelType && fuelRegex.test(car.fuelType));
+    }
+
+    // Apply transmission filter (case-insensitive exact match)
+    if (selectedTransmission !== "all") {
+      const transRegex = new RegExp(`^${selectedTransmission}$`, "i");
+      result = result.filter((car) => car.transmission && transRegex.test(car.transmission));
+    }
+
+    // Apply bodyType filter (case-insensitive exact match)
+    if (selectedBodyType !== "all") {
+      const bodyRegex = new RegExp(`^${selectedBodyType}$`, "i");
+      result = result.filter((car) => car.bodyType && bodyRegex.test(car.bodyType));
+    }
+
+    // Apply sorting
+    switch (sortBy) {
+      case "price_low":
+        result.sort((a, b) => a.price - b.price);
+        break;
+      case "price_high":
+        result.sort((a, b) => b.price - a.price);
+        break;
+      case "year_new":
+        result.sort((a, b) => b.year - a.year);
+        break;
+      case "mileage_low":
+        result.sort((a, b) => (a.mileage || 0) - (b.mileage || 0));
+        break;
+      case "newest":
+      default:
+        result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        break;
+    }
+
+    return result;
+  }, [allCars, searchTerm, selectedMake, selectedYear, selectedFuelType, selectedTransmission, selectedBodyType, sortBy]);
 
   const handleAddToWishlist = (carId: string) => {
     let updatedWishlist: string[];
@@ -136,18 +215,6 @@ const BuyCars = () => {
   const fuelTypes = ["all", "petrol", "diesel", "electric", "hybrid", "other"];
   const transmissions = ["all", "automatic", "manual"];
   const bodyTypes = ["all", "SUV", "Sedan", "Hatchback", "Coupe", "Pickup", "Wagon", "Convertible", "Other"];
-
-  // Update URL params when filters change
-  useEffect(() => {
-    const params = new URLSearchParams();
-    if (selectedMake !== "all") params.set("brand", selectedMake);
-    if (selectedYear !== "all") params.set("year", selectedYear);
-    if (selectedFuelType !== "all") params.set("fuelType", selectedFuelType);
-    if (selectedTransmission !== "all") params.set("transmission", selectedTransmission);
-    if (selectedBodyType !== "all") params.set("bodyType", selectedBodyType);
-    if (sortBy !== "newest") params.set("sortBy", sortBy);
-    setSearchParams(params);
-  }, [selectedMake, selectedYear, selectedFuelType, selectedTransmission, selectedBodyType, sortBy, setSearchParams]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-accent/20 to-primary/10 p-8">
@@ -252,7 +319,7 @@ const BuyCars = () => {
                 Loading cars...
               </div>
             ) : (
-              `${cars.length} car${cars.length !== 1 ? "s" : ""} found`
+              `${filteredCars.length} car${filteredCars.length !== 1 ? "s" : ""} found`
             )}
           </p>
           <Select value={sortBy} onValueChange={setSortBy}>
@@ -285,7 +352,7 @@ const BuyCars = () => {
               </Card>
             ))}
           </div>
-        ) : cars.length === 0 ? (
+        ) : filteredCars.length === 0 ? (
           <div className="text-center py-12">
             <Car className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">No Cars Found</h3>
@@ -301,7 +368,7 @@ const BuyCars = () => {
                 setSelectedTransmission("all");
                 setSelectedBodyType("all");
                 setSortBy("newest");
-                setSearchParams({}); // Clear URL params
+                window.history.pushState({}, "", "/buy-cars");
               }}
             >
               Clear Filters
@@ -309,7 +376,7 @@ const BuyCars = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {cars.map((car) => (
+            {filteredCars.map((car) => (
               <Card key={car._id} className="overflow-hidden hover:shadow-lg transition-shadow group">
                 <div className="relative">
                   <img

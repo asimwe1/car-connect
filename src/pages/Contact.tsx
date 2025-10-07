@@ -103,7 +103,7 @@ const Contact = () => {
                       id="phoneNumber"
                       name="phoneNumber"
                       type="tel"
-                      placeholder="+1 (555) 123-4567"
+                      placeholder="+250 788 881 400"
                       value={formData.phoneNumber}
                       onChange={handleInputChange}
                       className="search-input pl-10"
@@ -151,7 +151,7 @@ const Contact = () => {
                   </div>
                   <div>
                     <h3 className="font-semibold text-lg mb-1">Phone</h3>
-                    <p className="text-muted-foreground">+1 (555) 123-4567</p>
+                    <p className="text-muted-foreground">+250 788 881 400</p>
                     <p className="text-sm text-muted-foreground">Available 24/7</p>
                   </div>
                 </div>
@@ -166,8 +166,8 @@ const Contact = () => {
                   </div>
                   <div>
                     <h3 className="font-semibold text-lg mb-1">Email</h3>
-                    <p className="text-muted-foreground">info@premiumcars.com</p>
-                    <p className="text-sm text-muted-foreground">We respond within 24 hours</p>
+                    <p className="text-muted-foreground">info@car-connect.rw</p>
+                    <p className="text-sm text-muted-foreground">We respond within 48 hours</p>
                   </div>
                 </div>
               </CardContent>
@@ -181,8 +181,8 @@ const Contact = () => {
                   </div>
                   <div>
                     <h3 className="font-semibold text-lg mb-1">Address</h3>
-                    <p className="text-muted-foreground">123 Luxury Lane</p>
-                    <p className="text-muted-foreground">Premium City, PC 12345</p>
+                    <p className="text-muted-foreground">kigali city, Rwanda</p>
+                    <p className="text-muted-foreground">KN 84 ST, nyarugenge, </p>
                   </div>
                 </div>
               </CardContent>

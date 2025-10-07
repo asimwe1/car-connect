@@ -40,42 +40,53 @@ const SignUp = () => {
     defaultValues: { fullname: '', phone: '', password: '', confirmPassword: '' }
   });
 
-  const onSubmit = async (data: FormValues) => {
-    setIsLoading(true);
+const onSubmit = async (data: FormValues) => {
+  setIsLoading(true);
 
-    try {
-      const result = await register(data.fullname, data.phone, data.password);
-      if (!result.success) {
-        toast({
-          title: "Error",
-          description: result.message || "An unexpected error occurred",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Store phone number for OTP verification
-      localStorage.setItem('pendingVerification', JSON.stringify({
-        phone: data.phone,
-        fullname: data.fullname
-      }));
-
-      toast({
-        title: 'Verification Code Sent',
-        description: 'Please check your phone for the verification code'
-      });
-      navigate('/verify-otp');
-    } catch (error: any) {
-      console.error('SignUp error:', error);
+  try {
+    const result = await register(data.fullname, data.phone, data.password);
+    if (!result.success) {
       toast({
         title: "Error",
-        description: error.message || "An unexpected error occurred",
+        description: result.message || "An unexpected error occurred",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
+      return;
     }
-  };
+
+    // OTP verification part commented out for now
+    /*
+    // Store phone number for OTP verification
+    localStorage.setItem('pendingVerification', JSON.stringify({
+      phone: data.phone,
+      fullname: data.fullname
+    }));
+
+    toast({
+      title: 'Verification Code Sent',
+      description: 'Please check your phone for the verification code'
+    });
+    navigate('/verify-otp');
+    */
+
+    // Optional: You can show a success toast directly for now
+    toast({
+      title: 'Registration Successful',
+      description: 'You have successfully signed up'
+    });
+    navigate('/signin');
+
+  } catch (error: any) {
+    console.error('SignUp error:', error);
+    toast({
+      title: "Error",
+      description: error.message || "An unexpected error occurred",
+      variant: "destructive",
+    });
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-accent/20 to-primary/10 flex items-center justify-center p-4">

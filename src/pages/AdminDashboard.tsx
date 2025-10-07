@@ -104,7 +104,7 @@ const AdminDashboard = () => {
     { icon: BarChart3, label: 'Dashboard', href: '/admin-dashboard', active: true },
     { icon: Car, label: 'Manage Cars', href: '/admin/cars' },
     { icon: Plus, label: 'Add New Car', href: '/admin/add-car' },
-    { icon: Calendar, label: 'Bookings', href: '/admin/bookings' },
+    // { icon: Calendar, label: 'Bookings', href: '/admin/bookings' },
     { icon: DollarSign, label: 'Orders', href: '/admin/orders' },
     // Settings and Support moved to bottom section
   ];

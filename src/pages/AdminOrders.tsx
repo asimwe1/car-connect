@@ -143,7 +143,7 @@ const AdminOrders = () => {
     });
   };
 
-  const formatPrice = (price: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(price);
+  const formatPrice = (price: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'RWF', minimumFractionDigits: 0 }).format(price);
 
   const filteredOrders = orders.filter(order =>
     `${order.buyer.fullname}`.toLowerCase().includes(searchTerm.toLowerCase()) ||

@@ -75,7 +75,7 @@ const PopularMakesSection = () => {
   const formatPrice = (price: number) =>
     new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'RWF',
       minimumFractionDigits: 0,
     }).format(price);
 

@@ -150,7 +150,7 @@ const SellCarTab = () => {
   const formatPrice = (price) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'RWF',
       minimumFractionDigits: 0,
     }).format(price);
   };
@@ -295,7 +295,7 @@ const SellCarTab = () => {
           </div>
 
           <div>
-            <Label htmlFor="price">Price (USD) *</Label>
+            <Label htmlFor="price">Price (RWF) *</Label>
             <Input
               id="price"
               type="number"

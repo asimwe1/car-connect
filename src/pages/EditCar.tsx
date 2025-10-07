@@ -310,7 +310,7 @@ const EditCar = () => {
                 <h3 className="text-lg font-semibold">Pricing</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="price">Price (USD) *</Label>
+                    <Label htmlFor="price">Price (RWF) *</Label>
                     <Input
                       id="price"
                       type="number"

@@ -24,7 +24,7 @@ import { api } from "@/services/api";
 interface Order {
   _id: string;
   amount: number;
-  status: 'initiated' | 'paid' | 'cancelled';
+  status: 'pending' | 'sold' | 'cancelled';
   createdAt: string;
   updatedAt: string;
   buyer: { fullname: string; email: string };
@@ -56,7 +56,7 @@ const AdminOrders = () => {
       const normalized: Order[] = src.map((o: any) => ({
         _id: String(o._id || o.id || ''),
         amount: Number(o.amount || o.total || 0),
-        status: (o.status || 'initiated') as any,
+        status: (o.status || 'pending') as any,
         createdAt: String(o.createdAt || o.created_at || new Date().toISOString()),
         updatedAt: String(o.updatedAt || o.updated_at || new Date().toISOString()),
         buyer: {
@@ -109,7 +109,7 @@ const AdminOrders = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'paid':
+      case 'sold':
         return 'bg-green-500';
       case 'initiated':
         return 'bg-yellow-500';
@@ -122,9 +122,9 @@ const AdminOrders = () => {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'paid':
+      case 'sold':
         return <CheckCircle className="h-4 w-4" />;
-      case 'initiated':
+      case 'pending':
         return <Clock className="h-4 w-4" />;
       case 'cancelled':
         return <XCircle className="h-4 w-4" />;
@@ -152,12 +152,12 @@ const AdminOrders = () => {
   ).filter(order => statusFilter === '' || order.status === statusFilter);
 
   const totalRevenue = orders
-    .filter(order => order.status === 'paid')
+    .filter(order => order.status === 'sold')
     .reduce((sum, order) => sum + order.amount, 0);
 
   const totalOrders = orders.length;
-  const completedOrders = orders.filter(order => order.status === 'paid').length;
-  const pendingOrders = orders.filter(order => order.status === 'initiated').length;
+  const completedOrders = orders.filter(order => order.status === 'sold').length;
+  const pendingOrders = orders.filter(order => order.status === 'pending').length;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-accent/20 to-primary/10 p-8">
@@ -336,13 +336,13 @@ const AdminOrders = () => {
                         {formatPrice(order.amount)}
                       </div>
                       <div className="flex gap-2">
-                        {order.status === 'initiated' && (
+                        {order.status === 'pending' && (
                           <>
                             <Button
                               size="sm"
-                              onClick={() => handleUpdateStatus(order._id, 'paid')}
+                              onClick={() => handleUpdateStatus(order._id, 'sold')}
                             >
-                              Mark Paid
+                              Mark Sold
                             </Button>
                             <Button
                               variant="outline"

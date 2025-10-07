@@ -15,7 +15,7 @@ import chevroletLogo from '@/assets/brands/chevrolet-logo.png';
 
 const brands = [
   { name: 'Toyota', logo: toyotaLogo, count: '120+ Models' },
-  { name: 'Porsche', logo: porscheLogo, count: '35+ Models' },
+  { name: `${"Porche"}`, logo: porscheLogo, count: '35+ Models' },
   { name: 'Kia', logo: kiaLogo, count: '85+ Models' },
   { name: 'Nissan', logo: nissanLogo, count: '95+ Models' },
   { name: 'Mercedes-Benz', logo: mercedesLogo, count: '75+ Models' },

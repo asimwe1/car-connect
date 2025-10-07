@@ -86,7 +86,7 @@ const SignUp = () => {
             Create Account
           </CardTitle>
           <CardDescription className="text-muted-foreground">
-            Join CarConnect Rwanda today
+            Join Us today, and never struggle
           </CardDescription>
         </CardHeader>
         <CardContent>

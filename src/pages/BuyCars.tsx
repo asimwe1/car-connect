@@ -133,9 +133,10 @@ const BuyCars = () => {
 
     // Apply make filter (case-insensitive exact match)
     if (selectedMake !== "all") {
-      const makeRegex = new RegExp(`^${selectedMake}$`, "i");
-      result = result.filter((car) => makeRegex.test(car.make));
-    }
+  const makeRegex = new RegExp(selectedMake, "i");
+  result = result.filter((car) => makeRegex.test(car.make));
+}
+
 
     // Apply year filter (exact match)
     if (selectedYear !== "all") {

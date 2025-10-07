@@ -327,7 +327,7 @@ const BuyCars = () => {
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="newest">Newest First</SelectItem>
+              <SelectItem value="newest"></SelectItem>
               <SelectItem value="price_low">Price: Low to High</SelectItem>
               <SelectItem value="price_high">Price: High to Low</SelectItem>
               <SelectItem value="year_new">Year: Newest</SelectItem>

@@ -219,7 +219,7 @@ const BuyCars = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-accent/20 to-primary/10 p-8">
-      <SEO title="Buy Cars – CarHub Rwanda" description="Browse verified cars for sale in Rwanda. Filter by make, model, year, fuel type, transmission, and more." />
+      <SEO title="Buy Cars – CarConnect Rwanda" description="Browse verified cars for sale in Rwanda. Filter by make, model, year, fuel type, transmission, and more." />
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">

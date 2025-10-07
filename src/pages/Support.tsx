@@ -47,7 +47,7 @@ const Support = () => {
       id: '1',
       content: `Hello ${user?.fullname || 'there'}! 👋
 
-Welcome to CarHub Support! I'm your AI assistant and I'm here to help you with:
+Welcome to CarConnect Support! I'm your AI assistant and I'm here to help you with:
 
 • Questions about buying or selling cars
 • Account and profile assistance  

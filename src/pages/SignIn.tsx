@@ -143,7 +143,7 @@ const SignIn = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-accent/20 to-primary/10 flex items-center justify-center p-4">
-      <SEO title="Sign In – CarHub Rwanda" description="Sign in to your CarHub account to book test drives, save cars, and manage orders." />
+      <SEO title="Sign In – CarConnect Rwanda" description="Sign in to your CarConnect account to book test drives, save cars, and manage orders." />
       <Card className="w-full max-w-md bg-card/80 backdrop-blur-sm border border-border shadow-card">
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-primary-light bg-clip-text text-transparent">

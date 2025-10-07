@@ -154,7 +154,7 @@ const CarDetails = () => {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title={`${car ? `${car.make} ${car.model} – ${car.year}` : 'Car Details'} | CarHub Rwanda`}
+        title={`${car ? `${car.make} ${car.model} – ${car.year}` : 'Car Details'} | CarConnect Rwanda`}
         description={car?.description || 'View detailed specs, photos, and pricing for this vehicle.'}
       />
       <div className="container mx-auto px-4 py-8">

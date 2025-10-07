@@ -132,7 +132,7 @@ class NotificationService {
       {
         id: '1',
         type: 'info',
-        title: 'Welcome to CarHub',
+        title: 'Welcome to CarConnect',
         message: 'Your account has been successfully created!',
         timestamp: new Date(Date.now() - 5 * 60 * 1000), // 5 minutes ago
         read: false,

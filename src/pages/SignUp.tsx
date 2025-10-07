@@ -79,14 +79,14 @@ const SignUp = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-accent/20 to-primary/10 flex items-center justify-center p-4">
-      <SEO title="Sign Up – CarHub Rwanda" description="Create your CarHub account to start buying, selling, and renting cars in Rwanda." />
+      <SEO title="Sign Up – CarConnect Rwanda" description="Create your CarConnect account to start buying, selling, and renting cars in Rwanda." />
       <Card className="w-full max-w-md bg-card/80 backdrop-blur-sm border border-border shadow-card">
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-primary-light bg-clip-text text-transparent">
             Create Account
           </CardTitle>
           <CardDescription className="text-muted-foreground">
-            Join CarHub Rwanda today
+            Join CarConnect Rwanda today
           </CardDescription>
         </CardHeader>
         <CardContent>

@@ -23,7 +23,7 @@ const About = () => {
 
   return (
     <div className="min-h-screen">
-      <SEO title="About – CarHub Rwanda" description="Learn about CarHub, our mission, and the team connecting Rwanda with premium vehicles." />
+      <SEO title="About – CarConnect Rwanda" description="Learn about CarHub, our mission, and the team connecting Rwanda with premium vehicles." />
       <Navbar />
       
       {/* Hero Section */}

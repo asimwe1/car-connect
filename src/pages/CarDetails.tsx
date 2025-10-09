@@ -1,0 +1,392 @@
+import { useEffect, useMemo, useState } from 'react';
+import SEO from '@/components/SEO';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, Car, Fuel, Settings, MapPin, Play } from 'lucide-react';
+import { api } from '@/services/api';
+import LazyImage from '@/components/LazyImage';
+import CarMessaging from '@/components/CarMessaging';
+import { useAuth } from '@/contexts/AuthContext';
+
+interface CarData {
+  _id: string;
+  make: string;
+  model: string;
+  year: number;
+  price: number;
+  mileage: number;
+  fuelType: string;
+  transmission: string;
+  status: string;
+  description?: string;
+  images: string[];
+  primaryImage: string;
+  location?: string;
+  bodyType?: string;
+  color?: string;
+  owner: {
+    _id: string;
+    fullname: string;
+    email: string;
+  };
+  sellEnabled?: boolean;
+  rentEnabled?: boolean;
+  rentPricePerDay?: number;
+  rentDeposit?: number;
+  rentMinDays?: number;
+  rentMaxDays?: number;
+}
+
+// Helper function to create fallback data consistent with the Mongoose schema
+const createFallbackCar = (id: string): CarData => ({
+    _id: id,
+    make: 'Honda',
+    model: 'CR-V',
+    year: 2021,
+    price: 32500,
+    mileage: 22000,
+    // Ensure enum values match the schema
+    fuelType: 'petrol', 
+    transmission: 'automatic', 
+    // Default status
+    status: 'available', 
+    description: 'A reliable, low-mileage SUV in great condition. Perfect family vehicle for city and country roads. This is a demo listing.',
+    images: ['/placeholder.svg', 'https://via.placeholder.com/600/505050/FFFFFF?text=Interior+View'], // Added a second placeholder for gallery
+    primaryImage: '/placeholder.svg',
+    location: 'Kigali, Rwanda',
+    bodyType: 'SUV',
+    color: 'Silver',
+    owner: {
+        _id: 'demo-owner-123',
+        fullname: 'CarHub Demo',
+        email: 'demo@carhub.rw'
+    },
+    // Adding optional fields for completeness
+    sellEnabled: true,
+    rentEnabled: true,
+    rentPricePerDay: 50,
+    rentDeposit: 300,
+    rentMinDays: 3,
+    rentMaxDays: 30
+});
+
+const CarDetails = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [car, setCar] = useState<CarData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [activeImageIdx, setActiveImageIdx] = useState(0);
+
+  useEffect(() => {
+    if (!id) {
+      setLoading(false);
+      return;
+    }
+    const load = async () => {
+      try {
+        setLoading(true);
+        // Backend endpoint: /cars/:id
+        const response = await api.getCarById(id); 
+        
+        if (response.data) {
+          setCar(response.data);
+        } else {
+          // Fallback if API returns no data
+          setCar(createFallbackCar(id));
+        }
+      } catch (e) {
+        console.error('Failed to load car', e);
+        // Fallback if API request fails
+        setCar(createFallbackCar(id));
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [id]);
+
+  const pricing = useMemo(() => {
+    if (car) {
+      return { current: car.price, original: car.price, hasDiscount: false };
+    }
+    return { current: 0, original: 0, hasDiscount: false };
+  }, [car]);
+
+  const images: string[] = useMemo(() => {
+    if (car) {
+      return car.images.length > 0 ? car.images : [car.primaryImage || '/placeholder.svg'];
+    }
+    return [];
+  }, [car]);
+
+  const formatPrice = (price: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'RWF', minimumFractionDigits: 0 }).format(price);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-8">
+          <div className="h-8 w-40 bg-muted rounded animate-pulse mb-6" />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 h-96 bg-muted rounded animate-pulse" />
+            <div className="h-96 bg-muted rounded animate-pulse" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!car) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-8">
+          <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6">
+            <ArrowLeft className="h-4 w-4 mr-2" /> Back
+          </Button>
+          <p className="text-muted-foreground">Car not found.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <SEO
+        title={`${car ? `${car.make} ${car.model} – ${car.year}` : 'Car Details'} | CarConnect Rwanda`}
+        description={car?.description || 'View detailed specs, photos, and pricing for this vehicle.'}
+      />
+      <div className="container mx-auto px-4 py-8">
+        <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6">
+          <ArrowLeft className="h-4 w-4 mr-2" /> Back
+        </Button>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Media / Gallery */}
+          <Card className="lg:col-span-2 overflow-hidden">
+            <CardContent className="p-0">
+              <div className="relative">
+                {images[activeImageIdx] ? (
+                  <LazyImage
+                    src={images[activeImageIdx]}
+                    alt={`${car.make} ${car.model}`}
+                    containerClassName="w-full h-[420px]"
+                  />
+                ) : (
+                  <div className="w-full h-[420px] bg-muted flex items-center justify-center">
+                    <Car className="h-10 w-10 text-muted-foreground" />
+                  </div>
+                )}
+                {/* TODO: Add video support when implemented */}
+              </div>
+              {images.length > 1 && (
+                <div className="grid grid-cols-4 gap-2 p-3">
+                  {images.map((src, idx) => (
+                    <button key={idx} onClick={() => setActiveImageIdx(idx)} className={`h-20 overflow-hidden rounded ${idx === activeImageIdx ? 'ring-2 ring-primary' : ''}`}>
+                      <LazyImage src={src} alt={`thumb-${idx}`} containerClassName="w-full h-full" />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Summary */}
+          <Card>
+            <CardContent className="p-6 space-y-4">
+              <div>
+                <h1 className="text-2xl font-bold">{car.make} {car.model}</h1>
+                <p className="text-sm text-muted-foreground">{car.year} • {car.bodyType || 'Vehicle'}</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-3xl font-bold text-primary">{formatPrice(pricing.current)}</span>
+                {pricing.hasDiscount && (
+                  <span className="text-muted-foreground line-through">{formatPrice(pricing.original)}</span>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-3 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2"><Car className="h-4 w-4" />{car.mileage.toLocaleString()} Miles</div>
+                {/* Ensure enum value is displayed correctly */}
+                <div className="flex items-center gap-2"><Fuel className="h-4 w-4" />{car.fuelType.charAt(0).toUpperCase() + car.fuelType.slice(1)}</div>
+                <div className="flex items-center gap-2"><Settings className="h-4 w-4" />{car.transmission.charAt(0).toUpperCase() + car.transmission.slice(1)}</div>
+                <div className="flex items-center gap-2"><MapPin className="h-4 w-4" />{car.location || '—'}</div>
+              </div>
+              <div className="pt-2 space-y-2">
+                <Button 
+                  className="w-full" 
+                  disabled={car.status !== 'available' || !user}
+                  onClick={() => {
+                    if (user && car.status === 'available') {
+                      // Scroll to messaging component
+                      const messagingElement = document.querySelector('#car-messaging');
+                      if (messagingElement) {
+                        messagingElement.scrollIntoView({ behavior: 'smooth' });
+                        // Trigger the messaging component to expand
+                        const messagingButton = messagingElement.querySelector('button');
+                        if (messagingButton) {
+                          messagingButton.click();
+                        }
+                      }
+                    }
+                  }}
+                >
+                  {car.status !== 'available' ? 'Not Available' : user ? 'Chat with Seller' : 'Login to Chat'}
+                </Button>
+                {car.rentEnabled && (
+                  <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                    <div>Per day: <span className="font-medium text-foreground">{car.rentPricePerDay ? `$${car.rentPricePerDay.toLocaleString()}` : '—'}</span></div>
+                    <div>Deposit: <span className="font-medium text-foreground">{car.rentDeposit ? `$${car.rentDeposit.toLocaleString()}` : '—'}</span></div>
+                    <div>Min days: <span className="font-medium text-foreground">{car.rentMinDays ?? '—'}</span></div>
+                    <div>Max days: <span className="font-medium text-foreground">{car.rentMaxDays ?? '—'}</span></div>
+                  </div>
+                )}
+                {car.rentEnabled && (
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      <input type="date" className="border rounded px-3 py-2" disabled />
+                      <input type="date" className="border rounded px-3 py-2" disabled />
+                    </div>
+                    <Button variant="outline" className="w-full" disabled title="Rental booking coming soon">
+                      Select Dates & Rent (Coming Soon)
+                    </Button>
+                  </div>
+                )}
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => navigate(`/test-drive/${car._id}`)}
+                >
+                  Schedule Test Drive
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Description & Reviews */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+          <Card className="lg:col-span-2">
+            <CardContent className="p-6">
+              <h2 className="text-lg font-semibold mb-3">Description</h2>
+              <p className="text-sm text-muted-foreground">{car.description || 'No description provided.'}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Customer Reviews</h3>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center">
+                    {[...Array(5)].map((_, i) => (
+                      <div key={i} className="w-4 h-4 text-yellow-400 fill-current">
+                        ★
+                      </div>
+                    ))}
+                  </div>
+                  <span className="text-sm text-muted-foreground">4.8 (12 reviews)</span>
+                </div>
+              </div>
+              
+              {/* Mock Reviews */}
+              <div className="space-y-4">
+                <div className="border-b pb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                      <span className="text-sm font-medium">JD</span>
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">John Doe</p>
+                      <div className="flex items-center gap-1">
+                        {[...Array(5)].map((_, i) => (
+                          <div key={i} className="w-3 h-3 text-yellow-400 fill-current">
+                            ★
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    "Excellent condition, exactly as described. The seller was very professional and the car runs perfectly. Highly recommended!"
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-2">2 days ago</p>
+                </div>
+                
+                <div className="border-b pb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                      <span className="text-sm font-medium">SM</span>
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">Sarah Miller</p>
+                      <div className="flex items-center gap-1">
+                        {[...Array(5)].map((_, i) => (
+                          <div key={i} className="w-3 h-3 text-yellow-400 fill-current">
+                            ★
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    "Great value for money. The test drive was smooth and the car handles well. Very satisfied with my purchase."
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-2">1 week ago</p>
+                </div>
+                
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                      <span className="text-sm font-medium">MJ</span>
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">Mike Johnson</p>
+                      <div className="flex items-center gap-1">
+                        {[...Array(4)].map((_, i) => (
+                          <div key={i} className="w-3 h-3 text-yellow-400 fill-current">
+                            ★
+                          </div>
+                        ))}
+                        <div className="w-3 h-3 text-gray-300 fill-current">★</div>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    "Good car overall, minor scratches as mentioned. Seller was honest about the condition. Would buy again."
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-2">2 weeks ago</p>
+                </div>
+              </div>
+              
+              <div className="mt-4 pt-4 border-t">
+                <Button variant="outline" size="sm" className="w-full">
+                  Write a Review
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Car Messaging Component */}
+      {user && car && user.id !== car.owner._id && (
+        <div id="car-messaging">
+          <CarMessaging
+            carId={car._id}
+            sellerId={car.owner._id}
+            sellerName={car.owner.fullname}
+            carDetails={{
+              make: car.make,
+              model: car.model,
+              year: car.year,
+              price: car.price,
+              primaryImage: car.primaryImage
+            }}
+          />
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default CarDetails;

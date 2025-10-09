@@ -1,0 +1,52 @@
+name: Deploy (gated by CI)
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install deps
+        run: npm ci
+      - name: Build
+        run: npm run build
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+      - name: Run smoke tests
+        env:
+          BASE_URL: http://localhost:4173
+        run: |
+          nohup npm run preview &
+          npx wait-on http://localhost:4173
+          npx playwright test --reporter=line
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install deps
+        run: npm ci
+      - name: Pull Vercel Environment Info (production)
+        run: npx vercel pull --yes --environment=production
+      - name: Build (Vercel prebuilt)
+        run: |
+          npm run build
+          npx vercel build --prod
+      - name: Deploy to Vercel (production)
+        run: npx vercel deploy --prebuilt --prod
+

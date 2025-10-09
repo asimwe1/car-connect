@@ -255,7 +255,10 @@ class ApiService {
   }
 
   async getWishlist() {
-    return this.request('/wishlist', { method: 'GET' });
+    const result = await this.request('/wishlist', { method: 'GET' });
+    if (result.error) return result;
+    const cars = (result.data as any)?.data?.cars ?? [];
+    return { data: cars } as { data: any; error?: string };
   }
 
   async deleteWishlist() {

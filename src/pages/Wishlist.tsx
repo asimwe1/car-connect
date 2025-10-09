@@ -25,6 +25,7 @@ interface Car {
   images: string[];
   color: string;
   body_type: string;
+  title?: string;
 }
 
 const Wishlist: React.FC = () => {
@@ -42,7 +43,8 @@ const Wishlist: React.FC = () => {
       setLoading(true);
       const response = await api.getWishlist();
       if (response.error) throw new Error(response.error);
-      const cars = response.data?.cars || [];
+      // API layer normalized to return cars array directly
+      const cars = (response.data as any) || [];
       // Add title for display
       const mappedCars = cars.map(car => ({
         ...car,

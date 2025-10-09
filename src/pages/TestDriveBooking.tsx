@@ -7,16 +7,19 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { api } from "@/services/api";
 import { ArrowLeft, Calendar, Clock, Car, User, Phone, Mail, MapPin } from "lucide-react";
 
 interface Vehicle {
   _id: string;
   name: string;
   year: number;
-  subtitle: string;
-  image: string;
+  subtitle?: string;
+  image?: string;
+  images?: string[];
   price: number;
   make?: string;
+  model?: string;
   location?: string;
 }
 
@@ -48,10 +51,23 @@ const TestDriveBooking = () => {
   const fetchVehicle = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/vehicles/${id}`);
-      if (!res.ok) throw new Error('Vehicle not found');
-      const data: Vehicle = await res.json();
-      setVehicle(data);
+      // Use backend cars endpoint via API client
+      const res = await api.getCarById(id!);
+      if (!res.data) throw new Error('Vehicle not found');
+      const car: any = res.data;
+      const mapped: Vehicle = {
+        _id: car._id,
+        name: `${car.make ?? ''} ${car.model ?? ''}`.trim() || 'Vehicle',
+        year: car.year,
+        subtitle: car.description,
+        image: Array.isArray(car.images) && car.images.length > 0 ? car.images[0] : car.primaryImage,
+        images: car.images,
+        price: car.price,
+        make: car.make,
+        model: car.model,
+        location: car.location,
+      };
+      setVehicle(mapped);
     } catch (error) {
       console.error('Error fetching vehicle:', error);
       toast({
@@ -73,20 +89,13 @@ const TestDriveBooking = () => {
     try {
       setSubmitting(true);
       
-      // TODO: Implement API call to book test drive
-      const bookingData = {
-        vehicleId: id,
-        ...formData,
-        status: 'pending',
-        createdAt: new Date().toISOString()
-      };
-
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Create booking via backend
+      const bookingRes = await api.createBooking({ carId: id, notes: formData.message });
+      if (bookingRes.error) throw new Error(bookingRes.error);
 
       toast({
         title: "Test Drive Booked!",
-        description: "Your test drive request has been submitted. We'll contact you soon to confirm the details.",
+        description: "Your request has been submitted. We'll contact you to confirm details.",
       });
 
       navigate(`/car/${id}`);

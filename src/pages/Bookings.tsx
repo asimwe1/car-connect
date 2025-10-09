@@ -23,6 +23,7 @@ interface Booking {
     images: string[];
     primaryImage?: string;
     location?: string;
+    seller_contact?: string;
   };
   expiresAt?: string;
 }
@@ -59,6 +60,7 @@ const Bookings = () => {
           images: Array.isArray(b.car?.images) ? b.car.images : [],
           primaryImage: b.car?.primaryImage || b.primaryImage,
           location: b.car?.location || b.location,
+          seller_contact: b.car?.seller_contact || b.seller_contact,
         },
         expiresAt: b.expiresAt || b.expiry || undefined,
       }));
@@ -236,10 +238,10 @@ const Bookings = () => {
                                 ${booking.car.price.toLocaleString()}
                               </span>
                             </div>
-                            {booking.cars.seller_contact && (
+                            {booking.car.seller_contact && (
                               <div className="flex items-center gap-2">
                                 <Phone className="h-4 w-4 text-muted-foreground" />
-                                <span>{booking.cars.seller_contact}</span>
+                                <span>{booking.car.seller_contact}</span>
                               </div>
                             )}
                           </div>

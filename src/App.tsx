@@ -42,6 +42,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import ListCar from "./pages/ListCar";
 import ProtectedRoute from "./components/ProtectedRoute";
 import SessionWarning from "./components/SessionWarning";
+import ScrollToTop from "./components/ScrollToTop";
 
 const queryClient = new QueryClient();
 
@@ -63,6 +64,7 @@ const App = () => (
                   <link rel="canonical" href="https://carhubconnect.onrender.com/" />
                 </Helmet>
                 <SessionWarning />
+                <ScrollToTop />
                 <Routes>
                   <Route element={<Layout />}>
                     {/* Public routes */}

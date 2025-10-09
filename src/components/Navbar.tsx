@@ -127,77 +127,77 @@ const Navbar = () => {
           >
             {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
-        </div>
+        </div>  
 
-        {/* Mobile Navigation */}
-        {isOpen && (
-          <div className="md:hidden pb-4 border-t border-border safe-area-bottom">
-            <div className="flex flex-col space-y-1 pt-4">
-              {navLinks.map((link) => (
-                <NavLink
-                  key={link.name}
-                  to={link.path}
-                  onClick={(e) => {
-                    handleProtectedClick(e, link.path, link.protected);
-                    setIsOpen(false);
-                  }}
-                  className={() => {
-                    const active = isActiveLink(link);
-                    return `relative px-4 py-3 rounded-lg text-sm font-medium transition-colors touch-action-manipulation mobile-tap-highlight-transparent ${
-                      active ? 'text-primary bg-primary/5' : 'text-muted-foreground hover:text-primary hover:bg-accent'
-                    } after:content-[''] after:absolute after:left-4 after:bottom-2 after:h-0.5 after:bg-primary after:transition-transform after:duration-300 after:origin-left ${
-                      active ? 'after:w-8 after:scale-x-100' : 'after:w-8 after:scale-x-0 group-hover:after:scale-x-100'
-                    }`;
-                  }}
-                >
-                  {link.name}
-                </NavLink>
-              ))}
-              <div className="pt-4 border-t border-border">
-                {isAuthenticated ? (
-                  <>
+        {/* Mobile Navigation moved below for full-width background */}
+      </div>
+      {isOpen && (
+        <div className="md:hidden text-center bg-white w-full w-100% rounded-b-lg border-t border-border safe-area-bottom">
+          <div className="flex flex-col space-y-1 pt-4 px-4">
+            {navLinks.map((link) => (
+              <NavLink
+                key={link.name}
+                to={link.path}
+                onClick={(e) => {
+                  handleProtectedClick(e, link.path, link.protected);
+                  setIsOpen(false);
+                }}
+                className={() => {
+                  const active = isActiveLink(link);
+                  return `relative px-4 py-3 rounded-lg text-sm font-medium transition-colors touch-action-manipulation mobile-tap-highlight-transparent ${
+                    active ? 'text-primary bg-primary/5' : 'text-muted-foreground hover:text-primary hover:bg-accent'
+                  } after:content-[''] after:absolute after:left-4 after:bottom-2 after:h-0.5 after:bg-primary after:transition-transform after:duration-300 after:origin-left ${
+                    active ? 'after:w-8 after:scale-x-100' : 'after:w-8 after:scale-x-0 group-hover:after:scale-x-100'
+                  }`;
+                }}
+              >
+                {link.name}
+              </NavLink>
+            ))}
+            <div className="pt-4 border-t border-border">
+              {isAuthenticated ? (
+                <>
+                  <Link
+                    to="/buyer-dashboard"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center px-4 py-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-primary hover:bg-accent touch-action-manipulation mobile-tap-highlight-transparent"
+                  >
+                    <User className="w-4 h-4 mr-2" />
+                    Dashboard
+                  </Link>
+                  {user?.role === 'admin' && (
                     <Link
-                      to="/buyer-dashboard"
+                      to="/admin-dashboard"
                       onClick={() => setIsOpen(false)}
                       className="flex items-center px-4 py-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-primary hover:bg-accent touch-action-manipulation mobile-tap-highlight-transparent"
                     >
-                      <User className="w-4 h-4 mr-2" />
-                      Dashboard
+                      <Settings className="w-4 h-4 mr-2" />
+                      Admin
                     </Link>
-                    {user?.role === 'admin' && (
-                      <Link
-                        to="/admin-dashboard"
-                        onClick={() => setIsOpen(false)}
-                        className="flex items-center px-4 py-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-primary hover:bg-accent touch-action-manipulation mobile-tap-highlight-transparent"
-                      >
-                        <Settings className="w-4 h-4 mr-2" />
-                        Admin
-                      </Link>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <Link
-                      to="/signin"
-                      onClick={() => setIsOpen(false)}
-                      className="block px-4 py-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-primary hover:bg-accent touch-action-manipulation mobile-tap-highlight-transparent"
-                    >
-                      Sign In
-                    </Link>
-                    <Link
-                      to="/signup"
-                      onClick={() => setIsOpen(false)}
-                      className="block px-4 py-3 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary-light touch-action-manipulation mobile-tap-highlight-transparent"
-                    >
-                      Sign Up
-                    </Link>
-                  </>
-                )}
-              </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  <Link
+                    to="/signin"
+                    onClick={() => setIsOpen(false)}
+                    className="block px-4 py-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-primary hover:bg-accent touch-action-manipulation mobile-tap-highlight-transparent"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    to="/signup"
+                    onClick={() => setIsOpen(false)}
+                    className="block px-4 py-3 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary-light touch-action-manipulation mobile-tap-highlight-transparent"
+                  >
+                    Sign Up
+                  </Link>
+                </>
+              )}
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </nav>
   );
 };

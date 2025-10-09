@@ -12,6 +12,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import { api } from "@/services/api";
 
 interface Car {
+  createdAt: string | number | Date;
   _id: string;
   make: string;
   model: string;
@@ -30,7 +31,7 @@ interface Car {
   owner: string; // ObjectId as string
 }
 
-const BuyCars = () => {
+const BuyCars: React.FC = () => {
   const [cars, setCars] = useState<Car[]>([]);
   const [allCars, setAllCars] = useState<Car[]>([]); // Store unfiltered cars
   const [loading, setLoading] = useState(true);
@@ -41,23 +42,20 @@ const BuyCars = () => {
   const [selectedTransmission, setSelectedTransmission] = useState("all");
   const [selectedBodyType, setSelectedBodyType] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
-  const [wishlist, setWishlist] = useState<string[]>([]);
+  const [wishlistIds, setWishlistIds] = useState<string[]>([]);
   const navigate = useNavigate();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
 
-  // Initialize state from URL and fetch cars
+  // Fetch cars and wishlist on mount
   useEffect(() => {
     const brandFromUrl = searchParams.get("brand");
     if (brandFromUrl && brandFromUrl !== "all") {
       const adjustedMake = brandFromUrl === "mercedes-benz" ? "Mercedes Benz" : brandFromUrl;
       setSelectedMake(adjustedMake);
     }
-    const savedWishlist = localStorage.getItem("wishlist");
-    if (savedWishlist) {
-      setWishlist(JSON.parse(savedWishlist));
-    }
     fetchCars();
+    fetchWishlist();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -67,11 +65,10 @@ const BuyCars = () => {
       const params = {
         status: "available",
         page: 1,
-        limit: 1000, // Increase limit to fetch more cars for filtering
+        limit: 1000,
       };
       console.log("API call with params:", params);
       const response = await api.getCars(params);
-
       if (response.data?.items && Array.isArray(response.data.items)) {
         setAllCars(response.data.items);
       } else {
@@ -94,6 +91,25 @@ const BuyCars = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchWishlist = async () => {
+    try {
+      const response = await api.getWishlist();
+      if (response.data?.cars) {
+        setWishlistIds(response.data.cars.map((item: { car_id: string }) => item.car_id));
+      } else {
+        setWishlistIds([]);
+      }
+    } catch (error) {
+      console.error("Error fetching wishlist:", error);
+      setWishlistIds([]);
+      toast({
+        title: "Error",
+        description: "Failed to load wishlist. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -120,8 +136,6 @@ const BuyCars = () => {
   // Filter and sort cars on the frontend
   const filteredCars = useMemo(() => {
     let result = [...allCars];
-
-    // Apply search term (case-insensitive regex-like filtering)
     if (searchTerm) {
       const searchRegex = new RegExp(searchTerm, "i");
       result = result.filter((car) =>
@@ -130,38 +144,25 @@ const BuyCars = () => {
         (car.description && searchRegex.test(car.description))
       );
     }
-
-    // Apply make filter (case-insensitive exact match)
     if (selectedMake !== "all") {
-  const makeRegex = new RegExp(selectedMake, "i");
-  result = result.filter((car) => makeRegex.test(car.make));
-}
-
-
-    // Apply year filter (exact match)
+      const makeRegex = new RegExp(selectedMake, "i");
+      result = result.filter((car) => makeRegex.test(car.make));
+    }
     if (selectedYear !== "all") {
       result = result.filter((car) => car.year === parseInt(selectedYear));
     }
-
-    // Apply fuelType filter (case-insensitive exact match)
     if (selectedFuelType !== "all") {
       const fuelRegex = new RegExp(`^${selectedFuelType}$`, "i");
       result = result.filter((car) => car.fuelType && fuelRegex.test(car.fuelType));
     }
-
-    // Apply transmission filter (case-insensitive exact match)
     if (selectedTransmission !== "all") {
       const transRegex = new RegExp(`^${selectedTransmission}$`, "i");
       result = result.filter((car) => car.transmission && transRegex.test(car.transmission));
     }
-
-    // Apply bodyType filter (case-insensitive exact match)
     if (selectedBodyType !== "all") {
       const bodyRegex = new RegExp(`^${selectedBodyType}$`, "i");
       result = result.filter((car) => car.bodyType && bodyRegex.test(car.bodyType));
     }
-
-    // Apply sorting
     switch (sortBy) {
       case "price_low":
         result.sort((a, b) => a.price - b.price);
@@ -180,27 +181,26 @@ const BuyCars = () => {
         result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         break;
     }
-
     return result;
   }, [allCars, searchTerm, selectedMake, selectedYear, selectedFuelType, selectedTransmission, selectedBodyType, sortBy]);
 
-  const handleAddToWishlist = (carId: string) => {
-    let updatedWishlist: string[];
-    if (wishlist.includes(carId)) {
-      updatedWishlist = wishlist.filter((id) => id !== carId);
-      toast({
-        title: "Removed from Wishlist",
-        description: "Car removed from your wishlist.",
-      });
-    } else {
-      updatedWishlist = [...wishlist, carId];
-      toast({
-        title: "Added to Wishlist",
-        description: "Car added to your wishlist.",
-      });
+  const handleAddToWishlist = async (carId: string) => {
+    try {
+      if (wishlistIds.includes(carId)) {
+        const response = await api.removeFromWishlist(carId);
+        if (response.error) throw new Error(response.error);
+        setWishlistIds(prev => prev.filter(id => id !== carId));
+        toast({ title: "Removed from Wishlist", description: "Car removed from your wishlist." });
+      } else {
+        const response = await api.addToWishlist(carId);
+        if (response.error) throw new Error(response.error);
+        setWishlistIds(prev => [...prev, carId]);
+        toast({ title: "Added to Wishlist", description: "Car added to your wishlist." });
+      }
+    } catch (error) {
+      console.error("Error updating wishlist:", error);
+      toast({ title: "Error", description: "Failed to update wishlist. Please try again.", variant: "destructive" });
     }
-    setWishlist(updatedWishlist);
-    localStorage.setItem("wishlist", JSON.stringify(updatedWishlist));
   };
 
   const formatPrice = (price: number) => {
@@ -221,15 +221,11 @@ const BuyCars = () => {
     <div className="min-h-screen bg-gradient-to-br from-background via-accent/20 to-primary/10 p-8">
       <SEO title="Buy Cars – CarConnect Rwanda" description="Browse verified cars for sale in Rwanda. Filter by make, model, year, fuel type, transmission, and more." />
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold mb-4">Find Your Perfect Car</h1>
-          <p className="text-muted-foreground text-lg">
-            Browse our extensive collection of quality vehicles
-          </p>
+          <p className="text-muted-foreground text-lg">Browse our extensive collection of quality vehicles</p>
         </div>
 
-        {/* Filters */}
         <Card className="mb-8">
           <CardContent className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
@@ -311,7 +307,6 @@ const BuyCars = () => {
           </CardContent>
         </Card>
 
-        {/* Sort and Results */}
         <div className="flex justify-between items-center mb-6">
           <p className="text-sm text-muted-foreground">
             {loading ? (
@@ -328,7 +323,7 @@ const BuyCars = () => {
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="newest"></SelectItem>
+              <SelectItem value="newest">Newest</SelectItem>
               <SelectItem value="price_low">Price: Low to High</SelectItem>
               <SelectItem value="price_high">Price: High to Low</SelectItem>
               <SelectItem value="year_new">Year: Newest</SelectItem>
@@ -337,7 +332,6 @@ const BuyCars = () => {
           </Select>
         </div>
 
-        {/* Cars Grid */}
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => (
@@ -357,9 +351,7 @@ const BuyCars = () => {
           <div className="text-center py-12">
             <Car className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">No Cars Found</h3>
-            <p className="text-muted-foreground mb-6">
-              Try adjusting your search criteria or filters.
-            </p>
+            <p className="text-muted-foreground mb-6">Try adjusting your search criteria or filters.</p>
             <Button
               onClick={() => {
                 setSearchTerm("");
@@ -388,29 +380,26 @@ const BuyCars = () => {
                     onError={(e) => (e.currentTarget.src = "/placeholder-car.jpg")}
                   />
                   {car.status === "available" && (
-                    <Badge className="absolute top-2 left-2 bg-green-500">
-                      Available
-                    </Badge>
+                    <Badge className="absolute top-2 left-2 bg-green-500">Available</Badge>
                   )}
                   {car.status === "reserved" && (
-                    <Badge className="absolute top-2 left-2 bg-yellow-500">
-                      Reserved
-                    </Badge>
+                    <Badge className="absolute top-2 left-2 bg-yellow-500">Reserved</Badge>
                   )}
                   {car.status === "sold" && (
-                    <Badge className="absolute top-2 left-2 bg-red-500">
-                      Sold
-                    </Badge>
+                    <Badge className="absolute top-2 left-2 bg-red-500">Sold</Badge>
                   )}
                   <Button
                     variant="ghost"
                     size="icon"
                     className={`absolute top-2 right-2 bg-white/80 hover:bg-white ${
-                      wishlist.includes(car._id) ? "text-red-500" : "text-gray-500"
+                      wishlistIds.includes(car._id) ? "text-red-500" : "text-gray-500"
                     } hover:text-red-600`}
                     onClick={() => handleAddToWishlist(car._id)}
+                    disabled={car.status !== "available"}
                   >
-                    <Heart className={`h-4 w-4 ${wishlist.includes(car._id) ? "fill-red-500" : ""}`} />
+                    <Heart
+                      className={`h-4 w-4 ${wishlistIds.includes(car._id) ? "fill-red-500" : ""}`}
+                    />
                   </Button>
                 </div>
                 <CardContent className="p-4">
@@ -442,7 +431,7 @@ const BuyCars = () => {
                   </div>
                   <div className="flex items-center justify-between">
                     <p className="text-lg font-bold text-primary">{formatPrice(car.price)}</p>
-                    <Button size="sm" onClick={() => navigate(`/car/${car._id}`)}>
+                    <Button size="sm" onClick={() => navigate(`/car/${car._id}`)} disabled={car.status !== "available"}>
                       View Details
                     </Button>
                   </div>

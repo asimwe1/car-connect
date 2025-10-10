@@ -553,7 +553,7 @@ Just ask me anything!`,
                           isSystemChatMode ? handleSystemMessage() : handleSendMessage();
                         }
                       }}
-                      disabled={(!isSystemChatMode && !isConnected) || isTyping}
+                      disabled={isTyping}
                       className="min-h-[60px] max-h-[120px] resize-none"
                       rows={2}
                     />
@@ -571,6 +571,9 @@ Just ask me anything!`,
                           </span>
                         )}
                         {isTyping && <span className="text-blue-500">{isSystemChatMode ? 'System AI is typing...' : 'AI is typing...'}</span>}
+                        {!isSystemChatMode && !isConnected && (
+                          <span className="text-orange-500">Offline - Messages will be sent when connection is restored</span>
+                        )}
                       </div>
                       <div className="text-xs text-muted-foreground">
                         {inputMessage.length}/1000
@@ -579,7 +582,7 @@ Just ask me anything!`,
                   </div>
                   <Button
                     onClick={isSystemChatMode ? handleSystemMessage : handleSendMessage}
-                    disabled={!inputMessage.trim() || (!isSystemChatMode && !isConnected) || isTyping || inputMessage.length > 1000}
+                    disabled={!inputMessage.trim() || isTyping || inputMessage.length > 1000}
                     className="bg-primary hover:bg-primary/90 transition-all duration-200 hover:scale-105 h-[60px] w-[60px]"
                     size="icon"
                   >

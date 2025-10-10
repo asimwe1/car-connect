@@ -231,7 +231,9 @@ const CarDetails = () => {
                     }
                   }}
                 >
-                  {car.status !== 'available' ? 'Not Available' : user ? 'Chat with Seller' : 'Login to Chat'}
+                  {car.status !== 'available' ? 'Not Available' : 
+                   user?.role === 'admin' ? 'Admin View' :
+                   user ? 'Chat with Admin' : 'Login to Chat'}
                 </Button>
                 {car.rentEnabled && (
                   <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
@@ -368,13 +370,11 @@ const CarDetails = () => {
         </div>
       </div>
 
-      {/* Car Messaging Component */}
-      {user && car && user.id !== car.owner._id && (
+      {/* Customer to Admin Chat */}
+      {user && car && (
         <div id="car-messaging">
           <CarMessaging
             carId={car._id}
-            sellerId={car.owner._id}
-            sellerName={car.owner.fullname}
             carDetails={{
               make: car.make,
               model: car.model,

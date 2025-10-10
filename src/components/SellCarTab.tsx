@@ -9,10 +9,15 @@ import { Label } from '@/components/ui/label';
 import { Upload, Shield, Zap, Users, Car, CheckCircle, DollarSign, X, Image, Video } from 'lucide-react';
 import { uploadImages, uploadVideo } from '@/services/upload';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { api } from '@/services/api';
 import { useInView } from 'react-intersection-observer';
 
 const SellCarTab = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   
@@ -33,6 +38,7 @@ const SellCarTab = () => {
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [uploadedVideo, setUploadedVideo] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { ref: stepsRef, inView: stepsInView } = useInView({
     threshold: 0.1,
@@ -153,6 +159,77 @@ const SellCarTab = () => {
       currency: 'RWF',
       minimumFractionDigits: 0,
     }).format(price);
+  };
+
+  const validateForm = () => {
+    const required = [
+      { key: 'make', label: 'Make' },
+      { key: 'model', label: 'Model' },
+      { key: 'year', label: 'Year' },
+      { key: 'price', label: 'Price' },
+      { key: 'mileage', label: 'Mileage' },
+      { key: 'transmission', label: 'Transmission' },
+      { key: 'fuel', label: 'Fuel Type' },
+      { key: 'color', label: 'Color' },
+      { key: 'location', label: 'Location' },
+    ];
+
+    for (const field of required) {
+      const val = (formData as any)[field.key];
+      if (!val || String(val).trim() === '') {
+        toast({
+          title: `${field.label} is required`,
+          description: `Please provide ${field.label.toLowerCase()}.`,
+          variant: 'destructive',
+        });
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const handleListCar = async () => {
+    try {
+      if (!isAuthenticated) {
+        toast({ title: 'Sign in required', description: 'Please sign in to list your car.' });
+        navigate('/signin');
+        return;
+      }
+
+      if (!validateForm()) return;
+
+      setIsSubmitting(true);
+
+      // Build payload matching backend expectations
+      const images = uploadedImages || [];
+      const payload = {
+        make: formData.make,
+        model: formData.model,
+        year: Number(formData.year),
+        price: Number(formData.price),
+        mileage: Number(formData.mileage) || 0,
+        fuelType: formData.fuel,
+        transmission: formData.transmission || 'automatic',
+        status: 'available',
+        description: formData.description || undefined,
+        location: formData.location || undefined,
+        seats: formData.seats ? Number(formData.seats) : undefined,
+        color: formData.color || undefined,
+        images,
+        primaryImage: images[0] || undefined,
+        video: uploadedVideo || undefined,
+      } as any;
+
+      const res = await api.createCar(payload);
+      if (res.error) throw new Error(res.error);
+
+      toast({ title: 'Car listed!', description: 'Your car has been listed successfully.' });
+      navigate('/admin-dashboard');
+    } catch (err: any) {
+      toast({ title: 'Failed to list car', description: err?.message || 'Please try again.', variant: 'destructive' });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const sellingSteps = [
@@ -501,8 +578,8 @@ const SellCarTab = () => {
           )}
         </div>
 
-        <Button className="w-full mt-8 btn-hero text-lg py-4">
-          List My Car
+        <Button className="w-full mt-8 btn-hero text-lg py-4" disabled={isUploading || isSubmitting} onClick={handleListCar}>
+          {isSubmitting ? 'Listing...' : 'List My Car'}
         </Button>
       </div>
 

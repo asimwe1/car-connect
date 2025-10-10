@@ -65,12 +65,16 @@ class RealTimeChatService {
     return new Promise((resolve, reject) => {
       this.token = token;
 
-      // Use your backend URL
-      this.socket = io('wss://carhubconnect.onrender.com/messages', {
+      // Use your backend URL with fallback to HTTP
+      const socketUrl = 'https://carhubconnect.onrender.com';
+      this.socket = io(`${socketUrl}/messages`, {
         auth: { token },
-        transports: ['websocket'],
+        transports: ['websocket', 'polling'],
         timeout: 20000,
-        forceNew: true
+        forceNew: true,
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000
       });
 
       this.socket.on('connect', () => {
@@ -82,7 +86,12 @@ class RealTimeChatService {
       this.socket.on('connect_error', (error) => {
         console.error('❌ Connection error:', error);
         this.isConnected = false;
-        reject(error);
+        // Don't reject immediately, allow retry
+        setTimeout(() => {
+          if (!this.isConnected) {
+            reject(error);
+          }
+        }, 5000);
       });
 
       this.socket.on('disconnect', (reason) => {
@@ -94,6 +103,11 @@ class RealTimeChatService {
       this.socket.on('reconnect', () => {
         console.log('🔄 Reconnected to chat server');
         this.isConnected = true;
+      });
+
+      this.socket.on('reconnect_error', (error) => {
+        console.error('❌ Reconnection error:', error);
+        this.isConnected = false;
       });
     });
   }

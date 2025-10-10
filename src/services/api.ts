@@ -6,12 +6,9 @@ const RAW_API_BASE = import.meta.env.VITE_API_URL || 'https://carhubconnect.onre
 
 // Normalize to HTTPS to avoid "mixed content" in production
 const API_BASE_URL = (() => {
-  if (import.meta.env.DEV) {
-    return '/api';
-  }
   try {
     const url = new URL(RAW_API_BASE);
-    if (import.meta.env.PROD && url.protocol === 'http:') {
+    if (url.protocol === 'http:') {
       url.protocol = 'https:';
     }
     return url.toString().replace(/\/$/, '');
@@ -25,6 +22,8 @@ class ApiService {
 
   constructor(baseURL: string) {
     this.baseURL = baseURL;
+    console.log('API Service initialized with base URL:', this.baseURL);
+    console.log('API Service version: 2.0 - Fixed backend URL');
   }
 
   private async request<T = any>(
@@ -33,6 +32,7 @@ class ApiService {
     retries = 3
   ): Promise<{ data?: T; error?: string }> {
     const url = `${this.baseURL}${endpoint}`;
+    console.log('API Request:', { method: options.method || 'GET', url, endpoint });
     const token = this.getToken();
     const defaultHeaders: HeadersInit = {
       'Content-Type': 'application/json',
@@ -272,6 +272,31 @@ class ApiService {
   // Admin messaging methods
   async getAdminConversations() {
     return this.request('/messages/admin/conversations');
+  }
+
+  // Real-time metrics for admin dashboard
+  async getAdminMetrics() {
+    return this.request('/admin/metrics');
+  }
+
+  async getAdminStats() {
+    return this.request('/admin/stats');
+  }
+
+  async getAdminActivity() {
+    return this.request('/admin/activity');
+  }
+
+  async getAdminCarViews() {
+    return this.request('/admin/car-views');
+  }
+
+  async getAdminNewUsers() {
+    return this.request('/admin/new-users');
+  }
+
+  async getAdminPendingBookings() {
+    return this.request('/admin/pending-bookings');
   }
 }
 

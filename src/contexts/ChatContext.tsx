@@ -95,6 +95,11 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     realTimeChatService.onUserTyping((data: TypingIndicator) => {
       console.log('⌨️ User typing:', data);
 
+      // Ignore our own typing events; only track other users (e.g., admin)
+      if (user && data.userId === user.id) {
+        return;
+      }
+
       if (data.isTyping) {
         setTypingUsers(prev => new Set([...prev, data.userId]));
       } else {
@@ -151,6 +156,14 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     } catch (error) {
       console.error('❌ Failed to connect to chat service:', error);
       setIsConnected(false);
+      
+      // Retry connection after a delay
+      setTimeout(() => {
+        if (isAuthenticated && user) {
+          console.log('🔄 Retrying chat connection...');
+          connect();
+        }
+      }, 10000);
     }
   };
 
@@ -203,33 +216,42 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
 
   const sendMessage = async (recipientId: string, carId: string, content: string): Promise<void> => {
     try {
+      console.log('ChatContext: Sending message via API:', { recipientId, carId, content });
+      
       // Send via API first (persistent storage)
       const result = await api.sendMessage({ recipientId, carId, content });
       
-      if (result.data && result.data.message) {
-        const message = result.data.message;
-
-        // Add message to current conversation if it matches
-        if (currentConversation &&
-          carId === currentConversation.carId &&
-          recipientId === currentConversation.userId) {
-          setMessages(prev => [...prev, message]);
-        }
-
-        // Also send via real-time service for instant delivery (if connected)
-        if (isConnected) {
-          try {
-            await realTimeChatService.sendMessage(recipientId, carId, content);
-          } catch (realTimeError) {
-            console.warn('Real-time message failed, but message was saved:', realTimeError);
-            notify.info('Message Sent', 'Your message was saved but may not be delivered instantly.');
+      console.log('ChatContext: API response:', result);
+      
+      if (result.data) {
+        // Handle different response structures
+        const message = result.data.message || result.data;
+        
+        if (message) {
+          // Add message to current conversation if it matches
+          if (currentConversation &&
+            carId === currentConversation.carId &&
+            recipientId === currentConversation.userId) {
+            setMessages(prev => [...prev, message]);
           }
-        } else {
-          notify.info('Message Saved', 'Your message was saved and will be delivered when connection is restored.');
-        }
 
-        // Refresh conversations to update last message
-        await loadConversations();
+          // Also send via real-time service for instant delivery (if connected)
+          if (isConnected) {
+            try {
+              await realTimeChatService.sendMessage(recipientId, carId, content);
+            } catch (realTimeError) {
+              console.warn('Real-time message failed, but message was saved:', realTimeError);
+              notify.info('Message Sent', 'Your message was saved but may not be delivered instantly.');
+            }
+          } else {
+            notify.info('Message Saved', 'Your message was saved and will be delivered when connection is restored.');
+          }
+
+          // Refresh conversations to update last message
+          await loadConversations();
+        } else {
+          throw new Error(result.error || 'Invalid response format');
+        }
       } else {
         throw new Error(result.error || 'Failed to send message');
       }

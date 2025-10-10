@@ -18,7 +18,7 @@ test('protected action prompts auth', async ({ page }) => {
   await page.goto(`${base}/`);
   const header = page.locator('nav');
   await header.getByRole('link', { name: 'Sell Car', exact: true }).click();
-  await expect(page.getByText('Join CarHub')).toBeVisible();
+  await expect(page.getByText('Join Car.Connect')).toBeVisible();
 });
 
 

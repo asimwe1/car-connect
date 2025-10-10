@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 
 // Production Backend Integration Test
-// This script tests the CarHub frontend integration with the production backend
+// This script tests the Car.Connect frontend integration with the production backend
 
 const API_BASE = 'https://carhubconnect.onrender.com/api';
 const WS_URL = 'wss://carhubconnect.onrender.com/messages';
 
-console.log('🚀 Testing CarHub Production Backend Integration\n');
+console.log('🚀 Testing Car.Connect Production Backend Integration\n');
 
 async function testAPI() {
   console.log('📡 Testing API Endpoints...');

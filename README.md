@@ -73,9 +73,9 @@ npm run build
 
 ## 🚀 Deployment
 
-[![Vercel](https://img.shields.io/badge/deployed%20on-Vercel-000?logo=vercel)](https://carhub-rw.vercel.app)
+[![Vercel](https://img.shields.io/badge/deployed%20on-Vercel-000?logo=vercel)](https://car.connect)
 
-- Live: https://carhub-rw.vercel.app
+- Live: https://car.connect
 
 ## ✅ CI Smoke Tests
 

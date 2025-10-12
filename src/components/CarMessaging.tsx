@@ -3,9 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Send, MessageCircle, User, Wifi, WifiOff, Check, CheckCheck, Clock } from 'lucide-react';
+import { Send, MessageCircle, User, Wifi, WifiOff, Check, CheckCheck, Clock, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useChat } from '@/contexts/ChatContext';
+import { useToast } from '@/hooks/use-toast';
 
 // Custom hook to safely use chat context
 const useSafeChat = () => {
@@ -28,18 +29,27 @@ interface CarMessagingProps {
   };
 }
 
-const CarMessaging: React.FC<CarMessagingProps> = ({
-  carId,
-  carDetails
-}) => {
-  const { user } = useAuth();
+interface ChatMessage {
+  _id: string;
+  sender: { _id: string; fullname: string };
+  recipient: { _id: string; fullname: string };
+  content: string;
+  car: string;
+  read: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+const CarMessaging: React.FC<CarMessagingProps> = ({ carId, carDetails }) => {
+  const { user, isAuthenticated } = useAuth();
   const chatContext = useSafeChat();
-  
+  const { toast } = useToast();
+
   // If chat context is not available, don't render the component
   if (!chatContext) {
     return null;
   }
-  
+
   const {
     isConnected,
     messages,
@@ -49,16 +59,19 @@ const CarMessaging: React.FC<CarMessagingProps> = ({
     stopTyping,
     typingUsers,
     loadMessages,
-    markAsRead
+    markAsRead,
+    connect,
   } = chatContext;
 
   // Local state for demo messages and instant UI updates
-  const [localMessages, setLocalMessages] = useState<any[]>([]);
+  const [localMessages, setLocalMessages] = useState<ChatMessage[]>([]);
   const [hasLoadedDemo, setHasLoadedDemo] = useState(false);
-  const [messageStatuses, setMessageStatuses] = useState<Map<string, 'sending' | 'sent' | 'delivered' | 'seen'>>(new Map());
+  const [messageStatuses, setMessageStatuses] = useState<Map<string, 'sending' | 'sent' | 'delivered' | 'seen'>>(
+    new Map()
+  );
 
-  // Admin ID - we'll use a special admin ID for all customer-to-admin chats
-  const adminId = 'admin-support';
+  // Admin ID - use the actual admin user ID from successful curl command
+  const adminId = '68d5498abc621c37fe2b5fab';
 
   const [inputMessage, setInputMessage] = useState('');
   const [isExpanded, setIsExpanded] = useState(false);
@@ -66,332 +79,310 @@ const CarMessaging: React.FC<CarMessagingProps> = ({
   const [isSellerTyping, setIsSellerTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Load messages when component mounts or car changes
-  useEffect(() => {
-    if (user && carId && user.role !== 'admin' && !hasLoadedDemo) {
-      // Try to load from backend, but add demo messages if it fails
-      loadMessages(carId, adminId).catch(() => {
-        // If backend fails, show demo messages for normal chat experience
-        const demoMessages = [
-          {
-            _id: 'demo-1',
-            content: 'Hello! I\'m interested in this car. Can you tell me more about it?',
-            sender: {
-              _id: adminId,
-              fullname: 'Admin Support'
-            },
-            createdAt: new Date(Date.now() - 300000).toISOString(), // 5 minutes ago
-            isRead: true
-          },
-          {
-            _id: 'demo-2',
-            content: 'Sure! This car is in excellent condition with low mileage. Would you like to schedule a test drive?',
-            sender: {
-              _id: user.id,
-              fullname: user.fullname || 'You'
-            },
-            createdAt: new Date(Date.now() - 180000).toISOString(), // 3 minutes ago
-            isRead: true
-          }
-        ];
-        setLocalMessages(demoMessages);
-        setHasLoadedDemo(true);
-        
-        // Simulate admin typing after demo messages load
-        setTimeout(() => {
-          setIsSellerTyping(true);
-          setTimeout(() => {
-            setIsSellerTyping(false);
-            // Add a new admin message after typing
-            const newAdminMessage = {
-              _id: `demo-admin-${Date.now()}`,
-              content: 'Feel free to ask any questions about this vehicle!',
-              sender: {
-                _id: adminId,
-                fullname: 'Admin Support'
-              },
-              createdAt: new Date().toISOString(),
-              isRead: true
-            };
-            setLocalMessages(prev => [...prev, newAdminMessage]);
-          }, 3000); // Admin types for 3 seconds
-        }, 5000); // Start typing after 5 seconds
+  // Handle reconnection
+  const handleReconnect = async () => {
+    try {
+      await connect();
+      toast({
+        title: 'Reconnected',
+        description: 'Successfully reconnected to the chat service.',
+      });
+    } catch (error) {
+      console.error('Reconnection failed:', error);
+      toast({
+        title: 'Reconnection Failed',
+        description: 'Could not reconnect to the chat service. Please try again.',
+        variant: 'destructive',
       });
     }
-  }, [user, carId, adminId, loadMessages, hasLoadedDemo]);
+  };
 
-  // Monitor typing indicators
+  // Load messages when component mounts or carId changes
   useEffect(() => {
-    if (currentConversation) {
-      const isTyping = typingUsers.has(adminId);
-      setIsSellerTyping(isTyping);
+    if (isAuthenticated && user && carId) {
+      loadMessages(carId, adminId).catch((error) => {
+        console.error('Failed to load messages:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load messages. Please try again later.',
+          variant: 'destructive',
+        });
+      });
     }
-  }, [typingUsers, adminId, currentConversation]);
+  }, [carId, isAuthenticated, user, loadMessages, toast]);
 
-  // Auto scroll to bottom
+  // Update local messages and statuses when messages change
   useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
+    setLocalMessages(messages);
+    // Update statuses for new messages
+    const newStatuses = new Map(messageStatuses);
+    messages.forEach((msg) => {
+      if (!newStatuses.has(msg._id)) {
+        newStatuses.set(msg._id, msg.read ? 'seen' : 'delivered');
+      }
+    });
+    setMessageStatuses(newStatuses);
   }, [messages]);
 
-  // Mark messages as read when expanded and messages change
+  // Scroll to bottom when messages change
   useEffect(() => {
-    if (isExpanded && messages.length > 0 && user) {
-      const unreadMessages = messages.filter(msg => 
-        !msg.isRead && msg.sender._id !== user.id
-      );
-      
-      if (unreadMessages.length > 0) {
-        const messageIds = unreadMessages.map(msg => msg._id);
-        markAsRead(messageIds, adminId).catch(console.error);
-      }
-    }
-  }, [isExpanded, messages, user, adminId, markAsRead]);
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [localMessages]);
 
-  const handleSendMessage = async () => {
-    if (!user || !inputMessage.trim() || user.role === 'admin') return;
+  // Typing indicator logic
+  useEffect(() => {
+    const typingUser = Array.from(typingUsers)[0]; // Assuming single typing user for simplicity
+    setIsSellerTyping(typingUser === adminId);
+  }, [typingUsers]);
 
-    const messageContent = inputMessage.trim();
-    const messageId = `local-${Date.now()}`;
-    setInputMessage('');
-    setIsTyping(true);
-
-    // Create a local message immediately for instant UI feedback
-    const localMessage = {
-      _id: messageId,
-      content: messageContent,
-      sender: {
-        _id: user.id,
-        fullname: user.fullname || 'You'
-      },
-      createdAt: new Date().toISOString(),
-      isRead: false
-    };
-
-    // Add message to local state immediately (like normal chat)
-    setLocalMessages(prev => [...prev, localMessage]);
-    setMessageStatuses(prev => new Map(prev).set(messageId, 'sending'));
-    setIsTyping(false);
-
-    // Try to send to backend (but don't block UI)
-    try {
-      console.log('Sending message to admin:', { adminId, carId, content: messageContent });
-      await sendChatMessage(adminId, carId, messageContent);
-      
-      // Update status to sent
-      setMessageStatuses(prev => new Map(prev).set(messageId, 'sent'));
-      
-      // Simulate delivered status after a short delay
-      setTimeout(() => {
-        setMessageStatuses(prev => new Map(prev).set(messageId, 'delivered'));
-        
-        // Simulate seen status after admin "reads" it
-        setTimeout(() => {
-          setMessageStatuses(prev => new Map(prev).set(messageId, 'seen'));
-        }, 2000);
-      }, 1000);
-      
-    } catch (error) {
-      console.log('Message sent locally, backend sync will retry later');
-      // Keep as sending status if backend fails
-    }
-  };
-
+  // Handle input change for typing
   const handleTyping = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputMessage(e.target.value);
-
-    if (e.target.value.length > 0) {
+    if (!isTyping && e.target.value.trim()) {
       startTyping(adminId, carId);
-    } else {
+      setIsTyping(true);
+    } else if (isTyping && !e.target.value.trim()) {
       stopTyping(adminId, carId);
+      setIsTyping(false);
     }
   };
 
-  const isMine = (msg: any) => msg.sender._id === user?.id;
+  // Handle message send with retry logic
+  const handleSendMessage = async () => {
+    if (!inputMessage.trim() || !isAuthenticated || !user) {
+      toast({
+        title: 'Error',
+        description: 'Please log in to send a message.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
-  // Function to render message status indicators
-  const renderMessageStatus = (messageId: string) => {
-    const status = messageStatuses.get(messageId);
-    
-    switch (status) {
-      case 'sending':
-        return <Clock className="w-3 h-3 text-muted-foreground animate-spin" />;
-      case 'sent':
-        return <Check className="w-3 h-3 text-muted-foreground" />;
-      case 'delivered':
-        return <CheckCheck className="w-3 h-3 text-muted-foreground" />;
-      case 'seen':
-        return <CheckCheck className="w-3 h-3 text-blue-500" />;
-      default:
-        return null;
+    const tempId = Date.now().toString(); // Temporary ID for local message
+    const newMessage: ChatMessage = {
+      _id: tempId,
+      sender: { _id: user._id, fullname: user.fullname },
+      recipient: { _id: adminId, fullname: 'Admin One' },
+      content: inputMessage,
+      car: carId,
+      read: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    setLocalMessages((prev) => [...prev, newMessage]);
+    setMessageStatuses((prev) => new Map(prev).set(tempId, 'sending'));
+    setInputMessage('');
+    if (isTyping) {
+      stopTyping(adminId, carId);
+      setIsTyping(false);
+    }
+
+    try {
+      await sendChatMessage(adminId, carId, inputMessage);
+      setMessageStatuses((prev) => new Map(prev).set(tempId, 'sent'));
+      toast({
+        title: 'Success',
+        description: 'Message sent successfully.',
+      });
+    } catch (error) {
+      console.error('Message send failed:', error);
+      setMessageStatuses((prev) => new Map(prev).set(tempId, 'failed'));
+      toast({
+        title: 'Message Failed',
+        description: 'Failed to send message. Please try again.',
+        variant: 'destructive',
+      });
+      // Retry once after 5 seconds
+      setTimeout(async () => {
+        try {
+          await sendChatMessage(adminId, carId, inputMessage);
+          setMessageStatuses((prev) => new Map(prev).set(tempId, 'sent'));
+          toast({
+            title: 'Success',
+            description: 'Message sent successfully after retry.',
+          });
+        } catch (retryError) {
+          console.error('Retry failed:', retryError);
+        }
+      }, 5000);
     }
   };
 
-  // Only show messaging for customers (not admins)
-  if (!user || user.role === 'admin') {
-    return null;
-  }
+  // Mark messages as read when viewed
+  useEffect(() => {
+    if (messages.length > 0 && currentConversation && isAuthenticated && user) {
+      const unreadMessageIds = messages
+        .filter((msg) => !msg.read && msg.sender._id !== user._id)
+        .map((msg) => msg._id);
+      if (unreadMessageIds.length > 0) {
+        markAsRead(unreadMessageIds, adminId).catch((error) => {
+          console.error('Failed to mark messages as read:', error);
+        });
+      }
+    }
+  }, [messages, currentConversation, isAuthenticated, user, markAsRead]);
 
-  // Combine backend messages with local messages for display
-  const allMessages = [...messages, ...localMessages].sort((a, b) => 
-    new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-  );
-
-  const unreadCount = allMessages.filter(msg => 
-    !msg.isRead && msg.sender._id !== user.id
-  ).length;
+  // Add demo messages if no real messages (for development)
+  useEffect(() => {
+    if (messages.length === 0 && !hasLoadedDemo && isAuthenticated && user) {
+      const demoMessages: ChatMessage[] = [
+        {
+          _id: '1',
+          sender: { _id: adminId, fullname: 'Admin One' },
+          recipient: { _id: user._id, fullname: user.fullname },
+          content: 'Hello! How can I help you with this car?',
+          car: carId,
+          read: false,
+          createdAt: new Date(Date.now() - 3600000).toISOString(),
+          updatedAt: new Date(Date.now() - 3600000).toISOString(),
+        },
+        {
+          _id: '2',
+          sender: { _id: user._id, fullname: user.fullname },
+          recipient: { _id: adminId, fullname: 'Admin One' },
+          content: "I'm interested in this vehicle.",
+          car: carId,
+          read: true,
+          createdAt: new Date(Date.now() - 1800000).toISOString(),
+          updatedAt: new Date(Date.now() - 1800000).toISOString(),
+        },
+      ];
+      setLocalMessages(demoMessages);
+      setHasLoadedDemo(true);
+    }
+  }, [messages, hasLoadedDemo, isAuthenticated, user]);
 
   return (
     <div className="fixed bottom-4 right-4 z-50">
-      {!isExpanded ? (
-        // Collapsed state - floating button
-        <Button
-          onClick={() => setIsExpanded(true)}
-          className="rounded-full h-14 w-14 shadow-lg bg-primary hover:bg-primary/90 relative"
-          size="icon"
-        >
-          <MessageCircle className="h-6 w-6" />
-          {unreadCount > 0 && (
-            <Badge 
-              variant="destructive" 
-              className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0 flex items-center justify-center text-xs"
-            >
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </Badge>
-          )}
-        </Button>
-      ) : (
-        // Expanded state - chat window
-        <Card className="w-80 h-96 shadow-xl">
-          <CardHeader className="border-b bg-gradient-to-r from-primary/5 to-primary/10 p-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-sm">
-                <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center">
-                  <User className="h-3 w-3 text-primary-foreground" />
-                </div>
-                <div>
-                  <div className="font-medium">Admin Support</div>
-                  <div className="text-xs text-muted-foreground">
-                    {carDetails.make} {carDetails.model} {carDetails.year}
-                  </div>
-                </div>
-              </CardTitle>
-              <div className="flex items-center gap-2">
-                {isConnected && (
-                  <Badge variant="outline" className="text-green-600 border-green-600 text-xs">
-                    <Wifi className="h-2 w-2 mr-1" />
-                    Online
-                  </Badge>
-                )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsExpanded(false)}
-                  className="h-6 w-6 p-0"
+      <Card className="w-full max-w-md shadow-lg">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-lg">
+            {carDetails.make} {carDetails.model} ({carDetails.year})
+          </CardTitle>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsExpanded(!isExpanded)}
+          >
+            {isExpanded ? 'Minimize' : <MessageCircle className="h-4 w-4" />}
+          </Button>
+        </CardHeader>
+        {isExpanded && (
+          <CardContent className="p-0">
+            <div className="h-96 overflow-y-auto p-4 space-y-4">
+              {localMessages.map((msg) => (
+                <div
+                  key={msg._id}
+                  className={`flex ${msg.sender._id === user?._id ? 'justify-end' : 'justify-start'}`}
                 >
-                  ×
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-
-          <CardContent className="flex-1 overflow-y-auto p-3 space-y-3 h-64">
-            {allMessages.length === 0 ? (
-              <div className="text-center text-muted-foreground text-sm py-8">
-                <MessageCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p>Start a conversation about this car</p>
-              </div>
-            ) : (
-              allMessages.map((msg) => (
-                <div key={msg._id} className={`flex ${isMine(msg) ? 'justify-end' : 'justify-start'} items-end gap-1`}>
-                  {!isMine(msg) && (
-                    <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-primary-foreground font-bold text-xs">A</span>
+                  <div
+                    className={`max-w-xs p-3 rounded-lg ${
+                      msg.sender._id === user?._id
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <User className="h-3 w-3" />
+                      <span className="text-xs font-semibold">
+                        {msg.sender.fullname}
+                      </span>
                     </div>
-                  )}
-                  <div className={`max-w-[70%] rounded-lg px-3 py-2 text-sm ${
-                    isMine(msg) 
-                      ? 'bg-primary text-primary-foreground' 
-                      : 'bg-accent'
-                  }`}>
-                    <div className="whitespace-pre-wrap">{msg.content}</div>
-                    <div className={`text-xs mt-1 flex items-center gap-1 ${
-                      isMine(msg) 
-                        ? 'text-primary-foreground/70' 
-                        : 'text-muted-foreground'
-                    }`}>
-                      <span>
-                        {new Date(msg.createdAt).toLocaleTimeString([], { 
-                          hour: '2-digit', 
-                          minute: '2-digit' 
+                    <p className="text-sm">{msg.content}</p>
+                    <div className="flex items-center gap-1 mt-1 justify-end">
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(msg.createdAt).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
                         })}
                       </span>
-                      {isMine(msg) && renderMessageStatus(msg._id)}
-                    </div>
-                  </div>
-                  {isMine(msg) && (
-                    <div className="w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
-                      <User className="h-3 w-3 text-white" />
-                    </div>
-                  )}
-                </div>
-              ))
-            )}
-            {isSellerTyping && (
-              <div className="flex justify-start items-end gap-1">
-                <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-primary-foreground font-bold text-xs">A</span>
-                </div>
-                <div className="bg-accent rounded-lg px-3 py-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">Admin is typing</span>
-                    <div className="flex gap-1">
-                      <div className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce"></div>
-                      <div className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                      <div className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                      {msg.sender._id === user?._id && (
+                        <>
+                          {messageStatuses.get(msg._id) === 'sending' && (
+                            <Clock className="h-3 w-3" />
+                          )}
+                          {messageStatuses.get(msg._id) === 'sent' && (
+                            <Check className="h-3 w-3" />
+                          )}
+                          {messageStatuses.get(msg._id) === 'delivered' && (
+                            <CheckCheck className="h-3 w-3" />
+                          )}
+                          {messageStatuses.get(msg._id) === 'seen' && (
+                            <CheckCheck className="h-3 w-3 text-blue-500" />
+                          )}
+                          {messageStatuses.get(msg._id) === 'failed' && (
+                            <span className="text-xs text-red-500">Failed</span>
+                          )}
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </CardContent>
-
-          <div className="border-t p-3">
-            <div className="flex gap-2">
-              <Input
-                placeholder="Type a message..."
-                value={inputMessage}
-                onChange={handleTyping}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSendMessage();
-                  }
-                }}
-                disabled={isTyping}
-                className="text-sm flex-1"
-                autoFocus={isExpanded}
-              />
-              <Button
-                onClick={handleSendMessage}
-                disabled={!inputMessage.trim() || isTyping}
-                className="bg-primary hover:bg-primary/90 flex-shrink-0"
-                size="sm"
-              >
-                <Send className="h-3 w-3" />
-              </Button>
+              ))}
+              {isSellerTyping && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">
+                    Admin is typing
+                  </span>
+                  <div className="flex gap-1">
+                    <div className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce"></div>
+                    <div
+                      className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce"
+                      style={{ animationDelay: '0.1s' }}
+                    ></div>
+                    <div
+                      className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce"
+                      style={{ animationDelay: '0.2s' }}
+                    ></div>
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
             </div>
-            {!isConnected && (
-              <div className="mt-2 text-xs text-muted-foreground flex items-center gap-1">
-                <WifiOff className="h-3 w-3" />
-                Offline - Messages will be sent when connection is restored
+            <div className="border-t p-3">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Type a message..."
+                  value={inputMessage}
+                  onChange={handleTyping}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
+                  }}
+                  disabled={isTyping && !inputMessage.trim()}
+                  className="text-sm flex-1"
+                  autoFocus={isExpanded}
+                />
+                <Button
+                  onClick={handleSendMessage}
+                  disabled={!inputMessage.trim() || !isAuthenticated}
+                  className="bg-primary hover:bg-primary/90 flex-shrink-0"
+                  size="sm"
+                >
+                  <Send className="h-3 w-3" />
+                </Button>
               </div>
-            )}
-          </div>
-        </Card>
-      )}
+              {!isConnected && (
+                <div className="mt-2 text-xs text-muted-foreground flex items-center gap-2">
+                  <WifiOff className="h-3 w-3" />
+                  <span>Offline - Messages will be sent when connection is restored</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleReconnect}
+                    className="p-1"
+                  >
+                    <RefreshCw className="h-3 w-3" />
+                  </Button>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        )}
+      </Card>
     </div>
   );
 };

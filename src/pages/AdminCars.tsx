@@ -18,6 +18,8 @@ import {
   ArrowLeft
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from '@/contexts/AuthContext';
+import Sidebar from "@/components/Sidebar";
 
 interface Vehicle {
   id: string;
@@ -43,10 +45,15 @@ const AdminCars = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user, logout, isAuthenticated } = useAuth();
 
   useEffect(() => {
+    if (!isAuthenticated || user?.role !== 'admin') {
+      navigate('/signin');
+      return;
+    }
     fetchVehicles();
-  }, []);
+  }, [isAuthenticated, user, navigate]);
 
   const fetchVehicles = async () => {
     try {
@@ -107,6 +114,11 @@ const AdminCars = () => {
     }
   };
 
+  const handleSignOut = async () => {
+    await logout();
+    navigate('/');
+  };
+
   const formatPrice = (price: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'RWF', minimumFractionDigits: 0 }).format(price);
 
   const filteredVehicles = vehicles.filter(vehicle =>
@@ -115,171 +127,194 @@ const AdminCars = () => {
     vehicle.subtitle.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-accent/20 to-primary/10 p-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <Button variant="ghost" onClick={() => navigate('/admin-dashboard')}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold">Manage Cars</h1>
-            <p className="text-muted-foreground">Add, edit, or remove vehicle listings</p>
-          </div>
-        </div>
-
-        {/* Search and Actions */}
-        <Card className="mb-8">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search vehicles..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              <Button onClick={() => navigate('/admin/add-car')} className="btn-hero">
-                <Plus className="h-4 w-4 mr-2" />
-                Add New Vehicle
+  if (!isAuthenticated || user?.role !== 'admin') {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-8">
+          <Card>
+            <CardContent className="p-8 text-center">
+              <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
+              <p className="text-muted-foreground">You need admin privileges to access this page.</p>
+              <Button onClick={() => navigate('/')} className="mt-4">
+                Go Home
               </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Vehicles Grid */}
-        {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
-              <Card key={i} className="overflow-hidden animate-pulse">
-                <div className="h-48 bg-muted"></div>
-                <CardContent className="p-4">
-                  <div className="space-y-2">
-                    <div className="h-4 bg-muted rounded"></div>
-                    <div className="h-4 bg-muted rounded w-3/4"></div>
-                    <div className="h-4 bg-muted rounded w-1/2"></div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : errorMessage ? (
-          <Card className="bg-destructive/10 border-destructive/30 mb-8">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <h3 className="font-semibold text-destructive">Vehicles failed to load</h3>
-                  <p className="text-sm text-muted-foreground mt-1">{errorMessage}</p>
-                </div>
-                <Button onClick={fetchVehicles} variant="destructive">Retry</Button>
-              </div>
             </CardContent>
           </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredVehicles.map((vehicle) => (
-              <Card key={vehicle.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                <div className="relative">
-                  {vehicle.image ? (
-                    <img
-                      src={vehicle.image}
-                      alt={vehicle.name}
-                      className="w-full h-48 object-cover"
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-background via-accent/20 to-primary/10">
+      <div className="flex flex-col md:flex-row">
+        <Sidebar handleSignOut={handleSignOut} />
+        <div className="flex-1 md:ml-64 p-4 md:p-8">
+          <div className="max-w-7xl mx-auto">
+            {/* Header */}
+            <div className="flex items-center gap-4 mb-8">
+              <Button variant="ghost" onClick={() => navigate('/admin-dashboard')}>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Dashboard
+              </Button>
+              <div>
+                <h1 className="text-3xl font-bold">Manage Cars</h1>
+                <p className="text-muted-foreground">Add, edit, or remove vehicle listings</p>
+              </div>
+            </div>
+
+            {/* Search and Actions */}
+            <Card className="mb-8">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search vehicles..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
                     />
-                  ) : (
-                    <div className="w-full h-48 bg-muted flex items-center justify-center">
-                      <Car className="h-12 w-12 text-muted-foreground" />
-                    </div>
-                  )}
-                  
-                  {vehicle.badge && (
-                    <Badge className="absolute top-2 left-2 bg-primary text-primary-foreground">
-                      {vehicle.badge}
-                    </Badge>
-                  )}
+                  </div>
+                  <Button onClick={() => navigate('/admin/add-car')} className="btn-hero">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add New Vehicle
+                  </Button>
                 </div>
+              </CardContent>
+            </Card>
 
-                <CardContent className="p-4">
-                  <div className="space-y-3">
+            {/* Vehicles Grid */}
+            {loading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[...Array(6)].map((_, i) => (
+                  <Card key={i} className="overflow-hidden animate-pulse">
+                    <div className="h-48 bg-muted"></div>
+                    <CardContent className="p-4">
+                      <div className="space-y-2">
+                        <div className="h-4 bg-muted rounded"></div>
+                        <div className="h-4 bg-muted rounded w-3/4"></div>
+                        <div className="h-4 bg-muted rounded w-1/2"></div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : errorMessage ? (
+              <Card className="bg-destructive/10 border-destructive/30 mb-8">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between gap-4">
                     <div>
-                      <h3 className="font-semibold text-lg">{vehicle.name}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {vehicle.year} • {vehicle.subtitle}
-                      </p>
+                      <h3 className="font-semibold text-destructive">Vehicles failed to load</h3>
+                      <p className="text-sm text-muted-foreground mt-1">{errorMessage}</p>
                     </div>
-
-                    <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Car className="h-3 w-3" />
-                        <span>{vehicle.mileage.toLocaleString()} Miles</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Fuel className="h-3 w-3" />
-                        <span>{vehicle.fuelType}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Settings className="h-3 w-3" />
-                        <span>{vehicle.transmission}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <MapPin className="h-3 w-3" />
-                        <span>{vehicle.location || 'N/A'}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="text-lg font-bold text-primary">
-                        {formatPrice(vehicle.price)}
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => navigate(`/car/${vehicle.id}`)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => navigate(`/admin/edit-car/${vehicle.id}`)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDelete(vehicle.id)}
-                          className="text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
+                    <Button onClick={fetchVehicles} variant="destructive">Retry</Button>
                   </div>
                 </CardContent>
               </Card>
-            ))}
-          </div>
-        )}
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredVehicles.map((vehicle) => (
+                  <Card key={vehicle.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                    <div className="relative">
+                      {vehicle.image ? (
+                        <img
+                          src={vehicle.image}
+                          alt={vehicle.name}
+                          className="w-full h-48 object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-48 bg-muted flex items-center justify-center">
+                          <Car className="h-12 w-12 text-muted-foreground" />
+                        </div>
+                      )}
+                      
+                      {vehicle.badge && (
+                        <Badge className="absolute top-2 left-2 bg-primary text-primary-foreground">
+                          {vehicle.badge}
+                        </Badge>
+                      )}
+                    </div>
 
-        {!loading && filteredVehicles.length === 0 && (
-          <div className="text-center py-12">
-            <Car className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No Vehicles Found</h3>
-            <p className="text-muted-foreground mb-4">
-              {searchTerm ? 'Try adjusting your search criteria.' : 'Get started by adding your first vehicle.'}
-            </p>
-            <Button onClick={() => navigate('/admin/add-car')} className="btn-hero">
-              <Plus className="h-4 w-4 mr-2" />
-              Add New Vehicle
-            </Button>
+                    <CardContent className="p-4">
+                      <div className="space-y-3">
+                        <div>
+                          <h3 className="font-semibold text-lg">{vehicle.name}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {vehicle.year} • {vehicle.subtitle}
+                          </p>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-1">
+                            <Car className="h-3 w-3" />
+                            <span>{vehicle.mileage.toLocaleString()} Miles</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Fuel className="h-3 w-3" />
+                            <span>{vehicle.fuelType}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Settings className="h-3 w-3" />
+                            <span>{vehicle.transmission}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <MapPin className="h-3 w-3" />
+                            <span>{vehicle.location || 'N/A'}</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <div className="text-lg font-bold text-primary">
+                            {formatPrice(vehicle.price)}
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => navigate(`/car/${vehicle.id}`)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => navigate(`/admin/edit-car/${vehicle.id}`)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDelete(vehicle.id)}
+                              className="text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            {!loading && filteredVehicles.length === 0 && (
+              <div className="text-center py-12">
+                <Car className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No Vehicles Found</h3>
+                <p className="text-muted-foreground mb-4">
+                  {searchTerm ? 'Try adjusting your search criteria.' : 'Get started by adding your first vehicle.'}
+                </p>
+                <Button onClick={() => navigate('/admin/add-car')} className="btn-hero">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add New Vehicle
+                </Button>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

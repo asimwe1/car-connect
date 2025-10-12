@@ -271,7 +271,7 @@ class ApiService {
 
   // Admin messaging methods
   async getAdminConversations() {
-    return this.request('/messages/admin/conversations');
+    return this.request('/messages/conversations');
   }
 
   // Real-time metrics for admin dashboard

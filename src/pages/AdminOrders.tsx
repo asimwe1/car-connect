@@ -19,7 +19,9 @@ import {
   Car
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from '@/contexts/AuthContext';
 import { api } from "@/services/api";
+import Sidebar from '@/components/Sidebar';
 
 interface Order {
   _id: string;
@@ -41,10 +43,15 @@ const AdminOrders = () => {
   const [statusFilter, setStatusFilter] = useState<string>("");
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user, logout, isAuthenticated } = useAuth();
 
   useEffect(() => {
+    if (!isAuthenticated || user?.role !== 'admin') {
+      navigate('/signin');
+      return;
+    }
     fetchOrders();
-  }, []);
+  }, [isAuthenticated, user, navigate]);
 
   const fetchOrders = async () => {
     try {
@@ -88,8 +95,8 @@ const AdminOrders = () => {
     try {
       // TODO: Implement API call to update order status
       setOrders(prev => prev.map(order => 
-        order.id === orderId 
-          ? { ...order, status: newStatus as any, updated_at: new Date().toISOString() }
+        order._id === orderId 
+          ? { ...order, status: newStatus as any, updatedAt: new Date().toISOString() }
           : order
       ));
       
@@ -107,11 +114,16 @@ const AdminOrders = () => {
     }
   };
 
+  const handleSignOut = async () => {
+    await logout();
+    navigate('/');
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'sold':
         return 'bg-green-500';
-      case 'initiated':
+      case 'pending':
         return 'bg-yellow-500';
       case 'cancelled':
         return 'bg-red-500';
@@ -159,230 +171,249 @@ const AdminOrders = () => {
   const completedOrders = orders.filter(order => order.status === 'sold').length;
   const pendingOrders = orders.filter(order => order.status === 'pending').length;
 
+  if (!isAuthenticated || user?.role !== 'admin') {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-8">
+          <Card>
+            <CardContent className="p-8 text-center">
+              <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
+              <p className="text-muted-foreground">You need admin privileges to access this page.</p>
+              <Button onClick={() => navigate('/')} className="mt-4">
+                Go Home
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-accent/20 to-primary/10 p-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <Button variant="ghost" onClick={() => navigate('/admin-dashboard')}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold">Manage Orders</h1>
-            <p className="text-muted-foreground">View and manage customer orders</p>
-          </div>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Orders</p>
-                  <p className="text-2xl font-bold">{totalOrders}</p>
-                </div>
-                <ShoppingBag className="h-8 w-8 text-primary" />
+    <div className="min-h-screen bg-gradient-to-br from-background via-accent/20 to-primary/10">
+      <div className="flex flex-col md:flex-row">
+        <Sidebar handleSignOut={handleSignOut} />
+        <div className="flex-1 md:ml-64 p-4 md:p-8">
+          <div className="max-w-7xl mx-auto">
+            {/* Header */}
+            <div className="flex items-center gap-4 mb-8">
+              <Button variant="ghost" onClick={() => navigate('/admin-dashboard')}>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Dashboard
+              </Button>
+              <div>
+                <h1 className="text-3xl font-bold">Manage Orders</h1>
+                <p className="text-muted-foreground">View and manage customer orders</p>
               </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Completed</p>
-                  <p className="text-2xl font-bold text-green-600">{completedOrders}</p>
-                </div>
-                <CheckCircle className="h-8 w-8 text-green-600" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Pending</p>
-                  <p className="text-2xl font-bold text-yellow-600">{pendingOrders}</p>
-                </div>
-                <Clock className="h-8 w-8 text-yellow-600" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Revenue</p>
-                  <p className="text-2xl font-bold text-green-600">{formatPrice(totalRevenue)}</p>
-                </div>
-                <DollarSign className="h-8 w-8 text-green-600" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Search and Filters */}
-        <Card className="mb-8">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search orders by number, customer, or vehicle..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-2 border rounded-md bg-background"
-              >
-                <option value="">All Status</option>
-                <option value="pending">Pending</option>
-                <option value="confirmed">Confirmed</option>
-                <option value="processing">Processing</option>
-                <option value="completed">Completed</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Orders List */}
-        {loading ? (
-          <div className="space-y-4">
-            {[...Array(4)].map((_, i) => (
-              <Card key={i} className="animate-pulse">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+              <Card>
                 <CardContent className="p-6">
-                  <div className="space-y-3">
-                    <div className="h-4 bg-muted rounded w-1/4"></div>
-                    <div className="h-4 bg-muted rounded w-1/2"></div>
-                    <div className="h-4 bg-muted rounded w-3/4"></div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Total Orders</p>
+                      <p className="text-2xl font-bold">{totalOrders}</p>
+                    </div>
+                    <ShoppingBag className="h-8 w-8 text-primary" />
                   </div>
                 </CardContent>
               </Card>
-            ))}
-          </div>
-        ) : errorMessage ? (
-          <Card className="bg-destructive/10 border-destructive/30 mb-6">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <h3 className="font-semibold text-destructive">Orders failed to load</h3>
-                  <p className="text-sm text-muted-foreground mt-1">{errorMessage}</p>
-                </div>
-                <Button onClick={fetchOrders} variant="destructive">Retry</Button>
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-4">
-            {filteredOrders.map((order) => (
-              <Card key={order._id} className="hover:shadow-lg transition-shadow">
+              
+              <Card>
                 <CardContent className="p-6">
-                  <div className="flex items-start justify-between">
-                    <div className="flex gap-4">
-                      <img
-                        src={order.car.primaryImage || order.car.images[0] || '/placeholder.svg'}
-                        alt={`${order.car.make} ${order.car.model}`}
-                        className="w-20 h-20 object-cover rounded-lg"
-                      />
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold text-lg">{order._id.slice(0,8).toUpperCase()}</h3>
-                          <Badge className={getStatusColor(order.status)}>
-                            <span className="flex items-center gap-1">
-                              {getStatusIcon(order.status)}
-                              {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                            </span>
-                          </Badge>
-                        </div>
-                        <div className="space-y-1 text-sm text-muted-foreground">
-                          <div className="flex items-center gap-2">
-                            <User className="h-4 w-4" />
-                            <span>{order.buyer.fullname} ({order.buyer.email})</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Car className="h-4 w-4" />
-                            <span>{order.car.make} {order.car.model} {order.car.year}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4" />
-                            <span>Ordered {formatDate(order.createdAt)}</span>
-                          </div>
-                          {order.paymentRef && (
-                            <div className="flex items-center gap-2">
-                              <DollarSign className="h-4 w-4" />
-                              <span>Payment Ref {order.paymentRef}</span>
-                            </div>
-                          )}
-                        </div>
-                        {order.notes && (
-                          <p className="text-sm text-muted-foreground italic">
-                            Note: {order.notes}
-                          </p>
-                        )}
-                      </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Completed</p>
+                      <p className="text-2xl font-bold text-green-600">{completedOrders}</p>
                     </div>
-                    
-                    <div className="text-right space-y-2">
-                      <div className="text-2xl font-bold text-primary">
-                        {formatPrice(order.amount)}
+                    <CheckCircle className="h-8 w-8 text-green-600" />
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Pending</p>
+                      <p className="text-2xl font-bold text-yellow-600">{pendingOrders}</p>
+                    </div>
+                    <Clock className="h-8 w-8 text-yellow-600" />
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Total Revenue</p>
+                      <p className="text-2xl font-bold text-green-600">{formatPrice(totalRevenue)}</p>
+                    </div>
+                    <DollarSign className="h-8 w-8 text-green-600" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Search and Filters */}
+            <Card className="mb-8">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search orders by number, customer, or vehicle..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="px-3 py-2 border rounded-md bg-background"
+                  >
+                    <option value="">All Status</option>
+                    <option value="pending">Pending</option>
+                    <option value="sold">Sold</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Orders List */}
+            {loading ? (
+              <div className="space-y-4">
+                {[...Array(4)].map((_, i) => (
+                  <Card key={i} className="animate-pulse">
+                    <CardContent className="p-6">
+                      <div className="space-y-3">
+                        <div className="h-4 bg-muted rounded w-1/4"></div>
+                        <div className="h-4 bg-muted rounded w-1/2"></div>
+                        <div className="h-4 bg-muted rounded w-3/4"></div>
                       </div>
-                      <div className="flex gap-2">
-                        {order.status === 'pending' && (
-                          <>
-                            <Button
-                              size="sm"
-                              onClick={() => handleUpdateStatus(order._id, 'sold')}
-                            >
-                              Mark Sold
-                            </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : errorMessage ? (
+              <Card className="bg-destructive/10 border-destructive/30 mb-6">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <h3 className="font-semibold text-destructive">Orders failed to load</h3>
+                      <p className="text-sm text-muted-foreground mt-1">{errorMessage}</p>
+                    </div>
+                    <Button onClick={fetchOrders} variant="destructive">Retry</Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {filteredOrders.map((order) => (
+                  <Card key={order._id} className="hover:shadow-lg transition-shadow">
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between">
+                        <div className="flex gap-4">
+                          <img
+                            src={order.car.primaryImage || order.car.images[0] || '/placeholder.svg'}
+                            alt={`${order.car.make} ${order.car.model}`}
+                            className="w-20 h-20 object-cover rounded-lg"
+                          />
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-semibold text-lg">{order._id.slice(0,8).toUpperCase()}</h3>
+                              <Badge className={getStatusColor(order.status)}>
+                                <span className="flex items-center gap-1">
+                                  {getStatusIcon(order.status)}
+                                  {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                                </span>
+                              </Badge>
+                            </div>
+                            <div className="space-y-1 text-sm text-muted-foreground">
+                              <div className="flex items-center gap-2">
+                                <User className="h-4 w-4" />
+                                <span>{order.buyer.fullname} ({order.buyer.email})</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Car className="h-4 w-4" />
+                                <span>{order.car.make} {order.car.model} {order.car.year}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Calendar className="h-4 w-4" />
+                                <span>Ordered {formatDate(order.createdAt)}</span>
+                              </div>
+                              {order.paymentRef && (
+                                <div className="flex items-center gap-2">
+                                  <DollarSign className="h-4 w-4" />
+                                  <span>Payment Ref {order.paymentRef}</span>
+                                </div>
+                              )}
+                            </div>
+                            {order.notes && (
+                              <p className="text-sm text-muted-foreground italic">
+                                Note: {order.notes}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <div className="text-right space-y-2">
+                          <div className="text-2xl font-bold text-primary">
+                            {formatPrice(order.amount)}
+                          </div>
+                          <div className="flex gap-2">
+                            {order.status === 'pending' && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleUpdateStatus(order._id, 'sold')}
+                                >
+                                  Mark Sold
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleUpdateStatus(order._id, 'cancelled')}
+                                >
+                                  Cancel
+                                </Button>
+                              </>
+                            )}
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleUpdateStatus(order._id, 'cancelled')}
+                              onClick={() => navigate(`/admin/order/${order._id}`)}
                             >
-                              Cancel
+                              <Eye className="h-4 w-4" />
                             </Button>
-                          </>
-                        )}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => navigate(`/admin/order/${order._id}`)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
 
-        {!loading && filteredOrders.length === 0 && (
-          <div className="text-center py-12">
-            <ShoppingBag className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No Orders Found</h3>
-            <p className="text-muted-foreground">
-              {searchTerm ? 'Try adjusting your search criteria.' : 'No orders have been placed yet.'}
-            </p>
+            {!loading && filteredOrders.length === 0 && (
+              <div className="text-center py-12">
+                <ShoppingBag className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No Orders Found</h3>
+                <p className="text-muted-foreground">
+                  {searchTerm ? 'Try adjusting your search criteria.' : 'No orders have been placed yet.'}
+                </p>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
 };
 
 export default AdminOrders;
-
-

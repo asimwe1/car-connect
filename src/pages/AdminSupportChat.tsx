@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -9,9 +8,7 @@ import {
   Send,
   User,
   MessageCircle,
-  Users,
   Search,
-  Clock,
   Shield,
   Bell,
   Wifi,
@@ -21,7 +18,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useChat } from '@/contexts/ChatContext';
 import { api } from '@/services/api';
-import { boltAI } from '@/services/boltAI';
 import { notificationService } from '@/services/notifications';
 import { notify } from '@/components/Notifier';
 
@@ -54,6 +50,8 @@ const AdminSupportChat = () => {
   const [isUserTyping, setIsUserTyping] = useState(false);
   const [isSystemChatMode, setIsSystemChatMode] = useState(false);
   const [systemChatMessages, setSystemChatMessages] = useState<any[]>([]);
+  const [isLoadingConversations, setIsLoadingConversations] = useState(false);
+  const [conversationError, setConversationError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -65,29 +63,41 @@ const AdminSupportChat = () => {
     loadAdminConversations();
   }, [user, navigate]);
 
-  const loadAdminConversations = async () => {
+  const loadAdminConversations = async (retryCount = 0) => {
+    if (conversations.length > 0) return; // Prevent duplicate loading
+    setIsLoadingConversations(true);
+    setConversationError(null);
+
     try {
       const result = await api.getAdminConversations();
       if (result.data) {
-        // Update the conversations in the chat context
-        // For admin, we want to see all conversations
-        loadConversations();
+        loadConversations(result.data); // Pass API data to loadConversations
       } else {
-        console.error('Failed to load admin conversations:', result.error);
+        loadConversations(); // Fallback to context's default loading
+        console.warn('No conversation data received, falling back to default loadConversations');
       }
     } catch (error) {
       console.error('Failed to load admin conversations:', error);
+      if (retryCount < 3) {
+        // Retry up to 3 times with exponential backoff
+        setTimeout(() => loadAdminConversations(retryCount + 1), 1000 * (2 ** retryCount));
+      } else {
+        setConversationError('Failed to load conversations. Please try again later.');
+        notify.error('Load Failed', 'Unable to fetch conversations. Please refresh the page.');
+        loadConversations(); // Fallback to context's default loading
+      }
+    } finally {
+      setIsLoadingConversations(false);
     }
   };
 
   useEffect(() => {
-    // Auto-select first conversation if available
-    if (conversations.length > 0 && !currentConversation) {
+    if (conversations.length > 0 && !currentConversation && !isSystemChatMode) {
       const firstConversation = conversations[0];
       setCurrentConversation(firstConversation);
       loadMessages(firstConversation.carId, firstConversation.userId);
     }
-  }, [conversations, currentConversation]);
+  }, [conversations, currentConversation, isSystemChatMode, setCurrentConversation, loadMessages]);
 
   // Monitor typing indicators
   useEffect(() => {
@@ -97,28 +107,24 @@ const AdminSupportChat = () => {
     }
   }, [typingUsers, currentConversation]);
 
+  // Scroll to latest message
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, systemChatMessages]);
 
-  // Notification integration for new messages
+  // Notify for new messages
   useEffect(() => {
-    if (messages.length > 0) {
+    if (messages.length > 0 && !isSystemChatMode) {
       const latestMessage = messages[messages.length - 1];
-      
-      // Only notify for messages from other users (not admin's own messages)
       if (latestMessage.sender._id !== user?.id) {
-        // Trigger notification service
         notificationService.notifyNewChatMessage(latestMessage.sender._id);
-        
-        // Show toast notification
         notify.info(
           'New Message',
           `${latestMessage.sender.fullname}: ${latestMessage.content.substring(0, 50)}${latestMessage.content.length > 50 ? '...' : ''}`
         );
       }
     }
-  }, [messages, user?.id]);
+  }, [messages, user?.id, isSystemChatMode]);
 
   const fetchSystemStats = async () => {
     try {
@@ -129,10 +135,10 @@ const AdminSupportChat = () => {
         api.getAdminBookings({ page: 1, limit: 1 }),
       ]);
 
-      const carsRaw: any = (carsRes as any)?.data;
-      const usersRaw: any = (usersRes as any)?.data;
-      const ordersRaw: any = (ordersRes as any)?.data;
-      const bookingsRaw: any = (bookingsRes as any)?.data;
+      const carsRaw = carsRes?.data;
+      const usersRaw = usersRes?.data;
+      const ordersRaw = ordersRes?.data;
+      const bookingsRaw = bookingsRes?.data;
 
       setSystemStats({
         totalUsers: typeof usersRaw?.total === 'number' ? usersRaw.total : Array.isArray(usersRaw?.items) ? usersRaw.items.length : Array.isArray(usersRaw) ? usersRaw.length : 0,
@@ -149,8 +155,6 @@ const AdminSupportChat = () => {
     if (!currentConversation || !user || !inputMessage.trim()) return;
 
     const userMessage = inputMessage.trim();
-    
-    // Validate message length
     if (userMessage.length > 1000) {
       notify.error('Message too long', 'Please keep your message under 1000 characters.');
       return;
@@ -160,44 +164,18 @@ const AdminSupportChat = () => {
     setIsTyping(true);
 
     try {
-      // Send admin message
       await sendChatMessage(
         currentConversation.userId,
         currentConversation.carId,
         userMessage
       );
-
       notify.success('Message sent', 'Your message has been delivered successfully.');
-
-      // Generate AI response with system context
-      const aiResponse = await boltAI.generateResponse(userMessage, systemStats, true);
-
-      // Send AI response after a brief delay
-      setTimeout(async () => {
-        try {
-          await sendChatMessage(
-            currentConversation.userId,
-            currentConversation.carId,
-            aiResponse.response
-          );
-          
-          // Trigger notification for AI response
-          notificationService.simulateNotification(
-            'info',
-            'system',
-            'AI Response Generated',
-            `AI responded to ${currentConversation.otherUser.fullname}'s conversation`
-          );
-          
-        } catch (aiError) {
-          console.error('Failed to send AI response:', aiError);
-          notify.error('AI Response Failed', 'Failed to generate AI response.');
-        }
-        setIsTyping(false);
-      }, 1500);
+      // Reload messages after sending to ensure the latest messages are displayed
+      loadMessages(currentConversation.userId, currentConversation.carId);
     } catch (error) {
       console.error('Failed to send message:', error);
       notify.error('Message Failed', 'Failed to send your message. Please try again.');
+    } finally {
       setIsTyping(false);
     }
   };
@@ -215,21 +193,21 @@ const AdminSupportChat = () => {
   };
 
   const filteredConversations = conversations.filter(conversation =>
-    conversation.otherUser.fullname.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    conversation.lastMessage?.content.toLowerCase().includes(searchTerm.toLowerCase())
+    conversation.otherUser?.fullname?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    conversation.lastMessage?.content?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // System chat functions
   const handleStatClick = (statType: string, statValue: number) => {
     setIsSystemChatMode(true);
     setCurrentConversation(null);
-    
+
     const welcomeMessage = {
       _id: Date.now().toString(),
       content: `Hello! I'm your CarConnect system assistant. You clicked on ${statType} (${statValue}). What would you like to know about ${statType.toLowerCase()}? I can help you with:
 
 • Detailed statistics and analytics
-• System performance insights  
+• System performance insights
 • Data trends and patterns
 • Administrative actions
 • Reports and summaries
@@ -248,14 +226,11 @@ Just ask me anything!`,
     if (!inputMessage.trim()) return;
 
     const userMessage = inputMessage.trim();
-    
-    // Validate message length
     if (userMessage.length > 1000) {
       notify.error('Message too long', 'Please keep your message under 1000 characters.');
       return;
     }
 
-    // Add user message
     const newUserMessage = {
       _id: Date.now().toString(),
       content: userMessage,
@@ -266,40 +241,8 @@ Just ask me anything!`,
 
     setSystemChatMessages(prev => [...prev, newUserMessage]);
     setInputMessage('');
-    setIsTyping(true);
-
-    try {
-      // Generate AI response with system context
-      const aiResponse = await boltAI.generateResponse(userMessage, systemStats, true);
-
-      // Add AI response after delay
-      setTimeout(() => {
-        const aiMessage = {
-          _id: (Date.now() + 1).toString(),
-          content: aiResponse.response,
-          sender: { _id: 'system', fullname: 'System Assistant' },
-          createdAt: new Date().toISOString(),
-          isSystem: true
-        };
-
-        setSystemChatMessages(prev => [...prev, aiMessage]);
-        setIsTyping(false);
-
-        // Trigger notification for system response
-        notificationService.simulateNotification(
-          'success',
-          'system',
-          'System Response',
-          'System assistant responded to your query'
-        );
-      }, 1500);
-
-      notify.success('Message sent', 'Your query has been sent to the system assistant.');
-    } catch (error) {
-      console.error('Failed to get system response:', error);
-      notify.error('System Error', 'Failed to get response from system assistant.');
-      setIsTyping(false);
-    }
+    setIsTyping(false);
+    notify.success('Message sent', 'Your query has been sent to the system assistant.');
   };
 
   const exitSystemChat = () => {
@@ -380,38 +323,64 @@ Just ask me anything!`,
           <div className="flex-1 overflow-y-auto">
             <div className="p-4">
               <h3 className="text-sm font-medium mb-3 text-white">Active Conversations</h3>
-              <div className="space-y-2">
-                {filteredConversations.map((conversation) => (
-                  <div
-                    key={`${conversation.userId}-${conversation.carId}`}
-                    className={`cursor-pointer transition-all duration-200 hover:bg-primary-foreground/10 rounded-lg p-3 ${currentConversation?.userId === conversation.userId &&
-                        currentConversation?.carId === conversation.carId
-                        ? 'bg-primary-foreground/20'
-                        : ''
-                      }`}
-                    onClick={() => {
-                      setCurrentConversation(conversation);
-                      loadMessages(conversation.carId, conversation.userId);
-                    }}
+              {isLoadingConversations ? (
+                <div className="text-center text-primary-foreground/80">
+                  Loading conversations...
+                </div>
+              ) : conversationError ? (
+                <div className="text-center text-red-400">
+                  {conversationError}
+                  <Button
+                    variant="ghost"
+                    className="mt-2 text-primary-foreground hover:bg-primary-foreground/10"
+                    onClick={() => loadAdminConversations()}
                   >
-                    <div className="flex items-center gap-2 mb-1">
-                      <User className="h-4 w-4 text-primary-foreground/80" />
-                      <span className="text-sm font-medium text-white">{conversation.otherUser.fullname}</span>
-                      {conversation.unreadCount > 0 && (
-                        <Badge variant="secondary" className="text-xs bg-red-500 text-white">
-                          {conversation.unreadCount}
-                        </Badge>
-                      )}
+                    Retry
+                  </Button>
+                </div>
+              ) : conversations.length === 0 ? (
+                <div className="text-center text-primary-foreground/80">
+                  No conversations available
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {filteredConversations.map((conversation) => (
+                    <div
+                      key={`${conversation.userId}-${conversation.carId}`}
+                      className={`cursor-pointer transition-all duration-200 hover:bg-primary-foreground/10 rounded-lg p-3 ${
+                        currentConversation?.userId === conversation.userId &&
+                        currentConversation?.carId === conversation.carId
+                          ? 'bg-primary-foreground/20'
+                          : ''
+                      }`}
+                      onClick={() => {
+                        setCurrentConversation(conversation);
+                        loadMessages(conversation.carId, conversation.userId);
+                      }}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <User className="h-4 w-4 text-primary-foreground/80" />
+                        <span className="text-sm font-medium text-white">
+                          {conversation.otherUser?.fullname || 'Unknown User'}
+                        </span>
+                        {conversation.unreadCount > 0 && (
+                          <Badge variant="secondary" className="text-xs bg-red-500 text-white">
+                            {conversation.unreadCount}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="text-xs text-primary-foreground/70 truncate">
+                        <p className="font-medium">
+                          {conversation.car?.make || 'Unknown'} {conversation.car?.model || ''} {conversation.car?.year || ''}
+                        </p>
+                        {conversation.lastMessage && (
+                          <p className="truncate">{conversation.lastMessage.content}</p>
+                        )}
+                      </div>
                     </div>
-                    <div className="text-xs text-primary-foreground/70 truncate">
-                      <p className="font-medium">{conversation.car.make} {conversation.car.model} {conversation.car.year}</p>
-                      {conversation.lastMessage && (
-                        <p className="truncate">{conversation.lastMessage.content}</p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -438,7 +407,9 @@ Just ask me anything!`,
                   </span>
                 </Button>
                 <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
-                  <User className="h-4 w-4 text-white" />
+                  <span className="text-white font-bold text-sm">
+                    {user?.fullname?.charAt(0).toUpperCase() || 'A'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -456,20 +427,25 @@ Just ask me anything!`,
                   </div>
                   <div>
                     <h2 className="font-semibold">
-                      {isSystemChatMode ? 'System Assistant' : currentConversation?.otherUser.fullname}
+                      {isSystemChatMode ? 'System Assistant' : currentConversation?.otherUser?.fullname || 'Unknown User'}
                     </h2>
                     <p className="text-sm text-muted-foreground">
                       {isSystemChatMode 
-                        ? 'AI-powered system analytics and insights'
-                        : `${currentConversation?.car.make} ${currentConversation?.car.model} ${currentConversation?.car.year}`
+                        ? 'System analytics and insights'
+                        : `${currentConversation?.car?.make || 'Unknown'} ${currentConversation?.car?.model || ''} ${currentConversation?.car?.year || ''}`
                       }
                     </p>
                   </div>
                   <div className="ml-auto flex items-center gap-2">
-                    {isConnected && (
+                    {isConnected ? (
                       <Badge variant="outline" className="text-green-600 border-green-600">
                         <Wifi className="h-3 w-3 mr-1" />
                         Connected
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-orange-600 border-orange-600">
+                        <WifiOff className="h-3 w-3 mr-1" />
+                        Offline
                       </Badge>
                     )}
                     <Badge variant="outline">
@@ -492,46 +468,66 @@ Just ask me anything!`,
 
               {/* Messages */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
-                {(isSystemChatMode ? systemChatMessages : messages).map((message) => (
-                  <div key={message._id} className={`flex ${message.sender._id === user?.id ? 'justify-end' : 'justify-start'} items-end gap-2`}>
-                    {message.sender._id !== user?.id && (
-                      <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
-                        <span className="text-primary-foreground font-bold text-xs">
-                          {isSystemChatMode && message.sender._id === 'system' ? 'AI' : 'S'}
-                        </span>
-                      </div>
-                    )}
-                    <div className={`max-w-[70%] rounded-2xl px-4 py-3 ${message.sender._id === user?.id
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-white border'
-                      }`}>
-                      <div className="text-sm whitespace-pre-wrap">{message.content}</div>
-                      <div className={`text-xs mt-1 ${message.sender._id === user?.id
-                          ? 'text-primary-foreground/70'
-                          : 'text-muted-foreground'
-                        }`}>
-                        {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </div>
-                    </div>
-                    {message.sender._id === user?.id && (
-                      <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
-                        <User className="h-3 w-3 text-white" />
-                      </div>
-                    )}
-                  </div>
-                ))}
+{(isSystemChatMode ? systemChatMessages : messages).map((message) => (
+  <div
+    key={message._id}
+    className={`flex items-end gap-2 ${
+      message.sender._id === user?.id ? 'justify-end' : 'justify-start'
+    }`}
+  >
+    {/* Client (left) avatar */}
+    {message.sender._id !== user?.id && (
+      <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0 order-1">
+        <span className="text-gray-800 font-bold text-sm">
+          {isSystemChatMode && message.sender._id === 'system' 
+            ? 'AI' 
+            : message.sender.fullname?.charAt(0).toUpperCase() || 'C'}
+        </span>
+      </div>
+    )}
+
+    {/* Message bubble */}
+    <div
+      className={`max-w-[70%] rounded-2xl px-4 py-3 shadow-sm ${
+        message.sender._id === user?.id
+          ? 'bg-primary text-primary-foreground order-2'
+          : 'bg-white border border-gray-200 text-gray-800 order-2'
+      }`}
+    >
+      <div className="text-sm whitespace-pre-wrap">{message.content}</div>
+      <div
+        className={`text-xs mt-1 ${
+          message.sender._id === user?.id 
+            ? 'text-primary-foreground/70' 
+            : 'text-gray-500'
+        }`}
+      >
+        {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+      </div>
+    </div>
+
+    {/* Admin (right) avatar */}
+    {message.sender._id === user?.id && (
+      <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0 order-3">
+        <span className="text-white font-bold text-sm">
+          {user?.fullname?.charAt(0).toUpperCase() || 'A'}
+        </span>
+      </div>
+    )}
+  </div>
+))}
                 {(isTyping || isUserTyping) && (
                   <div className="flex justify-start items-end gap-2">
-                    <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-primary-foreground font-bold text-xs">
-                        {isSystemChatMode ? 'AI' : 'S'}
+                    <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-gray-800 font-bold text-sm">
+                        {isSystemChatMode ? 'AI' : 'C'}
                       </span>
                     </div>
-                    <div className="bg-white border rounded-2xl px-4 py-3">
+                    <div className="bg-white border border-gray-200 rounded-2xl px-4 py-3 shadow-sm">
                       <div className="flex gap-1">
-                        <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"></div>
-                        <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></div>
-                        <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
+                        <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
+                        <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                        <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                       </div>
                     </div>
                   </div>
@@ -554,7 +550,7 @@ Just ask me anything!`,
                         }
                       }}
                       disabled={isTyping}
-                      className="min-h-[60px] max-h-[120px] resize-none"
+                      className="min-h-[60px] max-h-[120px] resize-none border-gray-300"
                       rows={2}
                     />
                     <div className="flex justify-between items-center mt-2">
@@ -564,15 +560,16 @@ Just ask me anything!`,
                             <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                             System Chat Active
                           </span>
-                        ) : isConnected && (
+                        ) : isConnected ? (
                           <span className="flex items-center gap-1">
                             <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                             Connected
                           </span>
-                        )}
-                        {isTyping && <span className="text-blue-500">{isSystemChatMode ? 'System AI is typing...' : 'AI is typing...'}</span>}
-                        {!isSystemChatMode && !isConnected && (
+                        ) : (
                           <span className="text-orange-500">Offline - Messages will be sent when connection is restored</span>
+                        )}
+                        {isTyping && (
+                          <span className="text-blue-500">{isSystemChatMode ? 'System is typing...' : 'User is typing...'}</span>
                         )}
                       </div>
                       <div className="text-xs text-muted-foreground">
@@ -607,4 +604,3 @@ Just ask me anything!`,
 };
 
 export default AdminSupportChat;
-

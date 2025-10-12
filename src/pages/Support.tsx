@@ -7,7 +7,6 @@ import { ArrowLeft, Send, User, MessageCircle, Wifi, WifiOff, Bot } from "lucide
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useChat } from "@/contexts/ChatContext";
-import { boltAI, SystemContext } from "@/services/boltAI";
 import { api } from "@/services/api";
 import { notificationService } from "@/services/notifications";
 import { notify } from "@/components/Notifier";
@@ -27,7 +26,7 @@ const Support = () => {
   const [inputMessage, setInputMessage] = useState("");
   const [supportMessages, setSupportMessages] = useState<SupportMessage[]>([]);
   const [isTyping, setIsTyping] = useState(false);
-  const [systemContext, setSystemContext] = useState<SystemContext>({
+  const [systemContext, setSystemContext] = useState({
     totalUsers: 0,
     totalCars: 0,
     totalOrders: 0,
@@ -113,41 +112,8 @@ How can I assist you today?`,
 
     setSupportMessages(prev => [...prev, userMsg]);
     setInputMessage("");
-    setIsTyping(true);
-
-    try {
-      // Simulate sending to backend (you can integrate real API here)
-      notify.success('Message sent', 'Your message has been sent to support.');
-
-      // Generate AI response
-      const aiResponse = await boltAI.generateResponse(userMessage, systemContext, false);
-
-      // Add AI response after delay
-      setTimeout(() => {
-        const supportMsg: SupportMessage = {
-          id: (Date.now() + 1).toString(),
-          content: aiResponse.response,
-          sender: 'support',
-          timestamp: new Date()
-        };
-
-        setSupportMessages(prev => [...prev, supportMsg]);
-        setIsTyping(false);
-
-        // Trigger notification for support response
-        notificationService.simulateNotification(
-          'success',
-          'chat',
-          'Support Response',
-          'You received a response from our support team'
-        );
-      }, 1500 + Math.random() * 1000);
-
-    } catch (error) {
-      console.error('Failed to get support response:', error);
-      notify.error('Support Error', 'Failed to get response from support. Please try again.');
-      setIsTyping(false);
-    }
+    setIsTyping(false);
+    notify.success('Message sent', 'Your message has been sent to support.');
   };
 
   const handleTyping = (e: React.ChangeEvent<HTMLTextAreaElement>) => {

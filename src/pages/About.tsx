@@ -5,6 +5,8 @@ import Footer from '@/components/Footer';
 import { Card, CardContent } from '@/components/ui/card';
 import { Shield, Award, Users, Clock } from 'lucide-react';
 import LazyImage from '@/components/LazyImage';
+import mission1 from '@/assets/mission1.png';
+
 
 const About = () => {
   const stats = [
@@ -57,8 +59,8 @@ const About = () => {
             </div>
             <div className="animate-zoom-in">
               <LazyImage 
-                src="/placeholder.svg" 
-                alt="Our mission" 
+                src={mission1} 
+                alt="Our mission"
                 containerClassName="w-full h-96"
                 className="rounded-lg shadow-lg"
               />

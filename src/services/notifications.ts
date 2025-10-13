@@ -23,6 +23,11 @@ class NotificationService {
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private reconnectDelay = 1000;
+  // De-duplication structures
+  private recentlySeenIds: Set<string> = new Set();
+  private recentContentKeyToTimestampMs: Map<string, number> = new Map();
+  private dedupeWindowMs = 10_000; // suppress identical notifications seen within 10s
+  private maxTrackedRecent = 200; // cap memory used by dedupe caches
   private listeners: ((state: NotificationState) => void)[] = [];
   private state: NotificationState = {
     notifications: [],
@@ -78,37 +83,21 @@ class NotificationService {
         console.log('Notifications WebSocket disconnected:', event.code, event.reason);
         this.state.isConnected = false;
         this.notifyListeners();
-        
-        // Always attempt reconnect in production, and in development if explicitly configured
-        if (import.meta.env.PROD || import.meta.env.VITE_WS_URL) {
-          this.attemptReconnect();
-        } else {
-          console.log('WebSocket connection closed - using demo notifications in development');
-          this.addDemoNotifications();
-        }
+        // Always attempt reconnect; do not seed demo notifications
+        this.attemptReconnect();
       };
 
       this.ws.onerror = (error) => {
         console.error('Notifications WebSocket error:', error);
         this.state.isConnected = false;
         this.notifyListeners();
-        
-        // In production, always try to reconnect. In development, use demo notifications
-        if (!import.meta.env.PROD && !import.meta.env.VITE_WS_URL) {
-          console.log('WebSocket connection failed - using demo notifications in development');
-          this.addDemoNotifications();
-        }
+        // Try to reconnect; do not seed demo notifications
+        this.attemptReconnect();
       };
     } catch (error) {
       console.error('Failed to connect to notifications WebSocket:', error);
-      
-      // In production, always try to reconnect. In development, use demo notifications
-      if (import.meta.env.PROD || import.meta.env.VITE_WS_URL) {
-        this.attemptReconnect();
-      } else {
-        console.log('WebSocket connection failed - using demo notifications in development');
-        this.addDemoNotifications();
-      }
+      // Attempt to reconnect regardless of environment; do not seed demo notifications
+      this.attemptReconnect();
     }
   }
 
@@ -127,43 +116,73 @@ class NotificationService {
   }
 
   private addDemoNotifications() {
-    // Add some demo notifications for development
-    const demoNotifications: Notification[] = [
-      {
-        id: '1',
-        type: 'info',
-        title: 'Welcome to CarConnect',
-        message: 'Your account has been successfully created!',
-        timestamp: new Date(Date.now() - 5 * 60 * 1000), // 5 minutes ago
-        read: false,
-        category: 'system'
-      },
-      {
-        id: '2',
-        type: 'success',
-        title: 'Car Listed Successfully',
-        message: 'Your Toyota Camry has been listed for sale.',
-        timestamp: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes ago
-        read: true,
-        category: 'user'
-      }
-    ];
-
-    this.state.notifications = demoNotifications;
-    this.state.unreadCount = demoNotifications.filter(n => !n.read).length;
+    // Demo notifications disabled to avoid misleading default messages
+    this.state.notifications = [];
+    this.state.unreadCount = 0;
     this.notifyListeners();
   }
 
   private handleNotification(data: any) {
+    // Build canonical fields with safe fallbacks
+    const canonical = {
+      id: String(data?.id || ''),
+      type: (data?.type as Notification['type']) || 'info',
+      title: String(data?.title || 'Notification'),
+      message: String(data?.message || ''),
+      category: (data?.category as Notification['category']) || 'system',
+      data: data?.data ?? undefined,
+      timestamp: typeof data?.timestamp === 'number' || typeof data?.timestamp === 'string'
+        ? new Date(data.timestamp)
+        : new Date(),
+    };
+
+    // Compute dedupe keys
+    const idKey = canonical.id.trim();
+    const contentKey = this.buildContentKey(canonical.type, canonical.title, canonical.message, canonical.category, canonical.data);
+    const now = Date.now();
+
+    // Drop if same id seen recently
+    if (idKey) {
+      if (this.recentlySeenIds.has(idKey)) {
+        return; // duplicate by id
+      }
+    }
+
+    // Drop if identical content within dedupe window
+    const lastSeen = this.recentContentKeyToTimestampMs.get(contentKey) || 0;
+    if (now - lastSeen < this.dedupeWindowMs) {
+      return; // duplicate by content cooldown
+    }
+
+    // Record as seen before enqueue
+    if (idKey) {
+      this.recentlySeenIds.add(idKey);
+      if (this.recentlySeenIds.size > this.maxTrackedRecent) {
+        // best-effort prune: rebuild with last N from current notifications
+        const keep = new Set<string>();
+        for (const n of this.state.notifications.slice(0, 100)) {
+          if (n.id) keep.add(n.id);
+        }
+        this.recentlySeenIds = keep;
+      }
+    }
+    this.recentContentKeyToTimestampMs.set(contentKey, now);
+    if (this.recentContentKeyToTimestampMs.size > this.maxTrackedRecent) {
+      // prune oldest entries
+      const entries = Array.from(this.recentContentKeyToTimestampMs.entries()).sort((a, b) => a[1] - b[1]);
+      const toRemove = entries.slice(0, Math.max(0, entries.length - this.maxTrackedRecent + 20));
+      for (const [k] of toRemove) this.recentContentKeyToTimestampMs.delete(k);
+    }
+
     const notification: Notification = {
-      id: data.id || Date.now().toString(),
-      type: data.type || 'info',
-      title: data.title || 'Notification',
-      message: data.message || '',
-      timestamp: new Date(data.timestamp || Date.now()),
+      id: idKey || Date.now().toString(),
+      type: canonical.type,
+      title: canonical.title,
+      message: canonical.message,
+      timestamp: canonical.timestamp,
       read: false,
-      category: data.category || 'system',
-      data: data.data
+      category: canonical.category,
+      data: canonical.data
     };
 
     this.state.notifications.unshift(notification);
@@ -175,6 +194,28 @@ class NotificationService {
     }
 
     this.notifyListeners();
+  }
+
+  private buildContentKey(
+    type: Notification['type'],
+    title: string,
+    message: string,
+    category: Notification['category'],
+    data?: any
+  ): string {
+    // Stable stringify without functions/undefined & avoid large payloads
+    let dataString = '';
+    try {
+      if (data != null) {
+        dataString = JSON.stringify(data, (_key, value) => (
+          typeof value === 'function' || value === undefined ? null : value
+        ));
+        if (dataString.length > 500) dataString = dataString.slice(0, 500);
+      }
+    } catch {
+      dataString = '';
+    }
+    return `${type}|${category}|${title}|${message}|${dataString}`;
   }
 
   private notifyListeners() {

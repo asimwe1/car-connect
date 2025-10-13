@@ -63,7 +63,7 @@ const Navbar = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden md:flex items-center space-x-6">
             {navLinks.map((link) => (
               <NavLink
                 key={link.name}
@@ -73,7 +73,7 @@ const Navbar = () => {
                   const active = isActiveLink(link);
                   return `relative text-sm font-medium transition-colors duration-200 ${
                     active ? 'text-primary' : 'text-muted-foreground hover:text-primary'
-                  } after:content-[''] after:absolute after:left-0 after:-bottom-2 after:h-[2px] after:bg-primary after:transition-all after:duration-300 after:origin-left ${
+                  } ${link.name === 'Home' ? 'hidden lg:inline-block' : ''} after:content-[''] after:absolute after:left-0 after:-bottom-2 after:h-[2px] after:bg-primary after:transition-all after:duration-300 after:origin-left ${
                     active ? 'after:w-full after:scale-x-100 after:opacity-100' : 'after:w-0 after:scale-x-0 after:opacity-0 hover:after:w-full hover:after:scale-x-100 hover:after:opacity-100'
                   }`;
                 }}

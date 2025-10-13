@@ -12,7 +12,9 @@ import {
   Shield,
   Bell,
   Wifi,
-  WifiOff
+  WifiOff,
+  Menu,
+  X
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -53,6 +55,7 @@ const AdminSupportChat = () => {
   const [isLoadingConversations, setIsLoadingConversations] = useState(false);
   const [conversationError, setConversationError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (!user || user.role !== 'admin') {
@@ -253,9 +256,21 @@ Just ask me anything!`,
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="flex h-screen">
+      {/* Mobile header */}
+      <div className="flex items-center justify-between px-4 py-3 border-b md:hidden">
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" onClick={() => navigate('/admin-dashboard')} className="px-2">
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <h1 className="text-base font-semibold">Support Chat</h1>
+        </div>
+        <Button variant="ghost" onClick={() => setIsSidebarOpen(v => !v)} className="px-2">
+          {isSidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </Button>
+      </div>
+      <div className="flex flex-col md:flex-row h-[100dvh]">
         {/* Sidebar */}
-        <div className="w-80 bg-primary text-primary-foreground flex flex-col">
+        <div className={`${isSidebarOpen ? 'flex fixed inset-0 z-40' : 'hidden'} md:flex md:static md:inset-auto md:z-auto w-full md:w-80 bg-primary text-primary-foreground flex-col`}> 
           <div className="p-6 border-b border-primary-foreground/20">
             <div className="flex items-center gap-4 mb-4">
               <Button variant="ghost" onClick={() => navigate('/admin-dashboard')} className="text-primary-foreground hover:bg-primary-foreground/10">
@@ -383,24 +398,28 @@ Just ask me anything!`,
               )}
             </div>
           </div>
+          {/* Mobile close button */}
+          <div className="md:hidden mt-auto p-4 border-t border-primary-foreground/20">
+            <Button variant="secondary" className="w-full" onClick={() => setIsSidebarOpen(false)}>Close</Button>
+          </div>
         </div>
 
         {/* Chat Area */}
-        <div className="flex-1 flex flex-col bg-gray-50">
+        <div className="flex-1 flex flex-col bg-gray-50" onClick={() => { if (isSidebarOpen) setIsSidebarOpen(false); }}>
           {/* Top Header */}
-          <div className="bg-white border-b p-4">
-            <div className="flex items-center justify-between">
+              <div className="bg-white border-b p-4">
+                <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="relative">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    placeholder="Search or type"
-                    className="pl-10 w-64"
-                  />
+                      <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        placeholder="Search or type"
+                        className="pl-10 w-[200px] sm:w-64"
+                      />
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <Button variant="ghost" size="icon" className="relative">
+                    <Button variant="ghost" size="icon" className="relative">
                   <Bell className="h-5 w-5" />
                   <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 bg-red-600 rounded-full">
                     3
@@ -418,7 +437,7 @@ Just ask me anything!`,
           {(currentConversation || isSystemChatMode) ? (
             <>
               {/* Chat Header */}
-              <div className="border-b p-4 bg-white">
+              <div className="border-b p-3 sm:p-4 bg-white">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
                     <span className="text-primary-foreground font-bold text-sm">
@@ -426,10 +445,10 @@ Just ask me anything!`,
                     </span>
                   </div>
                   <div>
-                    <h2 className="font-semibold">
+                    <h2 className="font-semibold text-sm sm:text-base">
                       {isSystemChatMode ? 'System Assistant' : currentConversation?.otherUser?.fullname || 'Unknown User'}
                     </h2>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-xs sm:text-sm text-muted-foreground">
                       {isSystemChatMode 
                         ? 'System analytics and insights'
                         : `${currentConversation?.car?.make || 'Unknown'} ${currentConversation?.car?.model || ''} ${currentConversation?.car?.year || ''}`
@@ -467,7 +486,7 @@ Just ask me anything!`,
               </div>
 
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+              <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4 bg-gray-50">
 {(isSystemChatMode ? systemChatMessages : messages).map((message) => (
   <div
     key={message._id}
@@ -488,7 +507,7 @@ Just ask me anything!`,
 
     {/* Message bubble */}
     <div
-      className={`max-w-[70%] rounded-2xl px-4 py-3 shadow-sm ${
+      className={`max-w-[85%] sm:max-w-[70%] rounded-2xl px-4 py-3 shadow-sm ${
         message.sender._id === user?.id
           ? 'bg-primary text-primary-foreground order-2'
           : 'bg-white border border-gray-200 text-gray-800 order-2'
@@ -536,8 +555,8 @@ Just ask me anything!`,
               </div>
 
               {/* Message Input */}
-              <div className="border-t p-4 bg-white">
-                <div className="flex gap-3 items-end">
+              <div className="border-t p-3 sm:p-4 bg-white">
+                <div className="flex gap-2 sm:gap-3 items-end">
                   <div className="flex-1">
                     <Textarea
                       placeholder="Type your message here... (Press Enter to send, Shift+Enter for new line)"
@@ -550,7 +569,7 @@ Just ask me anything!`,
                         }
                       }}
                       disabled={isTyping}
-                      className="min-h-[60px] max-h-[120px] resize-none border-gray-300"
+                      className="min-h-[48px] sm:min-h-[60px] max-h-[150px] resize-none border-gray-300"
                       rows={2}
                     />
                     <div className="flex justify-between items-center mt-2">
@@ -580,7 +599,7 @@ Just ask me anything!`,
                   <Button
                     onClick={isSystemChatMode ? handleSystemMessage : handleSendMessage}
                     disabled={!inputMessage.trim() || isTyping || inputMessage.length > 1000}
-                    className="bg-primary hover:bg-primary/90 transition-all duration-200 hover:scale-105 h-[60px] w-[60px]"
+                    className="bg-primary hover:bg-primary/90 transition-all duration-200 hover:scale-105 h-[48px] w-[48px] sm:h-[60px] sm:w-[60px]"
                     size="icon"
                   >
                     <Send className="h-5 w-5" />

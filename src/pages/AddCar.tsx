@@ -21,6 +21,7 @@ const carSchema = z.object({
   model: z.string().min(1, 'Model is required').trim(),
   year: z.number().min(1900, 'Year must be after 1900').max(2025, 'Year cannot be in the future'),
   price: z.number().min(0, 'Price must be non-negative'),
+  currency: z.enum(['RWF', 'USD']).default('RWF'),
   mileage: z.number().min(0, 'Mileage must be non-negative').optional(),
   vin: z.string().optional(),
   description: z.string().optional(),
@@ -49,6 +50,7 @@ const AddCar = () => {
       model: '',
       year: 2023,
       price: 0,
+      currency: 'RWF',
       mileage: 0,
       fuelType: 'petrol',
       transmission: 'automatic',
@@ -96,6 +98,7 @@ const AddCar = () => {
         model: data.model,
         year: data.year,
         price: data.price,
+        currency: data.currency,
         mileage: data.mileage || 0,
         fuelType: data.fuelType,
         transmission: data.transmission,
@@ -262,19 +265,35 @@ const AddCar = () => {
                   {/* Pricing */}
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold">Pricing</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="price">Price (RWF) *</Label>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="space-y-2 md:col-span-2">
+                        <Label htmlFor="price">Price ({watch('currency')}) *</Label>
                         <Input
                           id="price"
                           type="number"
                           {...register('price', { valueAsNumber: true })}
-                          placeholder="15000000"
+                          placeholder={watch('currency') === 'USD' ? '15000' : '15000000'}
                           min="0"
                           step="0.01"
                           className={errors.price ? 'border-destructive' : ''}
                         />
                         {errors.price && <p className="text-sm text-destructive">{errors.price.message}</p>}
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="currency">Currency</Label>
+                        <Select
+                          value={watch('currency')}
+                          onValueChange={(value) => setValue('currency', value as any)}
+                        >
+                          <SelectTrigger className={errors.currency ? 'border-destructive' : ''}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="RWF">RWF</SelectItem>
+                            <SelectItem value="USD">USD</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {errors.currency && <p className="text-sm text-destructive">{(errors as any).currency?.message}</p>}
                       </div>
                     </div>
                   </div>

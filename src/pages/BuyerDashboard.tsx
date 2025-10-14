@@ -115,6 +115,7 @@ const BuyerDashboard: React.FC = () => {
     { icon: Heart, label: 'Wishlist', href: '/buyer/wishlist' },
     { icon: Calendar, label: 'Bookings', href: '/buyer/bookings' },
     { icon: Car, label: 'Buy Cars', href: '/buy-cars' },
+    { icon: Car, label: 'Sell Cars', href: '/list-car' },
     { icon: MessageCircle, label: 'Support', href: '/support' },
   ];
 

@@ -334,18 +334,13 @@ const SellCarTab = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div>
             <Label htmlFor="make">Make *</Label>
-            <Select value={formData.make} onValueChange={(value) => handleInputChange('make', value)}>
-              <SelectTrigger className="search-input">
-                <SelectValue placeholder="Select make" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="toyota">Toyota</SelectItem>
-                <SelectItem value="honda">Honda</SelectItem>
-                <SelectItem value="mercedes">Mercedes</SelectItem>
-                <SelectItem value="bmw">BMW</SelectItem>
-                <SelectItem value="nissan">Nissan</SelectItem>
-              </SelectContent>
-            </Select>
+            <Input
+              id="make"
+              placeholder="e.g., Mercedes-Benz"
+              value={formData.make}
+              onChange={(e) => handleInputChange('make', e.target.value)}
+              className="search-input"
+            />
           </div>
 
           <div>

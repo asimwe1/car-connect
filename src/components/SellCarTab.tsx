@@ -448,17 +448,14 @@ const SellCarTab = () => {
 
           <div>
             <Label htmlFor="location">Location *</Label>
-            <Select value={formData.location} onValueChange={(value) => handleInputChange('location', value)}>
-              <SelectTrigger className="search-input">
-                <SelectValue placeholder="Select location" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="kigali">Kigali</SelectItem>
-                <SelectItem value="butare">Butare</SelectItem>
-                <SelectItem value="musanze">Musanze</SelectItem>
-                <SelectItem value="rubavu">Rubavu</SelectItem>
-              </SelectContent>
-            </Select>
+            <input
+              id="location"
+              list="locations"
+              placeholder="e.g., Kigali"
+              value={formData.location}
+              onChange={(e) => handleInputChange('location', e.target.value)}
+              className="search-input"
+            />
           </div>
         </div>
 

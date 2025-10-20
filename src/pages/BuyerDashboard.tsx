@@ -212,7 +212,9 @@ const BuyerDashboard: React.FC = () => {
           <div className="flex-1 p-4 md:p-8">
             <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0 mb-6 md:mb-8">
               <div>
-                <h1 className="text-2xl md:text-3xl font-bold">Welcome back, {user?.fullname || 'User'}!</h1>
+                <h1 className="text-2xl md:text-3xl font-bold">
+                  Welcome back, <span className="text-primary">{user?.fullname || 'User'}</span>! 👋
+                </h1>
                 <p className="text-sm md:text-base text-muted-foreground">Here's what's happening with your car search</p>
               </div>
               
@@ -257,7 +259,7 @@ const BuyerDashboard: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-              <Link to="/cars">
+              <Link to="/buy-cars">
                 <Card className="bg-card/80 backdrop-blur-sm border border-border hover:shadow-card transition-shadow cursor-pointer">
                   <CardContent className="p-6 text-center">
                     <Car className="w-8 h-8 text-primary mx-auto mb-3" />

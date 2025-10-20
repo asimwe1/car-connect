@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, Phone, Lock, User } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { activityService } from '@/services/activityService';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -52,6 +53,14 @@ const onSubmit = async (data: FormValues) => {
         variant: "destructive",
       });
       return;
+    }
+
+    // Track new user registration activity
+    if (result.user) {
+      activityService.trackNewUser(result.user.id, {
+        fullname: result.user.fullname,
+        phone: result.user.phone
+      });
     }
 
     // OTP verification part commented out for now

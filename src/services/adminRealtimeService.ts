@@ -69,6 +69,23 @@ class AdminRealtimeService {
         this.emit('stats', data);
       });
 
+      // Additional real-time events for dynamic activity tracking
+      this.socket.on('user_action', (data) => {
+        this.emit('user_action', data);
+      });
+
+      this.socket.on('system_event', (data) => {
+        this.emit('system_event', data);
+      });
+
+      this.socket.on('order_update', (data) => {
+        this.emit('orders', data);
+      });
+
+      this.socket.on('car_interaction', (data) => {
+        this.emit('car_interaction', data);
+      });
+
     } catch (error) {
       console.error('Failed to initialize admin real-time service:', error);
       this.emit('connection_status', { connected: false, error: true });
@@ -156,6 +173,30 @@ class AdminRealtimeService {
   requestStats() {
     if (this.socket?.connected) {
       this.socket.emit('request_stats');
+    }
+  }
+
+  requestUserActions() {
+    if (this.socket?.connected) {
+      this.socket.emit('request_user_actions');
+    }
+  }
+
+  requestSystemEvents() {
+    if (this.socket?.connected) {
+      this.socket.emit('request_system_events');
+    }
+  }
+
+  requestOrderUpdates() {
+    if (this.socket?.connected) {
+      this.socket.emit('request_order_updates');
+    }
+  }
+
+  requestCarInteractions() {
+    if (this.socket?.connected) {
+      this.socket.emit('request_car_interactions');
     }
   }
 }

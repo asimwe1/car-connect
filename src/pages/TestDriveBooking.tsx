@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/services/api";
+import { activityService } from "@/services/activityService";
 import { ArrowLeft, Calendar, Clock, Car, User, Phone, Mail, MapPin } from "lucide-react";
 
 interface Vehicle {
@@ -92,6 +93,10 @@ const TestDriveBooking = () => {
       // Create booking via backend
       const bookingRes = await api.createBooking({ carId: id, notes: formData.message });
       if (bookingRes.error) throw new Error(bookingRes.error);
+
+      // Track booking activity
+      const bookingId = bookingRes.data?._id || `booking-${Date.now()}`;
+      activityService.trackBooking(bookingId, id, 'user');
 
       toast({
         title: "Test Drive Booked!",

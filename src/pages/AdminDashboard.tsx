@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useChat } from '@/contexts/ChatContext';
 import { api } from '@/services/api';
 import { adminRealtimeService } from '@/services/adminRealtimeService';
+import { activityService, ActivityData } from '@/services/activityService';
 import { Eye, Users, Calendar, MessageCircle } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
@@ -44,7 +45,7 @@ const AdminDashboard = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [recentMessages, setRecentMessages] = useState<any[]>([]);
-  const [recentActivity, setRecentActivity] = useState<any[]>([]);
+  const [recentActivity, setRecentActivity] = useState<ActivityData[]>([]);
   const [isRealtimeConnected, setIsRealtimeConnected] = useState(false);
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
@@ -59,62 +60,45 @@ const AdminDashboard = () => {
     }
 
     fetchDashboardData();
+    fetchActivities();
 
     refreshIntervalRef.current = setInterval(() => {
       fetchDashboardData(true);
+      fetchActivities(true);
+      // Generate random realistic activities occasionally
+      if (Math.random() < 0.1) { // 10% chance every 30 seconds
+        activityService.generateRandomRealisticActivities();
+      }
     }, 30000);
 
     const unsubscribeCarViews = adminRealtimeService.subscribe('car_views', (data) => {
       setStats((prev) => ({ ...prev, carViewsToday: data.count }));
-      setRecentActivity((prev) => [{
-        id: `car-view-${Date.now()}`,
-        type: 'car_view',
-        message: `${data.count} car views today`,
-        timestamp: new Date(),
-        icon: Eye,
-        priority: 'medium',
-      }, ...prev.slice(0, 14)]);
+      // Track car view activity
+      activityService.trackCarView(data.carId, data.userId);
     });
 
     const unsubscribeNewUsers = adminRealtimeService.subscribe('new_users', (data) => {
       setStats((prev) => ({ ...prev, newUsersThisWeek: data.count }));
-      setRecentActivity((prev) => [{
-        id: `new-user-${Date.now()}`,
-        type: 'new_user',
-        message: `${data.count} new users this week`,
-        timestamp: new Date(),
-        icon: Users,
-        priority: 'medium',
-      }, ...prev.slice(0, 14)]);
+      // Track new user activity
+      activityService.trackNewUser(data.userId, data.userInfo);
     });
 
     const unsubscribeBookings = adminRealtimeService.subscribe('bookings', (data) => {
       setStats((prev) => ({ ...prev, pendingBookings: data.pending }));
-      setRecentActivity((prev) => [{
-        id: `booking-${Date.now()}`,
-        type: 'booking',
-        message: `${data.pending} pending bookings`,
-        timestamp: new Date(),
-        icon: Calendar,
-        priority: 'high',
-      }, ...prev.slice(0, 14)]);
+      // Track booking activity
+      activityService.trackBooking(data.bookingId, data.carId, data.userId);
     });
 
     const unsubscribeMessages = adminRealtimeService.subscribe('messages', (data) => {
       setStats((prev) => ({ ...prev, unreadMessages: data.unread }));
       setRecentMessages((prev) => [data.message, ...prev.slice(0, 4)]);
-      setRecentActivity((prev) => [{
-        id: `message-${Date.now()}`,
-        type: 'message',
-        message: `New message from ${data.message.sender?.fullname || 'Customer'}`,
-        timestamp: new Date(),
-        icon: MessageCircle,
-        priority: 'high',
-      }, ...prev.slice(0, 14)]);
+      // Track message activity
+      activityService.trackMessage(data.messageId, data.senderId, data.recipientId);
     });
 
     const unsubscribeActivity = adminRealtimeService.subscribe('activity', (data) => {
-      setRecentActivity((prev) => [data, ...prev.slice(0, 14)]);
+      // Let the activity service handle this
+      activityService.createActivity(data);
     });
 
     const unsubscribeStats = adminRealtimeService.subscribe('stats', (data) => {
@@ -131,6 +115,15 @@ const AdminDashboard = () => {
         adminRealtimeService.requestActivity();
         adminRealtimeService.requestStats();
       }
+    });
+
+    // Subscribe to activity service updates
+    const unsubscribeActivityUpdates = activityService.subscribe('activities_updated', (activities) => {
+      setRecentActivity(activities.slice(0, 15));
+    });
+
+    const unsubscribeActivityCreated = activityService.subscribe('activity_created', (activity) => {
+      setRecentActivity((prev) => [activity, ...prev.slice(0, 14)]);
     });
 
     if (chatContext) {
@@ -155,8 +148,26 @@ const AdminDashboard = () => {
       unsubscribeActivity();
       unsubscribeStats();
       unsubscribeConnection();
+      unsubscribeActivityUpdates();
+      unsubscribeActivityCreated();
     };
   }, [isAuthenticated, user, navigate, chatContext]);
+
+  const fetchActivities = async (silent = false) => {
+    try {
+      const activities = await activityService.fetchActivities(silent);
+      setRecentActivity(activities.slice(0, 15));
+    } catch (error) {
+      console.error('Failed to fetch activities:', error);
+      if (!silent) {
+        toast({
+          title: "Activity Update Failed",
+          description: "Could not fetch latest activity data",
+          variant: "destructive"
+        });
+      }
+    }
+  };
 
   const fetchDashboardData = async (silent = false) => {
     try {
@@ -222,47 +233,8 @@ const AdminDashboard = () => {
         unreadMessages,
       });
 
-      const apiActivity = Array.isArray(activityRaw) ? activityRaw : [];
-      const dynamicActivity = [
-        {
-          id: `activity-${Date.now()}`,
-          type: 'car_view',
-          message: `${carViewsToday} car views today`,
-          timestamp: new Date(),
-          icon: Eye,
-          priority: 'high',
-        },
-        {
-          id: `activity-${Date.now() - 1000}`,
-          type: 'new_user',
-          message: `${newUsersThisWeek} new users this week`,
-          timestamp: new Date(Date.now() - 300000),
-          icon: Users,
-          priority: 'medium',
-        },
-        {
-          id: `activity-${Date.now() - 2000}`,
-          type: 'booking',
-          message: `${pendingBookings} pending bookings`,
-          timestamp: new Date(Date.now() - 600000),
-          icon: Calendar,
-          priority: 'high',
-        },
-        {
-          id: `activity-${Date.now() - 3000}`,
-          type: 'message',
-          message: `${unreadMessages} unread customer messages`,
-          timestamp: new Date(Date.now() - 900000),
-          icon: MessageCircle,
-          priority: 'high',
-        },
-      ];
-
-      const allActivity = [...apiActivity, ...dynamicActivity];
-      setRecentActivity((prev) => {
-        const combined = [...allActivity, ...prev].slice(0, 15);
-        return combined.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-      });
+      // Activity data is now handled by the activity service
+      // No need to generate hardcoded activities here
 
       setLastUpdate(new Date());
 

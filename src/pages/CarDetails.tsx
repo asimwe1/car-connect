@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Car, Fuel, Settings, MapPin, Play } from 'lucide-react';
 import { api } from '@/services/api';
+import { activityService } from '@/services/activityService';
 import LazyImage from '@/components/LazyImage';
 import CarMessaging from '@/components/CarMessaging';
 import { useAuth } from '@/contexts/AuthContext';
@@ -80,33 +81,39 @@ const CarDetails = () => {
   const [loading, setLoading] = useState(true);
   const [activeImageIdx, setActiveImageIdx] = useState(0);
 
-  useEffect(() => {
-    if (!id) {
-      setLoading(false);
-      return;
-    }
-    const load = async () => {
-      try {
-        setLoading(true);
-        // Backend endpoint: /cars/:id
-        const response = await api.getCarById(id); 
-        
-        if (response.data) {
-          setCar(response.data);
-        } else {
-          // Fallback if API returns no data
-          setCar(createFallbackCar(id));
-        }
-      } catch (e) {
-        console.error('Failed to load car', e);
-        // Fallback if API request fails
-        setCar(createFallbackCar(id));
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, [id]);
+  useEffect(() => {
+    if (!id) {
+      setLoading(false);
+      return;
+    }
+    const load = async () => {
+      try {
+        setLoading(true);
+        // Backend endpoint: /cars/:id
+        const response = await api.getCarById(id); 
+        
+        if (response.data) {
+          setCar(response.data);
+          // Track car view activity
+          activityService.trackCarView(id, user?.id);
+        } else {
+          // Fallback if API returns no data
+          setCar(createFallbackCar(id));
+          // Track car view activity even for fallback
+          activityService.trackCarView(id, user?.id);
+        }
+      } catch (e) {
+        console.error('Failed to load car', e);
+        // Fallback if API request fails
+        setCar(createFallbackCar(id));
+        // Track car view activity even for fallback
+        activityService.trackCarView(id, user?.id);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [id, user?.id]);
 
   const pricing = useMemo(() => {
     if (car) {

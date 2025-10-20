@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Send, MessageCircle, User, Wifi, WifiOff, Check, CheckCheck, Clock, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useChat } from '@/contexts/ChatContext';
+import { activityService } from '@/services/activityService';
 import { useToast } from '@/hooks/use-toast';
 
 // Custom hook to safely use chat context
@@ -181,6 +182,10 @@ const CarMessaging: React.FC<CarMessagingProps> = ({ carId, carDetails }) => {
     try {
       await sendChatMessage(adminId, carId, inputMessage);
       setMessageStatuses((prev) => new Map(prev).set(tempId, 'sent'));
+      
+      // Track message activity
+      activityService.trackMessage(tempId, user._id, adminId);
+      
       toast({
         title: 'Success',
         description: 'Message sent successfully.',

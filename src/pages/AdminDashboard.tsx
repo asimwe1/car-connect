@@ -271,7 +271,8 @@ const AdminDashboard = () => {
     <div className="min-h-screen bg-gradient-to-br from-background via-accent/20 to-primary/10">
       <div className="flex flex-col md:flex-row">
         <Sidebar handleSignOut={handleSignOut} />
-        <div className="flex-1 md:ml-64 p-4 md:p-8">
+        <div className="flex-1 md:ml-64 p-3 sm:p-4 md:p-8">
+          <div className="mx-auto w-full max-w-7xl">
           <Header
             user={user}
             lastUpdate={lastUpdate}
@@ -286,18 +287,23 @@ const AdminDashboard = () => {
             unreadMessages={stats.unreadMessages}
           />
           {errorMessage && (
-            <div className="mb-6">
-              <div className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-2 text-sm">
+            <div className="mb-3 sm:mb-6">
+              <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 sm:px-4 py-2 text-sm">
                 {errorMessage}
               </div>
             </div>
           )}
-          <StatsCards stats={stats} />
-          <RealtimeMetrics stats={stats} />
-          <QuickActions />
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+          {/* KPI cards - tighter gaps on mobile */}
+          <div className="space-y-3 sm:space-y-4">
+            <StatsCards stats={stats} />
+            <RealtimeMetrics stats={stats} />
+            <QuickActions />
+          </div>
+          {/* Two-column section collapses to single column on small screens */}
+          <div className="mt-4 sm:mt-6 grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-2 lg:gap-6">
             <RecentActivity recentActivity={recentActivity} />
             <CustomerMessages recentMessages={recentMessages} unreadMessages={stats.unreadMessages} />
+          </div>
           </div>
         </div>
       </div>

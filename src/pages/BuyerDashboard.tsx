@@ -235,75 +235,81 @@ const BuyerDashboard: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
-              <Card className="bg-card/80 backdrop-blur-sm border border-border">
+              <Card className="bg-gradient-to-br from-pink-50 to-pink-100 dark:from-pink-950/20 dark:to-pink-900/20 backdrop-blur-sm border border-pink-200 dark:border-pink-800 hover:shadow-lg hover:shadow-pink-500/10 transition-all duration-300">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Wishlist Items</CardTitle>
-                  <Heart className="h-4 w-4 text-primary" />
+                  <CardTitle className="text-sm font-medium text-pink-700 dark:text-pink-300">💖 Wishlist Items</CardTitle>
+                  <Heart className="h-4 w-4 text-pink-600 dark:text-pink-400" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stats.wishlist}</div>
-                  <p className="text-xs text-muted-foreground">Saved cars</p>
+                  <div className="text-2xl font-bold text-pink-800 dark:text-pink-200">{stats.wishlist}</div>
+                  <p className="text-xs text-pink-600 dark:text-pink-400">Saved cars</p>
                 </CardContent>
               </Card>
 
-              <Card className="bg-card/80 backdrop-blur-sm border border-border">
+              <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20 backdrop-blur-sm border border-blue-200 dark:border-blue-800 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Bookings</CardTitle>
-                  <Calendar className="h-4 w-4 text-primary" />
+                  <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-300">📅 Bookings</CardTitle>
+                  <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stats.bookings}</div>
-                  <p className="text-xs text-muted-foreground">Test drives scheduled</p>
+                  <div className="text-2xl font-bold text-blue-800 dark:text-blue-200">{stats.bookings}</div>
+                  <p className="text-xs text-blue-600 dark:text-blue-400">Test drives scheduled</p>
                 </CardContent>
               </Card>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
               <Link to="/buy-cars">
-                <Card className="bg-card/80 backdrop-blur-sm border border-border hover:shadow-card transition-shadow cursor-pointer">
+                <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950/20 dark:to-emerald-900/20 backdrop-blur-sm border border-emerald-200 dark:border-emerald-800 hover:shadow-lg hover:shadow-emerald-500/10 transition-all duration-300 cursor-pointer group">
                   <CardContent className="p-6 text-center">
-                    <Car className="w-8 h-8 text-primary mx-auto mb-3" />
-                    <h3 className="font-semibold mb-1">Browse Cars</h3>
-                    <p className="text-sm text-muted-foreground">Find your dream car</p>
+                    <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform duration-300">
+                      <Car className="w-6 h-6 text-white" />
+                    </div>
+                    <h3 className="font-semibold mb-1 text-emerald-800 dark:text-emerald-200">🚗 Browse Cars</h3>
+                    <p className="text-sm text-emerald-600 dark:text-emerald-400">Find your dream car</p>
                   </CardContent>
                 </Card>
               </Link>
 
               <Link to="/buyer/wishlist">
-                <Card className="bg-card/80 backdrop-blur-sm border border-border hover:shadow-card transition-shadow cursor-pointer">
+                <Card className="bg-gradient-to-br from-rose-50 to-rose-100 dark:from-rose-950/20 dark:to-rose-900/20 backdrop-blur-sm border border-rose-200 dark:border-rose-800 hover:shadow-lg hover:shadow-rose-500/10 transition-all duration-300 cursor-pointer group">
                   <CardContent className="p-6 text-center">
-                    <Heart className="w-8 h-8 text-primary mx-auto mb-3" />
-                    <h3 className="font-semibold mb-1">My Wishlist</h3>
-                    <p className="text-sm text-muted-foreground">Saved favorites</p>
+                    <div className="w-12 h-12 bg-gradient-to-br from-rose-500 to-rose-600 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform duration-300">
+                      <Heart className="w-6 h-6 text-white" />
+                    </div>
+                    <h3 className="font-semibold mb-1 text-rose-800 dark:text-rose-200">💖 My Wishlist</h3>
+                    <p className="text-sm text-rose-600 dark:text-rose-400">Saved favorites</p>
                   </CardContent>
                 </Card>
               </Link>
 
               <Link to="/buyer/bookings">
-                <Card className="bg-card/80 backdrop-blur-sm border border-border hover:shadow-card transition-shadow cursor-pointer">
+                <Card className="bg-gradient-to-br from-violet-50 to-violet-100 dark:from-violet-950/20 dark:to-violet-900/20 backdrop-blur-sm border border-violet-200 dark:border-violet-800 hover:shadow-lg hover:shadow-violet-500/10 transition-all duration-300 cursor-pointer group">
                   <CardContent className="p-6 text-center">
-                    <Calendar className="w-8 h-8 text-primary mx-auto mb-3" />
-                    <h3 className="font-semibold mb-1">Book Test Drive</h3>
-                    <p className="text-sm text-muted-foreground">Schedule viewing</p>
+                    <div className="w-12 h-12 bg-gradient-to-br from-violet-500 to-violet-600 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform duration-300">
+                      <Calendar className="w-6 h-6 text-white" />
+                    </div>
+                    <h3 className="font-semibold mb-1 text-violet-800 dark:text-violet-200">📅 Book Test Drive</h3>
+                    <p className="text-sm text-violet-600 dark:text-violet-400">Schedule viewing</p>
                   </CardContent>
                 </Card>
               </Link>
             </div>
 
-            <Card className="bg-card/80 backdrop-blur-sm border border-border">
+            <Card className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950/20 dark:to-slate-900/20 backdrop-blur-sm border border-slate-200 dark:border-slate-800">
               <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
-                <CardDescription>Your latest interactions and updates</CardDescription>
+                <CardTitle className="text-slate-800 dark:text-slate-200">📊 Recent Activity</CardTitle>
+                <CardDescription className="text-slate-600 dark:text-slate-400">Your latest interactions and updates</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="flex items-center gap-4 p-4 bg-accent/20 rounded-lg">
-                    <div className="w-2 h-2 bg-primary rounded-full"></div>
+                  <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full animate-pulse"></div>
                     <div className="flex-1">
-                      <p className="font-medium">Welcome to CarConnect!</p>
-                      <p className="text-sm text-muted-foreground">Start browsing our extensive car collection</p>
+                      <p className="font-medium text-blue-800 dark:text-blue-200">🎉 Welcome to CarConnect!</p>
+                      <p className="text-sm text-blue-600 dark:text-blue-400">Start browsing our extensive car collection</p>
                     </div>
-                    <span className="text-sm text-muted-foreground">Just now</span>
+                    <span className="text-sm text-blue-500 dark:text-blue-400">Just now</span>
                   </div>
                 </div>
               </CardContent>

@@ -36,6 +36,7 @@ import AdminCars from "./pages/AdminCars";
 import AdminOrders from "./pages/AdminOrders";
 import AdminSupportChat from "./pages/AdminSupportChat";
 import AdminCustomerChatDashboard from "./pages/AdminCustomerChatDashboard";
+import AdminManageUsers from "./pages/AdminManageUsers";
 import EditCar from "./pages/EditCar";
 import TestDriveBooking from "./pages/TestDriveBooking";
 import PageLoader from "./components/PageLoader";
@@ -163,6 +164,11 @@ const App = () => (
                     <Route path="/admin/customer-chat" element={
                       <ProtectedRoute adminOnly>
                         <AdminCustomerChatDashboard />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/admin/manage-users" element={
+                      <ProtectedRoute adminOnly>
+                        <AdminManageUsers />
                       </ProtectedRoute>
                     } />
                     <Route path="/admin/orders" element={

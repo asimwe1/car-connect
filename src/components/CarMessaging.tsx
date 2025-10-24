@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Send, MessageCircle, User, Wifi, WifiOff, Check, CheckCheck, Clock, RefreshCw } from 'lucide-react';
+import { Send, MessageCircle, User, Check, CheckCheck, Clock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useChat } from '@/contexts/ChatContext';
 import { activityService } from '@/services/activityService';
@@ -370,20 +370,6 @@ const CarMessaging: React.FC<CarMessagingProps> = ({ carId, carDetails }) => {
                   <Send className="h-3 w-3" />
                 </Button>
               </div>
-              {!isConnected && (
-                <div className="mt-2 text-xs text-muted-foreground flex items-center gap-2">
-                  <WifiOff className="h-3 w-3" />
-                  <span>Offline - Messages will be sent when connection is restored</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleReconnect}
-                    className="p-1"
-                  >
-                    <RefreshCw className="h-3 w-3" />
-                  </Button>
-                </div>
-              )}
             </div>
           </CardContent>
         )}

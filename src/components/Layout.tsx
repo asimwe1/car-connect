@@ -16,7 +16,6 @@ const Layout: React.FC = () => {
                           location.pathname === '/admin-dashboard';
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {!hideGlobalChrome && <OfflineBanner />}
       {!hideGlobalChrome && <Navbar />}
       <main className={!hideGlobalChrome ? "pt-16 flex-1" : "flex-1"}>
         <Outlet />

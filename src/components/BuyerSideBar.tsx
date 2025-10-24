@@ -23,7 +23,7 @@ const menuItems = [
     { icon: Heart, label: 'Wishlist', href: '/wishlist' },
     { icon: Calendar, label: 'Bookings', href: '/bookings' },
     { icon: Car, label: 'Buy Cars', href: '/buy-cars' },
-    { icon: MessageCircle, label: 'Support', href: '/support' },
+    // { icon: MessageCircle, label: 'Support', href: '/support' },
 ];
 
 

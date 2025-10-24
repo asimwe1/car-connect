@@ -45,7 +45,7 @@ const AdminLayout: React.FC = () => {
               <MessageCircle className="w-4 h-4" /> Support
             </Link>
             <Link to="/admin/customer-chat" className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${isActive('/admin/customer-chat') ? 'bg-primary/10 text-primary border border-primary/20' : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'}`}>
-              <MessageCircle className="w-4 h-4" /> Customer Chat
+              <MessageCircle className="w-4 h-4" /> Manage Users
             </Link>
           </nav>
           <div className="absolute bottom-4 left-4 right-4 space-y-2">

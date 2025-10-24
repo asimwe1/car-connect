@@ -12,7 +12,7 @@ import {
   AlertDialogTrigger,
   AlertDialogFooter,
 } from '@/components/ui/alert-dialog';
-import { BarChart3, Car, Plus, DollarSign, Settings, MessageCircle, LogOut, ArrowLeft } from 'lucide-react';
+import { BarChart3, Car, Plus, DollarSign, MessageCircle, LogOut, ArrowLeft } from 'lucide-react';
 
 interface SidebarProps {
   handleSignOut: () => void;
@@ -26,7 +26,7 @@ const Sidebar: React.FC<SidebarProps> = ({ handleSignOut }) => {
     { icon: Car, label: 'Manage Cars', href: '/admin/cars' },
     { icon: Plus, label: 'Add New Car', href: '/admin/add-car' },
     { icon: DollarSign, label: 'Orders', href: '/admin/orders' },
-    { icon: MessageCircle, label: 'Customer Chat', href: '/admin/customer-chat' },
+    { icon: MessageCircle, label: 'Manage Users', href: '/admin/manage-users' },
   ];
 
   return (
@@ -96,13 +96,6 @@ const Sidebar: React.FC<SidebarProps> = ({ handleSignOut }) => {
           ))}
         </nav>
         <div className="p-4 mt-[9rem] border-t border-border space-y-2">
-          <Link
-            to="/settings"
-            className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent/50"
-          >
-            <Settings className="w-4 h-4" />
-            Settings
-          </Link>
           <Link
             to="/admin/support-chat"
             className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent/50"

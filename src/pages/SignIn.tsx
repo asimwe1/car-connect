@@ -207,7 +207,7 @@ const SignIn = () => {
               </div>
             </div>
 
-            <div className="flex items-center justify-between">
+            {/* <div className="flex items-center justify-between">
               <label className="flex items-center gap-2 select-none text-sm text-muted-foreground">
                 <Checkbox
                   id="remember"
@@ -215,14 +215,14 @@ const SignIn = () => {
                   onCheckedChange={(v) => setValue('remember', !!v)}
                 />
                 <span>Remember me</span>
-              </label>
-              <Link
+              </label> */}
+              {/* <Link
                 to="/forgot-password"
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 Forgot your password?
-              </Link>
-            </div>
+              </Link> */}
+            {/* </div> */}
 
             <Button type="submit" className="btn-hero w-full" disabled={isLoading}>
               {isLoading ? 'Signing In...' : 'Sign In'}

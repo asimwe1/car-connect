@@ -13,14 +13,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import {
   User,
   Heart,
   Calendar,
   Car,
-  Search,
   Bell,
   LogOut,
   Star,
@@ -37,7 +35,6 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 
 const BuyerDashboard: React.FC = () => {
   const [stats, setStats] = useState({ wishlist: 0, bookings: 0 });
-  const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -116,7 +113,7 @@ const BuyerDashboard: React.FC = () => {
     { icon: Calendar, label: 'Bookings', href: '/buyer/bookings' },
     { icon: Car, label: 'Buy Cars', href: '/buy-cars' },
     { icon: Car, label: 'Sell Cars', href: '/list-car' },
-    { icon: MessageCircle, label: 'Support', href: '/support' },
+    // { icon: MessageCircle, label: 'Support', href: '/support' },
   ];
 
   if (authError) {
@@ -218,19 +215,8 @@ const BuyerDashboard: React.FC = () => {
                 <p className="text-sm md:text-base text-muted-foreground">Here's what's happening with your car search</p>
               </div>
               
-              <div className="flex flex-col space-y-3 md:flex-row md:items-center md:space-y-0 md:gap-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search cars..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="search-input pl-10 w-full md:w-80"
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <NotificationBell />
-                </div>
+              <div className="flex items-center gap-2">
+                <NotificationBell />
               </div>
             </div>
 

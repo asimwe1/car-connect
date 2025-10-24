@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Send, User, MessageCircle, Wifi, WifiOff, Bot } from "lucide-react";
+import { ArrowLeft, Send, User, MessageCircle, Wifi, Bot } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useChat } from "@/contexts/ChatContext";
@@ -12,11 +12,32 @@ import { notificationService } from "@/services/notifications";
 import { notify } from "@/components/Notifier";
 
 interface SupportMessage {
-  id: string;
+  _id: string;
   content: string;
-  sender: 'user' | 'support';
-  timestamp: Date;
+  sender: string;
+  createdAt: string;
+  read: boolean;
   isTyping?: boolean;
+}
+
+interface SupportConversation {
+  lastMessage: SupportMessage;
+  unreadCount: number;
+  otherUser: {
+    _id: string;
+    fullname: string;
+    email: string;
+    phone: string;
+  };
+  car: {
+    _id: string;
+    make: string;
+    model: string;
+    year: number;
+    primaryImage: string;
+  };
+  userId: string;
+  carId: string;
 }
 
 const Support = () => {
@@ -25,28 +46,25 @@ const Support = () => {
   
   const [inputMessage, setInputMessage] = useState("");
   const [supportMessages, setSupportMessages] = useState<SupportMessage[]>([]);
+  const [conversations, setConversations] = useState<SupportConversation[]>([]);
+  const [currentConversation, setCurrentConversation] = useState<SupportConversation | null>(null);
   const [isTyping, setIsTyping] = useState(false);
-  const [systemContext, setSystemContext] = useState({
-    totalUsers: 0,
-    totalCars: 0,
-    totalOrders: 0,
-    activeBookings: 0
-  });
+  const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!user) return;
-    fetchSystemContext();
+    fetchConversations();
     initializeSupport();
   }, [user]);
 
   const initializeSupport = () => {
     const welcomeMessage: SupportMessage = {
-      id: '1',
+      _id: 'welcome-1',
       content: `Hello ${user?.fullname || 'there'}! 👋
 
-Welcome to CarConnect Support! I'm your AI assistant and I'm here to help you with:
+Welcome to CarConnect Support! Our support team is here to help you with:
 
 • Questions about buying or selling cars
 • Account and profile assistance  
@@ -54,36 +72,50 @@ Welcome to CarConnect Support! I'm your AI assistant and I'm here to help you wi
 • Technical support and troubleshooting
 • General platform guidance
 
-How can I assist you today?`,
+How can we assist you today?`,
       sender: 'support',
-      timestamp: new Date()
+      createdAt: new Date().toISOString(),
+      read: true
     };
 
     setSupportMessages([welcomeMessage]);
   };
 
-  const fetchSystemContext = async () => {
+  const fetchConversations = async () => {
     try {
-      const [carsRes, usersRes, ordersRes, bookingsRes] = await Promise.all([
-        api.getCars({ page: 1, limit: 1 }),
-        api.getUsers({ page: 1, limit: 1 }),
-        api.getAdminOrders({ page: 1, limit: 1 }),
-        api.getAdminBookings({ page: 1, limit: 1 }),
-      ]);
-
-      const carsRaw: any = (carsRes as any)?.data;
-      const usersRaw: any = (usersRes as any)?.data;
-      const ordersRaw: any = (ordersRes as any)?.data;
-      const bookingsRaw: any = (bookingsRes as any)?.data;
-
-      setSystemContext({
-        totalUsers: typeof usersRaw?.total === 'number' ? usersRaw.total : Array.isArray(usersRaw?.items) ? usersRaw.items.length : Array.isArray(usersRaw) ? usersRaw.length : 0,
-        totalCars: typeof carsRaw?.total === 'number' ? carsRaw.total : Array.isArray(carsRaw?.items) ? carsRaw.items.length : Array.isArray(carsRaw) ? carsRaw.length : 0,
-        totalOrders: typeof ordersRaw?.total === 'number' ? ordersRaw.total : Array.isArray(ordersRaw?.items) ? ordersRaw.items.length : Array.isArray(ordersRaw) ? ordersRaw.length : 0,
-        activeBookings: typeof bookingsRaw?.total === 'number' ? bookingsRaw.total : Array.isArray(bookingsRaw?.items) ? bookingsRaw.items.length : Array.isArray(bookingsRaw) ? bookingsRaw.length : 0,
-      });
+      setLoading(true);
+      const response = await api.getAdminConversations();
+      
+      if (response.data) {
+        const data = response.data;
+        setConversations(data);
+        
+        // Find or create support conversation
+        const supportConv = data.find((conv: SupportConversation) => 
+          conv.car.make === 'Support' || conv.carId === 'support-general'
+        );
+        
+        if (supportConv) {
+          setCurrentConversation(supportConv);
+          await fetchMessages(supportConv.carId, supportConv.otherUser._id);
+        }
+      }
     } catch (error) {
-      console.error('Failed to fetch system context:', error);
+      console.error('Failed to fetch conversations:', error);
+      notify.error('Connection Error', 'Failed to load conversations. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchMessages = async (carId: string, recipientId: string) => {
+    try {
+      const response = await api.getMessages(carId, recipientId);
+      if (response.data) {
+        setSupportMessages(response.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch messages:', error);
     }
   };
 
@@ -102,23 +134,85 @@ How can I assist you today?`,
       return;
     }
 
-    // Add user message
+    // Add user message to local state immediately for better UX
     const userMsg: SupportMessage = {
-      id: Date.now().toString(),
+      _id: `temp-${Date.now()}`,
       content: userMessage,
-      sender: 'user',
-      timestamp: new Date()
+      sender: user.id,
+      createdAt: new Date().toISOString(),
+      read: false
     };
 
     setSupportMessages(prev => [...prev, userMsg]);
     setInputMessage("");
     setIsTyping(false);
-    notify.success('Message sent', 'Your message has been sent to support.');
+
+    try {
+      // Use the existing API service which handles the correct base URL
+      const result = await api.sendMessage({
+        recipientId: 'admin-support', // Support team ID
+        carId: 'support-general', // Support conversation ID
+        content: userMessage
+      });
+
+      if (result.data) {
+        notify.success('Message sent', 'Your message has been sent to our support team.');
+        
+        // Update the local message with the real ID from server
+        if (result.data.message) {
+          setSupportMessages(prev => 
+            prev.map(msg => 
+              msg._id === userMsg._id ? { ...result.data.message, read: false } : msg
+            )
+          );
+        }
+        
+        // Refresh conversations to update unread counts
+        await fetchConversations();
+      } else {
+        throw new Error('Failed to send message');
+      }
+    } catch (error) {
+      console.error('Failed to send support message:', error);
+      notify.error('Message failed', 'Failed to send your message. Please try again.');
+      
+      // Remove the temporary message on error
+      setSupportMessages(prev => prev.filter(msg => msg._id !== userMsg._id));
+    }
   };
 
   const handleTyping = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInputMessage(e.target.value);
   };
+
+  const markMessagesAsRead = async (messageIds: string[]) => {
+    try {
+      const result = await api.markMessagesAsRead(messageIds);
+      
+      if (result.data && result.data.success) {
+        // Update local state to mark messages as read
+        setSupportMessages(prev => 
+          prev.map(msg => 
+            messageIds.includes(msg._id) ? { ...msg, read: true } : msg
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Failed to mark messages as read:', error);
+    }
+  };
+
+  // Mark messages as read when component mounts or messages change
+  useEffect(() => {
+    const unreadMessages = supportMessages.filter(msg => 
+      !msg.read && msg.sender !== user?.id && msg.sender !== 'user'
+    );
+    
+    if (unreadMessages.length > 0) {
+      const messageIds = unreadMessages.map(msg => msg._id);
+      markMessagesAsRead(messageIds);
+    }
+  }, [supportMessages, user]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -156,34 +250,43 @@ How can I assist you today?`,
             </CardTitle>
           </CardHeader>
           <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
-            {supportMessages.map((message) => (
-              <div key={message.id} className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'} items-end gap-2`}>
-                {message.sender === 'support' && (
-                  <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
-                    <Bot className="h-3 w-3 text-primary-foreground" />
-                  </div>
-                )}
-                <div className={`max-w-[70%] rounded-2xl px-4 py-3 ${
-                  message.sender === 'user' 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'bg-white border shadow-sm'
-                }`}>
-                  <div className="text-sm whitespace-pre-wrap">{message.content}</div>
-                  <div className={`text-xs mt-1 ${
-                    message.sender === 'user' 
-                      ? 'text-primary-foreground/70' 
-                      : 'text-muted-foreground'
-                  }`}>
-                    {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </div>
-                </div>
-                {message.sender === 'user' && (
-                  <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
-                    <User className="h-3 w-3 text-white" />
-                  </div>
-                )}
+            {loading ? (
+              <div className="flex justify-center items-center h-32">
+                <div className="text-muted-foreground">Loading messages...</div>
               </div>
-            ))}
+            ) : (
+              supportMessages.map((message) => {
+                const isUserMessage = message.sender === user?.id || message.sender === 'user';
+                return (
+                  <div key={message._id} className={`flex ${isUserMessage ? 'justify-end' : 'justify-start'} items-end gap-2`}>
+                    {!isUserMessage && (
+                      <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
+                        <Bot className="h-3 w-3 text-primary-foreground" />
+                      </div>
+                    )}
+                    <div className={`max-w-[70%] rounded-2xl px-4 py-3 ${
+                      isUserMessage 
+                        ? 'bg-primary text-primary-foreground' 
+                        : 'bg-white border shadow-sm'
+                    }`}>
+                      <div className="text-sm whitespace-pre-wrap">{message.content}</div>
+                      <div className={`text-xs mt-1 ${
+                        isUserMessage 
+                          ? 'text-primary-foreground/70' 
+                          : 'text-muted-foreground'
+                      }`}>
+                        {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    </div>
+                    {isUserMessage && (
+                      <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
+                        <User className="h-3 w-3 text-white" />
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
             {isTyping && (
               <div className="flex justify-start items-end gap-2">
                 <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0">

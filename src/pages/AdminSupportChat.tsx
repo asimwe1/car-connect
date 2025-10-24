@@ -282,44 +282,6 @@ Just ask me anything!`,
             <p className="text-sm text-primary-foreground/80">Manage user conversations</p>
           </div>
 
-          {/* System Stats */}
-          <div className="p-4 border-b border-primary-foreground/20">
-            <h3 className="text-sm font-medium mb-3 text-white">System Overview</h3>
-            <div className="grid grid-cols-2 gap-2">
-              <div 
-                className="bg-primary-foreground/10 rounded-lg p-3 text-center cursor-pointer hover:bg-primary-foreground/20 transition-all duration-200 hover:scale-105"
-                onClick={() => handleStatClick('Users', systemStats.totalUsers)}
-                title="Click to chat about users"
-              >
-                <div className="text-lg font-bold text-white">{systemStats.totalUsers}</div>
-                <div className="text-xs text-primary-foreground/80">Users</div>
-              </div>
-              <div 
-                className="bg-primary-foreground/10 rounded-lg p-3 text-center cursor-pointer hover:bg-primary-foreground/20 transition-all duration-200 hover:scale-105"
-                onClick={() => handleStatClick('Cars', systemStats.totalCars)}
-                title="Click to chat about cars"
-              >
-                <div className="text-lg font-bold text-white">{systemStats.totalCars}</div>
-                <div className="text-xs text-primary-foreground/80">Cars</div>
-              </div>
-              <div 
-                className="bg-primary-foreground/10 rounded-lg p-3 text-center cursor-pointer hover:bg-primary-foreground/20 transition-all duration-200 hover:scale-105"
-                onClick={() => handleStatClick('Orders', systemStats.totalOrders)}
-                title="Click to chat about orders"
-              >
-                <div className="text-lg font-bold text-white">{systemStats.totalOrders}</div>
-                <div className="text-xs text-primary-foreground/80">Orders</div>
-              </div>
-              <div 
-                className="bg-primary-foreground/10 rounded-lg p-3 text-center cursor-pointer hover:bg-primary-foreground/20 transition-all duration-200 hover:scale-105"
-                onClick={() => handleStatClick('Bookings', systemStats.activeBookings)}
-                title="Click to chat about bookings"
-              >
-                <div className="text-lg font-bold text-white">{systemStats.activeBookings}</div>
-                <div className="text-xs text-primary-foreground/80">Bookings</div>
-              </div>
-            </div>
-          </div>
 
           {/* Search */}
           <div className="p-4 border-b border-primary-foreground/20">
@@ -410,21 +372,9 @@ Just ask me anything!`,
               <div className="bg-white border-b p-4">
                 <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="relative">
-                      <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input
-                        placeholder="Search or type"
-                        className="pl-10 w-[200px] sm:w-64"
-                      />
-                </div>
+                <h2 className="text-lg font-semibold">Customer Support</h2>
               </div>
               <div className="flex items-center gap-3">
-                    <Button variant="ghost" size="icon" className="relative">
-                  <Bell className="h-5 w-5" />
-                  <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 bg-red-600 rounded-full">
-                    3
-                  </span>
-                </Button>
                 <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
                   <span className="text-white font-bold text-sm">
                     {user?.fullname?.charAt(0).toUpperCase() || 'A'}
@@ -456,21 +406,12 @@ Just ask me anything!`,
                     </p>
                   </div>
                   <div className="ml-auto flex items-center gap-2">
-                    {isConnected ? (
+                    {isConnected && (
                       <Badge variant="outline" className="text-green-600 border-green-600">
                         <Wifi className="h-3 w-3 mr-1" />
                         Connected
                       </Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-orange-600 border-orange-600">
-                        <WifiOff className="h-3 w-3 mr-1" />
-                        Offline
-                      </Badge>
                     )}
-                    <Badge variant="outline">
-                      <Shield className="h-3 w-3 mr-1" />
-                      {isSystemChatMode ? 'System Chat' : 'Admin View'}
-                    </Badge>
                     {isSystemChatMode && (
                       <Button
                         variant="outline"
@@ -494,7 +435,7 @@ Just ask me anything!`,
       message.sender._id === user?.id ? 'justify-end' : 'justify-start'
     }`}
   >
-    {/* Client (left) avatar */}
+    {/* Customer (left) avatar */}
     {message.sender._id !== user?.id && (
       <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0 order-1">
         <span className="text-gray-800 font-bold text-sm">
@@ -509,19 +450,27 @@ Just ask me anything!`,
     <div
       className={`max-w-[85%] sm:max-w-[70%] rounded-2xl px-4 py-3 shadow-sm ${
         message.sender._id === user?.id
-          ? 'bg-primary text-primary-foreground order-2'
+          ? 'bg-green-500 text-white order-2'
           : 'bg-white border border-gray-200 text-gray-800 order-2'
       }`}
     >
       <div className="text-sm whitespace-pre-wrap">{message.content}</div>
-      <div
-        className={`text-xs mt-1 ${
-          message.sender._id === user?.id 
-            ? 'text-primary-foreground/70' 
-            : 'text-gray-500'
-        }`}
-      >
-        {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+      <div className="flex items-center justify-end gap-1 mt-1">
+        <span
+          className={`text-xs ${
+            message.sender._id === user?.id 
+              ? 'text-white/70' 
+              : 'text-gray-500'
+          }`}
+        >
+          {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        </span>
+        {message.sender._id === user?.id && (
+          <div className="flex items-center gap-1">
+            {/* Message status indicators */}
+            <span className="text-white/70 text-xs">✓✓</span>
+          </div>
+        )}
       </div>
     </div>
 
@@ -535,12 +484,10 @@ Just ask me anything!`,
     )}
   </div>
 ))}
-                {(isTyping || isUserTyping) && (
+                {isUserTyping && !isSystemChatMode && (
                   <div className="flex justify-start items-end gap-2">
                     <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-gray-800 font-bold text-sm">
-                        {isSystemChatMode ? 'AI' : 'C'}
-                      </span>
+                      <span className="text-gray-800 font-bold text-sm">C</span>
                     </div>
                     <div className="bg-white border border-gray-200 rounded-2xl px-4 py-3 shadow-sm">
                       <div className="flex gap-1">
@@ -585,10 +532,7 @@ Just ask me anything!`,
                             Connected
                           </span>
                         ) : (
-                          <span className="text-orange-500">Offline - Messages will be sent when connection is restored</span>
-                        )}
-                        {isTyping && (
-                          <span className="text-blue-500">{isSystemChatMode ? 'System is typing...' : 'User is typing...'}</span>
+                          <span className="text-orange-500">Connecting...</span>
                         )}
                       </div>
                       <div className="text-xs text-muted-foreground">

@@ -26,13 +26,14 @@ import Sidebar from '@/components/Sidebar';
 interface Order {
   _id: string;
   amount: number;
-  status: 'pending' | 'sold' | 'cancelled';
+  status: 'pending' | 'confirmed' | 'cancelled' | 'expired';
   createdAt: string;
   updatedAt: string;
   buyer: { fullname: string; email: string };
   car: { make: string; model: string; year: number; images: string[]; primaryImage?: string };
   paymentRef?: string;
   notes?: string;
+  expiresAt?: string;
 }
 
 const AdminOrders = () => {
@@ -57,29 +58,46 @@ const AdminOrders = () => {
     try {
       setErrorMessage(null);
       setLoading(true);
-      const response = await api.getAdminOrders({ page: 1, limit: 100 });
-      const raw = (response as any)?.data;
-      const src: any[] = Array.isArray(raw?.items) ? raw.items : (Array.isArray(raw) ? raw : []);
-      const normalized: Order[] = src.map((o: any) => ({
-        _id: String(o._id || o.id || ''),
-        amount: Number(o.amount || o.total || 0),
-        status: (o.status || 'pending') as any,
-        createdAt: String(o.createdAt || o.created_at || new Date().toISOString()),
-        updatedAt: String(o.updatedAt || o.updated_at || new Date().toISOString()),
+      
+      // Use the correct bookings API endpoint
+      const response = await fetch('https://carhubconnect.onrender.com/api/bookings', {
+        method: 'GET',
+        headers: {
+          'accept': '*/*',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      const bookings = data.items || [];
+      
+      // Transform bookings data to match Order interface
+      const normalized: Order[] = bookings.map((booking: any) => ({
+        _id: String(booking._id || ''),
+        amount: 0, // Bookings don't have amount, set to 0 or calculate from car price
+        status: (booking.status || 'pending') as any,
+        createdAt: String(booking.createdAt || new Date().toISOString()),
+        updatedAt: String(booking.updatedAt || new Date().toISOString()),
+        expiresAt: String(booking.expiresAt || ''),
         buyer: {
-          fullname: String(o.buyer?.fullname || o.customer_name || '—'),
-          email: String(o.buyer?.email || o.customer_email || '—'),
+          fullname: String(booking.user?.fullname || '—'),
+          email: String(booking.user?.email || '—'),
         },
         car: {
-          make: String(o.car?.make || o.make || 'Unknown'),
-          model: String(o.car?.model || o.model || ''),
-          year: Number(o.car?.year || o.year || new Date().getFullYear()),
-          images: Array.isArray(o.car?.images) ? o.car.images : [],
-          primaryImage: o.car?.primaryImage || o.primaryImage,
+          make: String(booking.car?.make || 'Unknown'),
+          model: String(booking.car?.model || ''),
+          year: Number(booking.car?.year || new Date().getFullYear()),
+          images: [], // Bookings API doesn't include images
+          primaryImage: undefined,
         },
-        paymentRef: o.paymentRef || o.payment_ref || undefined,
-        notes: o.notes || undefined,
+        paymentRef: undefined, // Bookings don't have payment ref
+        notes: booking.notes || undefined,
       }));
+      
       setOrders(normalized);
     } catch (error: any) {
       console.error("Error fetching orders:", error);
@@ -121,12 +139,14 @@ const AdminOrders = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'sold':
+      case 'confirmed':
         return 'bg-green-500';
       case 'pending':
         return 'bg-yellow-500';
       case 'cancelled':
         return 'bg-red-500';
+      case 'expired':
+        return 'bg-gray-500';
       default:
         return 'bg-gray-500';
     }
@@ -134,11 +154,13 @@ const AdminOrders = () => {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'sold':
+      case 'confirmed':
         return <CheckCircle className="h-4 w-4" />;
       case 'pending':
         return <Clock className="h-4 w-4" />;
       case 'cancelled':
+        return <XCircle className="h-4 w-4" />;
+      case 'expired':
         return <XCircle className="h-4 w-4" />;
       default:
         return <Clock className="h-4 w-4" />;
@@ -164,11 +186,11 @@ const AdminOrders = () => {
   ).filter(order => statusFilter === '' || order.status === statusFilter);
 
   const totalRevenue = orders
-    .filter(order => order.status === 'sold')
+    .filter(order => order.status === 'confirmed')
     .reduce((sum, order) => sum + order.amount, 0);
 
   const totalOrders = orders.length;
-  const completedOrders = orders.filter(order => order.status === 'sold').length;
+  const completedOrders = orders.filter(order => order.status === 'confirmed').length;
   const pendingOrders = orders.filter(order => order.status === 'pending').length;
 
   if (!isAuthenticated || user?.role !== 'admin') {
@@ -202,8 +224,8 @@ const AdminOrders = () => {
                 Back to Dashboard
               </Button>
               <div>
-                <h1 className="text-3xl font-bold">Manage Orders</h1>
-                <p className="text-muted-foreground">View and manage customer orders</p>
+                <h1 className="text-3xl font-bold">Manage Bookings</h1>
+                <p className="text-muted-foreground">View and manage customer bookings</p>
               </div>
             </div>
 
@@ -225,7 +247,7 @@ const AdminOrders = () => {
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Completed</p>
+                      <p className="text-sm font-medium text-muted-foreground">Confirmed</p>
                       <p className="text-2xl font-bold text-green-600">{completedOrders}</p>
                     </div>
                     <CheckCircle className="h-8 w-8 text-green-600" />
@@ -265,7 +287,7 @@ const AdminOrders = () => {
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Search orders by number, customer, or vehicle..."
+                      placeholder="Search bookings by customer or vehicle..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-10"
@@ -278,8 +300,9 @@ const AdminOrders = () => {
                   >
                     <option value="">All Status</option>
                     <option value="pending">Pending</option>
-                    <option value="sold">Sold</option>
+                    <option value="confirmed">Confirmed</option>
                     <option value="cancelled">Cancelled</option>
+                    <option value="expired">Expired</option>
                   </select>
                 </div>
               </CardContent>
@@ -345,8 +368,14 @@ const AdminOrders = () => {
                               </div>
                               <div className="flex items-center gap-2">
                                 <Calendar className="h-4 w-4" />
-                                <span>Ordered {formatDate(order.createdAt)}</span>
+                                <span>Booked {formatDate(order.createdAt)}</span>
                               </div>
+                              {order.expiresAt && (
+                                <div className="flex items-center gap-2">
+                                  <Clock className="h-4 w-4" />
+                                  <span>Expires {formatDate(order.expiresAt)}</span>
+                                </div>
+                              )}
                               {order.paymentRef && (
                                 <div className="flex items-center gap-2">
                                   <DollarSign className="h-4 w-4" />
@@ -371,9 +400,9 @@ const AdminOrders = () => {
                               <>
                                 <Button
                                   size="sm"
-                                  onClick={() => handleUpdateStatus(order._id, 'sold')}
+                                  onClick={() => handleUpdateStatus(order._id, 'confirmed')}
                                 >
-                                  Mark Sold
+                                  Confirm Booking
                                 </Button>
                                 <Button
                                   variant="outline"
@@ -403,9 +432,9 @@ const AdminOrders = () => {
             {!loading && filteredOrders.length === 0 && (
               <div className="text-center py-12">
                 <ShoppingBag className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No Orders Found</h3>
+                <h3 className="text-lg font-semibold mb-2">No Bookings Found</h3>
                 <p className="text-muted-foreground">
-                  {searchTerm ? 'Try adjusting your search criteria.' : 'No orders have been placed yet.'}
+                  {searchTerm ? 'Try adjusting your search criteria.' : 'No bookings have been made yet.'}
                 </p>
               </div>
             )}

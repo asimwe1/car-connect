@@ -13,7 +13,7 @@ import StatsCards from '@/components/StatsCards';
 import RealtimeMetrics from '@/components/RealtimeMetrics';
 import QuickActions from '@/components/QuickActions';
 import RecentActivity from '@/components/RecentActivity';
-import CustomerMessages from '@/components/CustomerMessages';
+import CustomerMessagesSupport from '@/components/CustomerMessagesSupport';
 
 interface Stats {
   totalCars: number;
@@ -65,10 +65,6 @@ const AdminDashboard = () => {
     refreshIntervalRef.current = setInterval(() => {
       fetchDashboardData(true);
       fetchActivities(true);
-      // Generate random realistic activities occasionally
-      if (Math.random() < 0.1) { // 10% chance every 30 seconds
-        activityService.generateRandomRealisticActivities();
-      }
     }, 30000);
 
     const unsubscribeCarViews = adminRealtimeService.subscribe('car_views', (data) => {
@@ -212,14 +208,15 @@ const AdminDashboard = () => {
       const totalOrders = typeof ordersRaw?.total === 'number' ? ordersRaw.total : Array.isArray(ordersRaw?.items) ? ordersRaw.items.length : Array.isArray(ordersRaw) ? ordersRaw.length : 0;
       const recentBookings = typeof bookingsRaw?.total === 'number' ? bookingsRaw.total : Array.isArray(bookingsRaw?.items) ? bookingsRaw.items.length : Array.isArray(bookingsRaw) ? bookingsRaw.length : 0;
 
-      const carViewsToday = metricsRaw?.carViewsToday || Math.floor(Math.random() * 50) + 20;
-      const newUsersThisWeek = metricsRaw?.newUsersThisWeek || Math.floor(Math.random() * 15) + 5;
-      const pendingBookings = metricsRaw?.pendingBookings || Math.floor(Math.random() * 8) + 2;
+      // Calculate real metrics from actual data
+      const carViewsToday = metricsRaw?.carViewsToday || 0;
+      const newUsersThisWeek = metricsRaw?.newUsersThisWeek || 0;
+      const pendingBookings = metricsRaw?.pendingBookings || 0;
 
       const conversations = Array.isArray(conversationsRaw) ? conversationsRaw : [];
       const unreadMessages = conversations.reduce((total, conv) => total + (conv.unreadCount || 0), 0);
 
-      const totalRevenue = statsRaw?.totalRevenue || (totalOrders * (Math.random() * 5000000 + 2000000));
+      const totalRevenue = statsRaw?.totalRevenue || 0;
 
       setStats({
         totalCars,
@@ -302,7 +299,7 @@ const AdminDashboard = () => {
           {/* Two-column section collapses to single column on small screens */}
           <div className="mt-4 sm:mt-6 grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-2 lg:gap-6">
             <RecentActivity recentActivity={recentActivity} />
-            <CustomerMessages recentMessages={recentMessages} unreadMessages={stats.unreadMessages} />
+            <CustomerMessagesSupport />
           </div>
           </div>
         </div>

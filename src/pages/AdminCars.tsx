@@ -165,8 +165,8 @@ const AdminCars = () => {
 
             {/* Search and Actions */}
             <Card className="mb-8">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between gap-4">
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -176,7 +176,7 @@ const AdminCars = () => {
                       className="pl-10"
                     />
                   </div>
-                  <Button onClick={() => navigate('/admin/add-car')} className="btn-hero">
+                  <Button onClick={() => navigate('/admin/add-car')} className="btn-hero w-full sm:w-auto">
                     <Plus className="h-4 w-4 mr-2" />
                     Add New Vehicle
                   </Button>
@@ -186,7 +186,7 @@ const AdminCars = () => {
 
             {/* Vehicles Grid */}
             {loading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                 {[...Array(6)].map((_, i) => (
                   <Card key={i} className="overflow-hidden animate-pulse">
                     <div className="h-48 bg-muted"></div>
@@ -213,7 +213,7 @@ const AdminCars = () => {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                 {filteredVehicles.map((vehicle) => (
                   <Card key={vehicle.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                     <div className="relative">
@@ -264,15 +264,16 @@ const AdminCars = () => {
                           </div>
                         </div>
 
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                           <div className="text-lg font-bold text-primary">
                             {formatPrice(vehicle.price)}
                           </div>
-                          <div className="flex gap-2">
+                          <div className="flex gap-2 flex-wrap">
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => navigate(`/car/${vehicle.id}`)}
+                              className="flex-1 sm:flex-none"
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
@@ -280,6 +281,7 @@ const AdminCars = () => {
                               variant="outline"
                               size="sm"
                               onClick={() => navigate(`/admin/edit-car/${vehicle.id}`)}
+                              className="flex-1 sm:flex-none"
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -287,7 +289,7 @@ const AdminCars = () => {
                               variant="outline"
                               size="sm"
                               onClick={() => handleDelete(vehicle.id)}
-                              className="text-destructive hover:text-destructive"
+                              className="text-destructive hover:text-destructive flex-1 sm:flex-none"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>

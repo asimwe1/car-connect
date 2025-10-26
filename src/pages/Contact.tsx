@@ -6,11 +6,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
+import { CountryCodeSelector } from '@/components/CountryCodeSelector';
 import { Phone, Mail, MapPin, Clock, Send } from 'lucide-react';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
     name: '',
+    countryCode: 'RW',
     phoneNumber: '',
     message: ''
   });
@@ -21,6 +23,13 @@ const Contact = () => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
+    });
+  };
+
+  const handleCountryCodeChange = (countryCode: string) => {
+    setFormData({
+      ...formData,
+      countryCode
     });
   };
 
@@ -50,6 +59,7 @@ const Contact = () => {
       // Reset form
       setFormData({
         name: '',
+        countryCode: 'RW',
         phoneNumber: '',
         message: ''
       });
@@ -97,16 +107,20 @@ const Contact = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="phoneNumber">Phone Number</Label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <div className="flex gap-2">
+                    <CountryCodeSelector
+                      value={formData.countryCode}
+                      onValueChange={handleCountryCodeChange}
+                      className="flex-shrink-0"
+                    />
                     <Input
                       id="phoneNumber"
                       name="phoneNumber"
                       type="tel"
-                      placeholder="+250 788 881 400"
+                      placeholder="78***"
                       value={formData.phoneNumber}
                       onChange={handleInputChange}
-                      className="search-input pl-10"
+                      className="search-input"
                       required
                     />
                   </div>
@@ -151,8 +165,39 @@ const Contact = () => {
                   </div>
                   <div>
                     <h3 className="font-semibold text-lg mb-1">Phone</h3>
-                    <p className="text-muted-foreground">+250 788 881 400 / +250788781073 / +250788572481</p>
-                    <p className="text-sm text-muted-foreground">Available 24/7</p>
+                    <ul className="text-muted-foreground space-y-1">
+                      <li>
+                        <a 
+                          href="https://wa.me/250788881400" 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-blue-400 hover:text-blue-300 transition-colors"
+                        >
+                          +250 788 881 400
+                        </a>
+                      </li>
+                      <li>
+                        <a 
+                          href="https://wa.me/250788781073" 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-blue-400 hover:text-blue-300 transition-colors"
+                        >
+                          +250 788 781 073
+                        </a>
+                      </li>
+                      <li>
+                        <a 
+                          href="https://wa.me/250788572481" 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-blue-400 hover:text-blue-300 transition-colors"
+                        >
+                          +250 788 572 481
+                        </a>
+                      </li>
+                    </ul>
+                    <p className="text-sm text-muted-foreground mt-2">Available 24/7</p>
                   </div>
                 </div>
               </CardContent>
@@ -166,8 +211,25 @@ const Contact = () => {
                   </div>
                   <div>
                     <h3 className="font-semibold text-lg mb-1">Email</h3>
-                    <p className="text-muted-foreground">customer@car-connect.rw / support@car-connect.rw</p>
-                    <p className="text-sm text-muted-foreground">We respond as soon as possible</p>
+                    <ul className="text-muted-foreground space-y-1">
+                      <li>
+                        <a 
+                          href="mailto:customer@car-connect.rw" 
+                          className="text-blue-400 hover:text-blue-300 transition-colors"
+                        >
+                          customer@car-connect.rw
+                        </a>
+                      </li>
+                      <li>
+                        <a 
+                          href="mailto:support@car-connect.rw" 
+                          className="text-blue-400 hover:text-blue-300 transition-colors"
+                        >
+                          support@car-connect.rw
+                        </a>
+                      </li>
+                    </ul>
+                    <p className="text-sm text-muted-foreground mt-2">We respond as soon as possible</p>
                   </div>
                 </div>
               </CardContent>

@@ -112,8 +112,12 @@ const BuyerDashboard: React.FC = () => {
     { icon: Heart, label: 'Wishlist', href: '/buyer/wishlist' },
     { icon: Calendar, label: 'Bookings', href: '/buyer/bookings' },
     { icon: Car, label: 'Buy Cars', href: '/buy-cars' },
-    { icon: Car, label: 'Sell Cars', href: '/list-car' },
-    // { icon: MessageCircle, label: 'Support', href: '/support' },
+    { icon: Car, label: 'Rent Car', href: '/rent-cars' },
+  ];
+
+  const sellMenuItems = [
+    { icon: Car, label: 'Sell My Car', href: '/list-car?sell' },
+    { icon: Car, label: 'Rent My Car', href: '/list-car?rent' },
   ];
 
   if (authError) {
@@ -155,6 +159,16 @@ const BuyerDashboard: React.FC = () => {
                     {item.label}
                   </Link>
                 ))}
+                {sellMenuItems.map((item) => (
+                  <Link
+                    key={item.label}
+                    to={item.href}
+                    className="flex items-center gap-2 px-3 py-2 rounded-md text-xs font-medium transition-colors whitespace-nowrap text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                  >
+                    <item.icon className="w-3 h-3" />
+                    {item.label}
+                  </Link>
+                ))}
               </div>
             </div>
           </div>
@@ -183,9 +197,25 @@ const BuyerDashboard: React.FC = () => {
                   {item.label}
                 </Link>
               ))}
+              
+              {/* Separator line */}
+              <div className="border-t border-border my-4"></div>
+              
+              {sellMenuItems.map((item) => (
+                <Link
+                  key={item.label}
+                  to={item.href}
+                  className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                >
+                  <item.icon className="w-4 h-4" />
+                  {item.label}
+                </Link>
+              ))}
             </nav>
 
             <div className="absolute bottom-4 left-4 right-4 space-y-2">
+              {/* Add some spacing before logout */}
+              <div className="h-4"></div>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:text-foreground">

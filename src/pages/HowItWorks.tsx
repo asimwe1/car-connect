@@ -1,6 +1,4 @@
 import React from 'react';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -81,7 +79,6 @@ const HowItWorks = () => {
 
   return (
     <div className="min-h-screen">
-      <Navbar />
       
       {/* Hero Section */}
       <section className="py-20 bg-gradient-to-r from-primary to-primary-dark text-white">
@@ -221,8 +218,6 @@ const HowItWorks = () => {
           </div>
         </div>
       </section>
-      
-      <Footer />
     </div>
   );
 };

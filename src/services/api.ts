@@ -140,11 +140,36 @@ class ApiService {
   }
 
   async getCarById(id: string) {
-    return this.request(`/cars/${id}`);
+    return this.request(`/cars/car/${id}`);
   }
 
   async createCar(carData: any) {
-    return this.request('/cars', { method: 'POST', body: JSON.stringify(carData) });
+    // Using the correct endpoint for listing a car
+    try {
+      const compressedData = {
+        ...carData,
+        // Convert any undefined values to null to avoid JSON issues
+        description: carData.description || null,
+        location: carData.location || null,
+        seats: carData.seats || null,
+        color: carData.color || null,
+        primaryImage: carData.primaryImage || null,
+        video: carData.video || null
+      };
+
+      return this.request('/cars/list', { 
+        method: 'POST',
+        body: JSON.stringify(compressedData),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Origin': window.location.origin
+        }
+      });
+    } catch (error) {
+      console.error('Car creation error:', error);
+      throw error;
+    }
   }
 
   async updateCar(id: string, carData: any) {
@@ -336,33 +361,12 @@ class ApiService {
     });
   }
 
-  async getAdminNewUsers() {
-    return this.request('/admin/new-users');
-  }
-
   async getAdminPendingBookings() {
     return this.request('/admin/pending-bookings');
   }
 
-  // Brand management methods
-  async getBrands() {
-    return this.request('/brands');
-  }
-
   async getActiveBrands() {
     return this.request('/brands/active');
-  }
-
-  async createBrand(brandData: any) {
-    return this.request('/brands', { method: 'POST', body: JSON.stringify(brandData) });
-  }
-
-  async updateBrand(id: string, brandData: any) {
-    return this.request(`/brands/${id}`, { method: 'PUT', body: JSON.stringify(brandData) });
-  }
-
-  async deleteBrand(id: string) {
-    return this.request(`/brands/${id}`, { method: 'DELETE' });
   }
 
   async toggleBrandStatus(id: string) {

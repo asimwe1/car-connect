@@ -48,6 +48,7 @@ import ListCar from "./pages/ListCar";
 import ProtectedRoute from "./components/ProtectedRoute";
 import SessionWarning from "./components/SessionWarning";
 import ScrollToTop from "./components/ScrollToTop";
+import AdminOrderDetails from "./pages/AdminOrderDetails";
 
 const queryClient = new QueryClient();
 

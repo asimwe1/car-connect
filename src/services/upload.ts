@@ -1,4 +1,5 @@
 // Simple Cloudinary unsigned upload helpers
+import { compressImage } from '@/utils/compressImage';
 
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'demo';
 const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'ml_default';

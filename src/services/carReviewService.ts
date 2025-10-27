@@ -3,6 +3,7 @@ import { api } from './api';
 
 export interface CarReview {
   id: string;
+  _id?: string; // MongoDB ID field
   make: string;
   model: string;
   year: number;
@@ -10,13 +11,21 @@ export interface CarReview {
   mileage: number;
   fuelType: string;
   transmission: string;
+  bodyType?: string;
   color: string;
   location: string;
   description?: string;
   images: string[];
   primaryImage?: string;
   video?: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'pending' | 'approved' | 'rejected' | 'listed' | 'available';
+  owner: string | {
+    _id: string;
+    fullname: string;
+    email: string;
+    phone: string;
+  };
+  // Legacy fields for compatibility
   sellerId: string;
   sellerName: string;
   sellerPhone: string;

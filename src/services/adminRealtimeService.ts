@@ -13,7 +13,16 @@ class AdminRealtimeService {
 
   private connect() {
     try {
+      // Temporarily disable Socket.IO connection due to backend endpoint issues
+      const isDev = import.meta.env.DEV;
+      if (isDev || true) { // Force disable for now
+        console.log('Admin realtime service disabled - backend WebSocket not available');
+        this.emit('connection_status', { connected: false, fallback: true });
+        return;
+      }
+
       const socketUrl = 'https://carhubconnect.onrender.com';
+      const token = localStorage.getItem('token');
       
       this.socket = io(`${socketUrl}/admin`, {
         transports: ['websocket', 'polling'],
@@ -21,6 +30,9 @@ class AdminRealtimeService {
         reconnectionAttempts: this.maxReconnectAttempts,
         reconnectionDelay: 1000,
         timeout: 20000,
+        auth: {
+          token
+        },
       });
 
       this.socket.on('connect', () => {

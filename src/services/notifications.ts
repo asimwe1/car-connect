@@ -21,7 +21,7 @@ interface NotificationState {
 class NotificationService {
   private ws: WebSocket | null = null;
   private reconnectAttempts = 0;
-  private maxReconnectAttempts = 5;
+  private maxReconnectAttempts = 3; // Reduced from 5 to fail faster
   private reconnectDelay = 1000;
   // De-duplication structures
   private recentlySeenIds: Set<string> = new Set();
@@ -43,6 +43,14 @@ class NotificationService {
 
   private connect() {
     try {
+      // Skip WebSocket connection in development/production if backend doesn't support it
+      const isDev = import.meta.env.DEV;
+      if (isDev) {
+        console.log('WebSocket disabled in development mode, using demo notifications');
+        this.useDemoNotifications();
+        return;
+      }
+
       // Connect to production WebSocket server or development fallback
       const wsUrl = import.meta.env.VITE_WS_URL || 'wss://localhost:5000/messages';
       console.log(`Attempting to connect to WebSocket: ${wsUrl}`);
@@ -104,7 +112,8 @@ class NotificationService {
   private attemptReconnect() {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
-      const delay = Math.min(this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1), 30000); // Max 30 seconds
+      // Reduce maximum delay and attempts for faster fallback
+      const delay = Math.min(1000 * this.reconnectAttempts, 5000); // Max 5 seconds
       setTimeout(() => {
         console.log(`Attempting to reconnect... (${this.reconnectAttempts}/${this.maxReconnectAttempts}) in ${delay}ms`);
         this.connect();

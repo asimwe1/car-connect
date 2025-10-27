@@ -10,104 +10,130 @@ import { activityService } from '@/services/activityService';
 import LazyImage from '@/components/LazyImage';
 import CarMessaging from '@/components/CarMessaging';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 interface CarData {
-  _id: string;
-  make: string;
-  model: string;
-  year: number;
-  price: number;
-  mileage: number;
-  fuelType: string;
-  transmission: string;
-  status: string;
-  description?: string;
-  images: string[];
-  primaryImage: string;
-  location?: string;
-  bodyType?: string;
-  color?: string;
-  owner: {
-    _id: string;
-    fullname: string;
-    email: string;
-  };
-  sellEnabled?: boolean;
-  rentEnabled?: boolean;
-  rentPricePerDay?: number;
-  rentDeposit?: number;
-  rentMinDays?: number;
-  rentMaxDays?: number;
-}
-
-// Helper function to create fallback data consistent with the Mongoose schema
-const createFallbackCar = (id: string): CarData => ({
-    _id: id,
-    make: 'Honda',
-    model: 'CR-V',
-    year: 2021,
-    price: 32500,
-    mileage: 22000,
-    // Ensure enum values match the schema
-    fuelType: 'petrol', 
-    transmission: 'automatic', 
-    // Default status
-    status: 'available', 
-    description: 'A reliable, low-mileage SUV in great condition. Perfect family vehicle for city and country roads. This is a demo listing.',
-    images: ['/placeholder.svg', 'https://via.placeholder.com/600/505050/FFFFFF?text=Interior+View'], // Added a second placeholder for gallery
-    primaryImage: '/placeholder.svg',
-    location: 'Kigali, Rwanda',
-    bodyType: 'SUV',
-    color: 'Silver',
-    owner: {
-        _id: 'demo-owner-123',
-        fullname: 'CarHub Demo',
-        email: 'demo@carhub.rw'
-    },
-    // Adding optional fields for completeness
-    sellEnabled: true,
-    rentEnabled: true,
-    rentPricePerDay: 50,
-    rentDeposit: 300,
-    rentMinDays: 3,
-    rentMaxDays: 30
-});
+  _id: string;
+  make: string;
+  model: string;
+  year: number;
+  price: number;
+  mileage?: number;
+  fuelType?: string;
+  transmission?: string;
+  status: string;
+  description?: string;
+  images: string[];
+  primaryImage?: string;
+  location?: string;
+  bodyType?: string;
+  color?: string;
+  owner?: {
+    _id: string;
+    fullname: string;
+    email: string;
+  };
+  sellEnabled?: boolean;
+  rentEnabled?: boolean;
+  rentPricePerDay?: number;
+  rentDeposit?: number;
+  rentMinDays?: number;
+  rentMaxDays?: number;
+  createdAt?: string;
+  updatedAt?: string;
+  __v?: number;
+}// No fallback car data - we'll show proper error states instead
 
 const CarDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { toast } = useToast();
   const [car, setCar] = useState<CarData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [activeImageIdx, setActiveImageIdx] = useState(0);
 
   useEffect(() => {
     if (!id) {
+      setError('No car ID provided');
       setLoading(false);
       return;
     }
+    
+    // Validate MongoDB ObjectId format (24 hex characters)
+    const objectIdRegex = /^[0-9a-fA-F]{24}$/;
+    if (!objectIdRegex.test(id)) {
+      setError('Invalid car ID format');
+      setLoading(false);
+      return;
+    }
+    
     const load = async () => {
       try {
         setLoading(true);
+        setError(null);
         // Backend endpoint: /cars/:id
         const response = await api.getCarById(id); 
         
-        if (response.data) {
-          setCar(response.data);
-          // Track car view activity
-          activityService.trackCarView(id, user?.id);
+        console.log('Car details response:', response); // Debug log
+        console.log('Requested car ID:', id); // Debug log
+        
+        if (response.data && !response.error) {
+          // Handle different possible response structures
+          let carData = null;
+          
+          // Check if response has the car data directly (like the working example)
+          if (response.data._id) {
+            // Direct car object (this is what we expect based on the working endpoint)
+            carData = response.data;
+          } else if (response.data.data) {
+            carData = response.data.data;
+          } else if (response.data.car) {
+            carData = response.data.car;
+          } else {
+            console.warn('Unexpected response structure:', response.data);
+            carData = null;
+          }
+          
+          console.log('Extracted car data:', carData); // Debug log
+          
+          if (carData && carData._id) {
+            setCar(carData);
+            // Track car view activity
+            activityService.trackCarView(id, user?.id);
+          } else {
+            console.warn('No valid car data found');
+            setError('Car not found or invalid data received');
+            setCar(null);
+          }
         } else {
-          // Fallback if API returns no data
-          setCar(createFallbackCar(id));
-          // Track car view activity even for fallback
-          activityService.trackCarView(id, user?.id);
+          console.warn('API response error:', response.error);
+          // Handle different error types
+          if (response.error?.includes('404')) {
+            setError('This car listing could not be found. It may have been sold or removed.');
+          } else if (response.error?.includes('403')) {
+            setError('You do not have permission to view this car listing.');
+          } else {
+            setError(response.error || 'Failed to load car details');
+          }
+          setCar(null);
         }
       } catch (e) {
         console.error('Failed to load car', e);
-        // Fallback if API request fails
-        setCar(createFallbackCar(id));
-        // Track car view activity even for fallback
-        activityService.trackCarView(id, user?.id);
+        // Handle network and other errors
+        if (e instanceof Error) {
+          if (e.message.includes('404')) {
+            setError('This car listing could not be found. It may have been sold or removed.');
+          } else if (e.message.includes('network') || e.message.includes('fetch')) {
+            setError('Network error. Please check your connection and try again.');
+          } else {
+            setError(e.message);
+          }
+        } else {
+          setError('An unexpected error occurred while loading car details');
+        }
+        setCar(null);
       } finally {
         setLoading(false);
       }
@@ -115,21 +141,27 @@ const CarDetails = () => {
     load();
   }, [id, user?.id]);
 
-  const pricing = useMemo(() => {
-    if (car) {
-      return { current: car.price, original: car.price, hasDiscount: false };
-    }
-    return { current: 0, original: 0, hasDiscount: false };
-  }, [car]);
-
-  const images: string[] = useMemo(() => {
-    if (car) {
-      return car.images.length > 0 ? car.images : [car.primaryImage || '/placeholder.svg'];
-    }
-    return [];
-  }, [car]);
-
-  const formatPrice = (price: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'RWF', minimumFractionDigits: 0 }).format(price);
+  const pricing = useMemo(() => {
+    if (car && car.price) {
+      return { current: car.price, original: car.price, hasDiscount: false };
+    }
+    return { current: 0, original: 0, hasDiscount: false };
+  }, [car]);  const images: string[] = useMemo(() => {
+    if (car) {
+      // Ensure we have valid images
+      const validImages = car.images?.filter(img => img && img.trim() !== '') || [];
+      if (validImages.length > 0) {
+        return validImages;
+      }
+      // Fall back to primary image if available
+      if (car.primaryImage && car.primaryImage.trim() !== '') {
+        return [car.primaryImage];
+      }
+      // Final fallback to placeholder
+      return ['/placeholder.svg'];
+    }
+    return ['/placeholder.svg'];
+  }, [car]);  const formatPrice = (price: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'RWF', minimumFractionDigits: 0 }).format(price);
 
   if (loading) {
     return (
@@ -145,20 +177,65 @@ const CarDetails = () => {
     );
   }
 
-  if (!car) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 py-8">
-          <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6">
-            <ArrowLeft className="h-4 w-4 mr-2" /> Back
-          </Button>
-          <p className="text-muted-foreground">Car not found.</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
+  if (!car) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-8">
+          <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6">
+            <ArrowLeft className="h-4 w-4 mr-2" /> Back
+          </Button>
+          <div className="text-center py-12">
+            <div className="w-16 h-16 mx-auto mb-4 bg-muted rounded-full flex items-center justify-center">
+              <Car className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h2 className="text-2xl font-semibold mb-2">Car Not Found</h2>
+            <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+              {error || 'The car you are looking for could not be found or may have been removed.'}
+            </p>
+            <div className="mb-4 p-3 bg-muted/30 rounded text-sm text-muted-foreground">
+              <strong>Car ID:</strong> {id}
+            </div>
+            <div className="space-x-4">
+              <Button onClick={() => navigate('/buy-cars')} className="bg-primary hover:bg-primary/90">
+                Browse Available Cars
+              </Button>
+              <Button variant="outline" onClick={() => navigate(-1)}>
+                Go Back
+              </Button>
+            </div>
+            {error?.includes('404') && (
+              <div className="mt-8 p-4 bg-muted/50 rounded-lg max-w-md mx-auto">
+                <p className="text-sm text-muted-foreground mb-3">
+                  <strong>Tip:</strong> This car may have been recently sold or the listing may have expired. 
+                  Check out our other available vehicles below.
+                </p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={async () => {
+                    try {
+                      const response = await api.getCars({ status: 'available', limit: 5 });
+                      console.log('Available cars check:', response);
+                      if (response.data?.items?.length > 0) {
+                        toast({ title: 'Success', description: `Found ${response.data.items.length} available cars. Check console for details.` });
+                      } else {
+                        toast({ title: 'Info', description: 'No cars found in database' });
+                      }
+                    } catch (e) {
+                      console.error('Error checking cars:', e);
+                      toast({ title: 'Error', description: 'Failed to check available cars', variant: 'destructive' });
+                    }
+                  }}
+                >
+                  Check Available Cars (Debug)
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }  return (
     <div className="min-h-screen bg-background">
       <SEO
         title={`${car ? `${car.make} ${car.model} – ${car.year}` : 'Car Details'} | CarConnect Rwanda`}
@@ -207,17 +284,31 @@ const CarDetails = () => {
                 <p className="text-sm text-muted-foreground">{car.year} • {car.bodyType || 'Vehicle'}</p>
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-3xl font-bold text-primary">{formatPrice(pricing.current)}</span>
+                                <span className="text-3xl font-bold text-primary">
+                  {pricing.current > 0 ? formatPrice(pricing.current) : 'Price N/A'}
+                </span>
                 {pricing.hasDiscount && (
                   <span className="text-muted-foreground line-through">{formatPrice(pricing.original)}</span>
                 )}
               </div>
               <div className="grid grid-cols-2 gap-3 text-sm text-muted-foreground">
-                <div className="flex items-center gap-2"><Car className="h-4 w-4" />{car.mileage.toLocaleString()} Miles</div>
+                                <div className="flex items-center gap-2">
+                  <Car className="h-4 w-4" />
+                  {car.mileage ? `${car.mileage.toLocaleString()} Miles` : 'Mileage N/A'}
+                </div>
                 {/* Ensure enum value is displayed correctly */}
-                <div className="flex items-center gap-2"><Fuel className="h-4 w-4" />{car.fuelType.charAt(0).toUpperCase() + car.fuelType.slice(1)}</div>
-                <div className="flex items-center gap-2"><Settings className="h-4 w-4" />{car.transmission.charAt(0).toUpperCase() + car.transmission.slice(1)}</div>
-                <div className="flex items-center gap-2"><MapPin className="h-4 w-4" />{car.location || '—'}</div>
+                                <div className="flex items-center gap-2">
+                  <Fuel className="h-4 w-4" />
+                  {car.fuelType ? car.fuelType.charAt(0).toUpperCase() + car.fuelType.slice(1) : 'Fuel N/A'}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Settings className="h-4 w-4" />
+                  {car.transmission ? car.transmission.charAt(0).toUpperCase() + car.transmission.slice(1) : 'Transmission N/A'}
+                </div>
+                                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  {car.location || 'Location N/A'}
+                </div>
               </div>
               <div className="pt-2 space-y-2">
                 <Button 

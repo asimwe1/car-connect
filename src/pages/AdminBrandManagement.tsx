@@ -40,7 +40,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import Sidebar from '@/components/Sidebar';
 import { brandService, Brand, CreateBrandData, UpdateBrandData } from '@/services/brandService';
-import { uploadImages } from '@/services/upload';
+import { uploadImagesToCloudinary } from '@/services/cloudinaryUpload';
 
 const AdminBrandManagement = () => {
   const [brands, setBrands] = useState<Brand[]>([]);
@@ -83,11 +83,33 @@ const AdminBrandManagement = () => {
       setLoading(true);
       const response = await brandService.getBrands();
       
+      console.log('API Response:', response); // Debug log
+      
       if (response.error) {
         throw new Error(response.error);
       }
+
+      if (!response.data?.data?.brands) {
+        console.error('Invalid response structure:', response);
+        throw new Error('Invalid response structure from server');
+      }
       
-      setBrands(response.data || []);
+      // Extract brands from the nested response structure
+      const brandsData = response.data.data.brands || [];
+      
+      console.log('Brands data:', brandsData); // Debug log
+      
+      // Map the response data to match our Brand interface
+      const mappedBrands = brandsData.map((brand: any) => ({
+        id: brand._id,
+        name: brand.name,
+        count: brand.count?.toString() || '',
+        logo: brand.logo || '',
+        isActive: brand.isActive !== false, // default to true if not specified
+        __v: brand.__v
+      }));
+      
+      setBrands(mappedBrands);
     } catch (error: any) {
       console.error('Error fetching brands:', error);
       const msg = typeof error?.message === 'string' ? error.message : 'Failed to fetch brands. Please try again.';
@@ -114,8 +136,20 @@ const AdminBrandManagement = () => {
       if (response.error) {
         throw new Error(response.error);
       }
+
+      console.log('Create brand response:', response); // Debug log
       
-      setBrands(prev => [response.data!, ...prev]);
+      // Map the new brand to match our Brand interface
+      const newBrand = {
+        id: response.data?.data?._id,
+        name: response.data?.data?.name,
+        count: response.data?.count?.toString() || '',
+        logo: response.data?.logo || '',
+        isActive: response.data?.isActive !== false,
+        __v: response.data?.__v
+      };
+      
+      setBrands(prev => [newBrand, ...prev]);
       setIsCreateDialogOpen(false);
       setCreateFormData({ name: '', logo: '', count: '' });
       

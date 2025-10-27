@@ -142,7 +142,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       // Get the actual auth token from localStorage
       const token = localStorage.getItem('token');
       if (!token) {
-        console.error('No auth token found');
+        console.log('No auth token found, skipping chat connection');
         setIsConnected(false);
         return;
       }

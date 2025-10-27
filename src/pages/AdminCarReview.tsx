@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { api } from '@/services/api';
+import { adminRealtimeService } from '@/services/adminRealtimeService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -58,7 +60,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import Sidebar from '@/components/Sidebar';
-import { carReviewService, CarReview, CarReviewFilters } from '@/services/carReviewService';
+import type { CarReview, CarReviewFilters } from '@/services/carReviewService';
 
 const AdminCarReview = () => {
   const [cars, setCars] = useState<CarReview[]>([]);
@@ -83,8 +85,49 @@ const AdminCarReview = () => {
       navigate('/signin');
       return;
     }
+
+    // Initialize realtime connection
+    const connectRealtime = () => {
+      if (!adminRealtimeService) {
+        console.error('Admin realtime service not available');
+        return;
+      }
+
+      try {
+        adminRealtimeService.connect();
+      } catch (error) {
+        console.error('Failed to connect to realtime service:', error);
+        // Attempt to reconnect after a delay, but stop after 5 attempts
+        if (!window.realtimeAttempts) {
+          window.realtimeAttempts = 1;
+        } else if (window.realtimeAttempts >= 5) {
+          console.log('Max realtime connection attempts reached');
+          return;
+        } else {
+          window.realtimeAttempts++;
+        }
+        setTimeout(connectRealtime, 5000);
+      }
+    };
+
+    connectRealtime();
     fetchCars();
     fetchStats();
+
+    // Cleanup function
+    return () => {
+      if (adminRealtimeService) {
+        try {
+          adminRealtimeService.disconnect();
+          // Reset connection attempts counter
+          if (window.realtimeAttempts) {
+            delete window.realtimeAttempts;
+          }
+        } catch (error) {
+          console.error('Error disconnecting realtime service:', error);
+        }
+      }
+    };
   }, [isAuthenticated, user, navigate]);
 
   const fetchCars = async () => {

@@ -47,11 +47,25 @@ const AdminOrders = () => {
   const { user, logout, isAuthenticated } = useAuth();
 
   useEffect(() => {
-    if (!isAuthenticated || user?.role !== 'admin') {
-      navigate('/signin');
-      return;
-    }
-    fetchOrders();
+    const init = async () => {
+      if (!isAuthenticated || user?.role !== 'admin') {
+        navigate('/signin');
+        return;
+      }
+
+      try {
+        const meResponse = await api.request('/auth/me');
+        if (meResponse.error || !meResponse.data?.user) {
+          throw new Error('Authentication check failed');
+        }
+        await fetchOrders();
+      } catch (error) {
+        console.error('Auth or initialization error:', error);
+        navigate('/signin');
+      }
+    };
+
+    init();
   }, [isAuthenticated, user, navigate]);
 
   const fetchOrders = async () => {
@@ -59,21 +73,17 @@ const AdminOrders = () => {
       setErrorMessage(null);
       setLoading(true);
       
-      // Use the correct bookings API endpoint
-      const response = await fetch('https://carhubconnect.onrender.com/api/bookings', {
+      // Use the API service which handles authentication via cookies
+      const response = await api.request('/bookings', {
         method: 'GET',
-        headers: {
-          'accept': '*/*',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+        credentials: 'include'
       });
       
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      if (response.error) {
+        throw new Error(response.error);
       }
       
-      const data = await response.json();
-      const bookings = data.items || [];
+      const bookings = response.data?.items || [];
       
       // Transform bookings data to match Order interface
       const normalized: Order[] = bookings.map((booking: any) => ({

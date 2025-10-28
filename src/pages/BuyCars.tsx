@@ -71,7 +71,10 @@ const BuyCars: React.FC = () => {
       };
       console.log("API call with params:", params);
       const response = await api.getCars(params);
+      console.log("Cars API response:", response); // Debug log
       if (response.data?.items && Array.isArray(response.data.items)) {
+        console.log("Cars found:", response.data.items.length); // Debug log
+        console.log("First few car IDs:", response.data.items.slice(0, 3).map(car => car._id)); // Debug log
         setAllCars(response.data.items);
       } else {
         setAllCars([]);

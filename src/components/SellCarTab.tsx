@@ -43,6 +43,8 @@ const SellCarTab: React.FC<SellCarTabProps> = ({ listingType, isLocked }) => {
     description: ''
   });
   
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [selectedVideo, setSelectedVideo] = useState<File | null>(null);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [uploadedVideo, setUploadedVideo] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -67,56 +69,50 @@ const SellCarTab: React.FC<SellCarTabProps> = ({ listingType, isLocked }) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>): void => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
 
     // Validate file count
-    if (uploadedImages.length + files.length > 20) {
+    if (selectedImages.length + files.length > 20) {
       toast({
         title: "Too many images",
         description: "Maximum 20 images allowed",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
 
     // Validate file sizes
-    for (const file of files) {
+    const validFiles = Array.from(files).filter(file => {
       if (file.size > 5 * 1024 * 1024) { // 5MB
         toast({
           title: "File too large",
           description: `${file.name} is larger than 5MB`,
-          variant: "destructive",
+          variant: "destructive"
         });
-        return;
+        return false;
       }
+      return true;
+    });
+
+    // Store the files
+    setSelectedImages(prev => [...prev, ...validFiles]);
+
+    // Clear input
+    if (imageInputRef.current) {
+      imageInputRef.current.value = '';
     }
 
-    setIsUploading(true);
-    try {
-      const newImages = await uploadImages(Array.from(files));
-      setUploadedImages(prev => [...prev, ...newImages]);
-      toast({
-        title: "Images uploaded",
-        description: `${files.length} image(s) uploaded successfully`,
-      });
-    } catch (error) {
-      console.error('Image upload error:', error);
-      toast({
-        title: "Upload failed",
-        description: "Failed to upload images. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsUploading(false);
-      if (imageInputRef.current) {
-        imageInputRef.current.value = '';
-      }
-    }
+    // Show success message
+    toast({
+      title: "Images selected",
+      description: `${validFiles.length} images ready to upload`,
+      variant: "default"
+    });
   };
 
-  const handleVideoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleVideoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -130,35 +126,27 @@ const SellCarTab: React.FC<SellCarTabProps> = ({ listingType, isLocked }) => {
       return;
     }
 
-    setIsUploading(true);
-    try {
-      const videoUrl = await uploadVideo(file);
-      setUploadedVideo(videoUrl);
-      toast({
-        title: "Video uploaded",
-        description: "Video uploaded successfully",
-      });
-    } catch (error) {
-      console.error('Video upload error:', error);
-      toast({
-        title: "Upload failed",
-        description: "Failed to upload video. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsUploading(false);
-      if (videoInputRef.current) {
-        videoInputRef.current.value = '';
-      }
+    // Store the video file
+    setSelectedVideo(file);
+    
+    // Clear input
+    if (videoInputRef.current) {
+      videoInputRef.current.value = '';
     }
+
+    toast({
+      title: "Video selected",
+      description: "Video ready to upload",
+      variant: "default",
+    });
   };
 
   const removeImage = (index: number) => {
-    setUploadedImages(prev => prev.filter((_, i) => i !== index));
+    setSelectedImages(prev => prev.filter((_, i) => i !== index));
   };
 
   const removeVideo = () => {
-    setUploadedVideo(null);
+    setSelectedVideo(null);
   };
 
   const formatPrice = (price) => {
@@ -205,11 +193,54 @@ const SellCarTab: React.FC<SellCarTabProps> = ({ listingType, isLocked }) => {
       }
 
       if (!validateForm()) return;
+      
+      if (selectedImages.length === 0) {
+        toast({
+          title: "Images required",
+          description: "Please select at least one image of your car",
+          variant: "destructive"
+        });
+        return;
+      }
 
       setIsSubmitting(true);
+      let imageUrls: string[] = [];
+      let videoUrl: string | null = null;
+
+      // First upload images to Cloudinary
+      if (selectedImages.length > 0) {
+        toast({
+          title: "Uploading images",
+          description: "Please wait while we upload your images...",
+          variant: "default"
+        });
+        
+        // Upload images in batches of 3 to avoid timeout
+        const batchSize = 3;
+        const batches = [];
+        for (let i = 0; i < selectedImages.length; i += batchSize) {
+          batches.push(selectedImages.slice(i, i + batchSize));
+        }
+        
+        for (const batch of batches) {
+          const batchUrls = await uploadImages(batch);
+          imageUrls = [...imageUrls, ...batchUrls];
+        }
+        setUploadedImages(imageUrls);
+      }
+
+      // Upload video if selected
+      if (selectedVideo) {
+        toast({
+          title: "Uploading video",
+          description: "Please wait while we upload your video...",
+          variant: "default"
+        });
+        videoUrl = await uploadVideo(selectedVideo);
+        setUploadedVideo(videoUrl);
+      }
 
       // Build payload matching backend expectations
-      const images = uploadedImages || [];
       const payload = {
         make: formData.make,
         model: formData.model,
@@ -223,9 +254,9 @@ const SellCarTab: React.FC<SellCarTabProps> = ({ listingType, isLocked }) => {
         location: formData.location || undefined,
         seats: formData.seats ? Number(formData.seats) : undefined,
         color: formData.color || undefined,
-        images,
-        primaryImage: images[0] || undefined,
-        video: uploadedVideo || undefined,
+        images: imageUrls,
+        primaryImage: imageUrls[0] || undefined,
+        video: videoUrl,
       } as any;
 
       const res = await api.createCar(payload);
@@ -519,14 +550,15 @@ const SellCarTab: React.FC<SellCarTabProps> = ({ listingType, isLocked }) => {
           </div>
           
           {/* Image Previews */}
-          {uploadedImages.length > 0 && (
+          {selectedImages.length > 0 && (
             <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
-              {uploadedImages.map((url, index) => (
+              {selectedImages.map((file, index) => (
                 <div key={index} className="relative group">
                   <img
-                    src={url}
+                    src={URL.createObjectURL(file)}
                     alt={`Upload ${index + 1}`}
                     className="w-full h-24 object-cover rounded-lg"
+                    onLoad={(e) => URL.revokeObjectURL((e.target as HTMLImageElement).src)}
                   />
                   <button
                     onClick={() => removeImage(index)}
@@ -571,12 +603,13 @@ const SellCarTab: React.FC<SellCarTabProps> = ({ listingType, isLocked }) => {
           </div>
           
           {/* Video Preview */}
-          {uploadedVideo && (
+          {selectedVideo && (
             <div className="mt-4 relative">
               <video
-                src={uploadedVideo}
+                src={URL.createObjectURL(selectedVideo)}
                 controls
                 className="w-full max-w-md mx-auto rounded-lg"
+                onLoadedData={(e) => URL.revokeObjectURL((e.target as HTMLVideoElement).src)}
               />
               <button
                 onClick={removeVideo}

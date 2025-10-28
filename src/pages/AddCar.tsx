@@ -456,8 +456,8 @@ const AddCar = () => {
             <p className="text-muted-foreground mb-6">You need admin privileges to access this page.</p>
             <Button onClick={() => navigate('/')} className="btn-hero">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Go Home
-            </Button>
+                Go Home
+              </Button>
           </div>
         </div>
       </div>
@@ -468,7 +468,7 @@ const AddCar = () => {
     <div className="min-h-screen bg-background">
       <Sidebar onSignOut={handleSignOut} />
       <div className="ml-64 p-8">
-        <div className="max-w-4xl mx-auto">
+          <div className="max-w-4xl mx-auto">
           <div className="mb-8">
             <div className="flex items-center gap-4 mb-4">
               <Button
@@ -483,17 +483,17 @@ const AddCar = () => {
                 <h1 className="text-3xl font-bold">Add New Car</h1>
                 <p className="text-muted-foreground">Create a new car listing</p>
               </div>
+              </div>
             </div>
-          </div>
 
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Car className="h-5 w-5" />
+            <form onSubmit={handleSubmit(onSubmit)}>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Car className="h-5 w-5" />
                   Add New Car
-                </CardTitle>
-              </CardHeader>
+                  </CardTitle>
+                </CardHeader>
               <CardContent>
                 <Tabs value={carType} onValueChange={(value) => setCarType(value as 'sell' | 'rent')} className="w-full">
                   <TabsList className="grid w-full grid-cols-2 mb-6">
@@ -525,28 +525,28 @@ const AddCar = () => {
                   </TabsContent>
                 </Tabs>
 
-                {/* Actions */}
-                <div className="flex gap-4 pt-6">
-                  <Button type="submit" disabled={isLoading} className="btn-hero">
-                    {isLoading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Creating...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="h-4 w-4 mr-2" />
-                        Create Listing
-                      </>
-                    )}
-                  </Button>
-                  <Button type="button" variant="outline" onClick={() => navigate('/admin-dashboard')}>
-                    Cancel
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </form>
+                  {/* Actions */}
+                  <div className="flex gap-4 pt-6">
+                    <Button type="submit" disabled={isLoading} className="btn-hero">
+                      {isLoading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Creating...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="h-4 w-4 mr-2" />
+                          Create Listing
+                        </>
+                      )}
+                    </Button>
+                    <Button type="button" variant="outline" onClick={() => navigate('/admin-dashboard')}>
+                      Cancel
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </form>
         </div>
       </div>
     </div>

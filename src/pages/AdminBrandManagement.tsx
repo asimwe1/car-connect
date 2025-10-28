@@ -176,9 +176,21 @@ const AdminBrandManagement = () => {
       if (response.error) {
         throw new Error(response.error);
       }
+
+      console.log('Update brand response:', response); // Debug log
+      
+      // Map the updated brand to match our Brand interface
+      const updatedBrand = {
+        id: response.data?.data?._id,
+        name: response.data?.data?.name,
+        count: response.data?.count?.toString() || '',
+        logo: response.data?.logo || '',
+        isActive: response.data?.isActive !== false,
+        __v: response.data?.__v
+      };
       
       setBrands(prev => prev.map(brand => 
-        brand.id === editingBrand.id ? response.data! : brand
+        brand.id === editingBrand.id ? updatedBrand : brand
       ));
       setIsEditDialogOpen(false);
       setEditingBrand(null);
@@ -250,7 +262,18 @@ const AdminBrandManagement = () => {
   const handleLogoUpload = async (file: File, isEdit = false) => {
     if (!file) return;
 
-    if (file.size > 2 * 1024 * 1024) { // 2MB
+    // Check file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: 'Invalid file type',
+        description: 'Please upload an image file',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Check file size (2MB limit)
+    if (file.size > 2 * 1024 * 1024) {
       toast({
         title: 'File too large',
         description: 'Logo must be smaller than 2MB',
@@ -261,8 +284,14 @@ const AdminBrandManagement = () => {
 
     setIsUploading(true);
     try {
-      const uploadedImages = await uploadImages([file]);
-      const logoUrl = uploadedImages[0];
+      // Upload to Cloudinary using the existing service
+      const uploadedUrls = await uploadImagesToCloudinary([file]);
+      
+      if (!uploadedUrls || uploadedUrls.length === 0) {
+        throw new Error('Failed to get upload URL');
+      }
+
+      const logoUrl = uploadedUrls[0];
       
       if (isEdit) {
         setEditFormData(prev => ({ ...prev, logo: logoUrl }));
@@ -302,9 +331,9 @@ const AdminBrandManagement = () => {
     navigate('/');
   };
 
-  const filteredBrands = brands.filter(brand =>
-    brand.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredBrands = Array.isArray(brands) ? brands.filter(brand =>
+    brand?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+  ) : [];
 
   if (!isAuthenticated || user?.role !== 'admin') {
     return (

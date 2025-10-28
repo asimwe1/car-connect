@@ -18,33 +18,67 @@ async function uploadFile(file: File, endpoint: string): Promise<string> {
 
   // For demo purposes, use a placeholder URL if Cloudinary is not configured
   if (CLOUD_NAME === 'demo') {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.readAsDataURL(file);
+    return Promise.resolve('https://placeholder.com/image.jpg');
+  }
+
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', UPLOAD_PRESET);
+
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Accept': 'application/json'
+      }
     });
-  }
 
-  const form = new FormData();
-  form.append('file', file);
-  form.append('upload_preset', UPLOAD_PRESET);
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`Upload failed (${response.status}): ${text}`);
+    }
 
-  const res = await fetch(endpoint, { method: 'POST', body: form });
-  if (!res.ok) {
-    const txt = await res.text();
-    throw new Error(`Upload failed (${res.status}): ${txt}`);
+    const data = await response.json();
+    return data.secure_url;
+  } catch (error) {
+    console.error('Upload error:', error);
+    throw error;
   }
-  const data = await res.json();
-  return data.secure_url as string;
 }
 
 export async function uploadImages(files: File[]): Promise<string[]> {
-  const uploads = files.map((f) => uploadFile(f, CLOUDINARY_IMAGE_URL));
-  return Promise.all(uploads);
+  try {
+    // Compress images before uploading
+    const compressedFiles = await Promise.all(
+      files.map(async (file) => {
+        try {
+          return await compressImage(file);
+        } catch (error) {
+          console.warn(`Compression failed for ${file.name}, using original:`, error);
+          return file;
+        }
+      })
+    );
+
+    // Upload compressed files in sequence to avoid overwhelming the server
+    const urls = [];
+    for (const file of compressedFiles) {
+      const url = await uploadFile(file, CLOUDINARY_IMAGE_URL);
+      urls.push(url);
+    }
+    return urls;
+  } catch (error) {
+    console.error('Image upload error:', error);
+    throw error;
+  }
 }
 
 export async function uploadVideo(file: File): Promise<string> {
-  return uploadFile(file, CLOUDINARY_VIDEO_URL);
+  try {
+    return await uploadFile(file, CLOUDINARY_VIDEO_URL);
+  } catch (error) {
+    console.error('Video upload error:', error);
+    throw error;
+  }
 }
-
-

@@ -3,16 +3,13 @@ import { Outlet, useLocation } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import FloatingActions from "@/components/FloatingActions";
-import OfflineBanner from "@/components/OfflineBanner";
 
 const Layout: React.FC = () => {
   const location = useLocation();
   const hideGlobalChrome = location.pathname.startsWith('/admin') || 
                           location.pathname === '/support' || 
                           location.pathname === '/admin/support-chat' ||
-                          location.pathname === '/list-car' ||
                           location.pathname === '/settings' ||
-                          location.pathname === '/buyer-dashboard' ||
                           location.pathname === '/admin-dashboard';
   return (
     <div className="min-h-screen bg-background flex flex-col">

@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useChat } from '@/contexts/ChatContext';
 import { api } from '@/services/api';
 import { adminRealtimeService } from '@/services/adminRealtimeService';
-import { getActivityService, ActivityData } from '@/services/activityService';
+import { ActivityData, getActivityService } from '@/services/activityService';
 import { Eye, Users, Calendar, MessageCircle } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
@@ -28,6 +28,7 @@ interface Stats {
 }
 
 const AdminDashboard = () => {
+  const activityServiceRef = useRef(getActivityService());
   const [stats, setStats] = useState<Stats>({
     totalCars: 0,
     totalUsers: 0,
@@ -75,31 +76,31 @@ const AdminDashboard = () => {
     const unsubscribeCarViews = adminRealtimeService.subscribe('car_views', (data) => {
       setStats((prev) => ({ ...prev, carViewsToday: data.count }));
       // Track car view activity
-      activityService.trackCarView(data.carId, data.userId);
+      activityServiceRef.current.trackCarView(data.carId, data.userId);
     });
 
     const unsubscribeNewUsers = adminRealtimeService.subscribe('new_users', (data) => {
       setStats((prev) => ({ ...prev, newUsersThisWeek: data.count }));
       // Track new user activity
-      activityService.trackNewUser(data.userId, data.userInfo);
+      activityServiceRef.current.trackNewUser(data.userId, data.userInfo);
     });
 
     const unsubscribeBookings = adminRealtimeService.subscribe('bookings', (data) => {
       setStats((prev) => ({ ...prev, pendingBookings: data.pending }));
       // Track booking activity
-      activityService.trackBooking(data.bookingId, data.carId, data.userId);
+      activityServiceRef.current.trackBooking(data.bookingId, data.carId, data.userId);
     });
 
     const unsubscribeMessages = adminRealtimeService.subscribe('messages', (data) => {
       setStats((prev) => ({ ...prev, unreadMessages: data.unread }));
       setRecentMessages((prev) => [data.message, ...prev.slice(0, 4)]);
       // Track message activity
-      activityService.trackMessage(data.messageId, data.senderId, data.recipientId);
+      activityServiceRef.current.trackMessage(data.messageId, data.senderId, data.recipientId);
     });
 
     const unsubscribeActivity = adminRealtimeService.subscribe('activity', (data) => {
       // Let the activity service handle this
-      activityService.createActivity(data);
+      activityServiceRef.current.createActivity(data);
     });
 
     const unsubscribeStats = adminRealtimeService.subscribe('stats', (data) => {
@@ -124,7 +125,7 @@ const AdminDashboard = () => {
       setRecentActivity(activities.slice(0, 15));
     });
 
-    const unsubscribeActivityCreated = activityService.subscribe('activity_created', (activity) => {
+    const unsubscribeActivityCreated = activityServiceRef.current.subscribe('activity_created', (activity) => {
       setRecentActivity((prev) => [activity, ...prev.slice(0, 14)]);
     });
 

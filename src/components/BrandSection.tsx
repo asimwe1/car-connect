@@ -45,7 +45,7 @@ const BrandSection = () => {
   };
 
   return (
-    <section className="py-20 bg-gradient-to-b from-background to-accent/10">
+    <section id='premium-brands' className="py-20 bg-gradient-to-b from-background to-accent/10">
       <div className="max-w-7xl mx-auto px-4">
         <div className="text-center mb-16 fade-in-up">
           <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-primary-light bg-clip-text text-transparent">

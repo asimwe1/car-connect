@@ -1,31 +1,34 @@
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FaWhatsapp, FaFacebookF, FaInstagram, FaXTwitter } from 'react-icons/fa6';
 
 const Footer = () => {
+  const navigate = useNavigate();
+
+  const handleMoreBrandsClick = () => {
+    // If we're already on the home page, just scroll to the section
+    if (window.location.pathname === '/') {
+      const element = document.getElementById('premium-brands');
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    } else {
+      // Navigate to home page and then scroll to section
+      navigate('/');
+      setTimeout(() => {
+        const element = document.getElementById('premium-brands');
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
+    }
+  };
+
   return (
     <footer className="bg-[#0B2559] text-white py-8">
       <div className="container mx-auto px-4">
-        {/* Newsletter Section */}
-        <div className="bg-[#12306E]/60 rounded-lg p-8 mb-12 text-center">
-          <h2 className="text-2xl font-bold mb-4">CarConnect</h2>
-          <p className="text-blue-100 mb-6">
-            We help you to buy or sell your car at suitable terms
-          </p>
-          <div className="flex max-w-md mx-auto gap-2">
-            <Input
-              type="tel"
-              placeholder="Enter phone (optional)"
-              className="bg-white/10 border-white/20 text-white placeholder:text-blue-200"
-            />
-            <Button className="btn-hero" asChild>
-              <a href="/signup">Sign Up</a>
-            </Button>
-          </div>
-        </div>
-
         {/* Footer Links */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-2">
           {/* Company */}
@@ -66,7 +69,14 @@ const Footer = () => {
               <li><Link to="/buy-cars?brand=Ford" className="text-white hover:text-blue-200 transition-colors">Ford</Link></li>
               <li><Link to="/buy-cars?brand=Nissan" className="text-white hover:text-blue-200 transition-colors">Nissan</Link></li>
               <li><Link to="/buy-cars?brand=Mercedes-Benz" className="text-white hover:text-blue-200 transition-colors">Mercedes-Benz</Link></li>
-              <li><Link to="/buy-cars?brand=Kia" className="text-white hover:text-blue-200 transition-colors">Kia</Link></li>
+              <li>
+                <button 
+                  onClick={handleMoreBrandsClick}
+                  className="text-white hover:text-blue-200 transition-colors cursor-pointer"
+                >
+                  More
+                </button>
+              </li>
             </ul>
           </div>
 
@@ -87,7 +97,7 @@ const Footer = () => {
         </div>
 
         {/* Bottom Bar */}
-        <div className="border-t h-4 border-white/20 pt-8 flex flex-col items-center justify-center space-y-4">
+        <div className="border-t h-4 border-white/20 pt-8 flex flex-col md:flex-row md:items-center md:justify-center items-center justify-center space-y-4 md:space-y-0 md:gap-8">
           
 
           <div className="flex items-center gap-4">
@@ -129,6 +139,9 @@ const Footer = () => {
               <FaXTwitter className="h-5 w-5" />
             </a>
           </div>
+          
+          <div className="hidden md:block w-px h-6 bg-white/20"></div>
+          
           <p className="text-blue-200">© 2025 car.connect.rw. All rights reserved.</p>
         </div>
       </div>

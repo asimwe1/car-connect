@@ -15,11 +15,11 @@ const Navbar = () => {
 
   const navLinks: Array<{ name: string; path: string; tab?: 'sell' | 'rent'; protected?: boolean }> = [
     { name: 'Home', path: '/' },
-    { name: 'About', path: '/about' },
     { name: 'Buy Cars', path: '/buy-cars' },
     { name: 'Sell My Car', path: '/list-car?sell', tab: 'sell', protected: true },
     { name: 'Rent My Car', path: '/list-car?rent', tab: 'rent', protected: true },
     { name: 'Contact', path: '/contact' },
+    { name: 'About', path: '/about' },
   ];
 
   const isActiveLink = (link: { path: string; tab?: 'sell' | 'rent' }) => {
@@ -58,7 +58,7 @@ const Navbar = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2 focus:outline-none focus:ring-2 focus:ring-primary rounded-md">
             <span className="text-xl font-bold bg-gradient-to-r from-primary to-primary-light bg-clip-text text-transparent">
-              car.connect
+              car-connect.rw
             </span>
           </Link>
 

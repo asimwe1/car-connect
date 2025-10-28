@@ -2,12 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 type ListingType = 'sell' | 'rent';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-<<<<<<< HEAD
-import SellCarTab from '@/components/SellCarTab';
-import RentCarTab from '@/components/RentCarTab';
-=======
 import SellCarTab, { SellCarTabProps } from '@/components/SellCarTab';
->>>>>>> c3cceab (User portal integration)
+import RentCarTab from '@/components/RentCarTab';
 import CarRentTab from '@/components/CarRentTab';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -93,11 +89,7 @@ const ListCar: React.FC = () => {
                     <SellCarTab listingType={tab} isLocked={isLocked} />
                   </TabsContent>
                   <TabsContent value="rent" className="mt-0">
-<<<<<<< HEAD
-                    <RentCarTab />
-=======
                     <SellCarTab listingType={tab} isLocked={isLocked} />
->>>>>>> c3cceab (User portal integration)
                   </TabsContent>
                 </>
               )}

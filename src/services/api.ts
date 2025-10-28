@@ -291,6 +291,55 @@ class ApiService {
     return this.request('/admin/new-users');
   }
 
+  // Brand methods
+  async getBrands() {
+    return this.request<{
+      success: boolean;
+      message: string;
+      data: {
+        brands: Array<{
+          _id: string;
+          name: string;
+          logo: string;
+          count: number;
+        }>;
+        count: number;
+      };
+    }>('/brands');
+  }
+
+  async getBrandById(brandId: string) {
+    return this.request(`/brands/${brandId}`);
+  }
+
+  async getBrandByName(name: string) {
+    return this.request(`/brand/${encodeURIComponent(name)}`);
+  }
+
+  async createBrand(data: { name: string; logo: string; count: string }) {
+    return this.request('/brands', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateBrand(brandId: string, data: Partial<{ name: string; logo: string; count: string }>) {
+    return this.request(`/brands/${brandId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteBrand(brandId: string) {
+    return this.request(`/brands/${brandId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getAdminNewUsers() {
+    return this.request('/admin/new-users');
+  }
+
   async getAdminPendingBookings() {
     return this.request('/admin/pending-bookings');
   }

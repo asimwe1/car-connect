@@ -1,35 +1,44 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import toyotaLogo from '@/assets/brands/toyota-logo.png';
-import porscheLogo from '@/assets/brands/porsche-logo.png';
-import kiaLogo from '@/assets/brands/kia-logo.png';
-import nissanLogo from '@/assets/brands/nissan-logo.png';
-import mercedesLogo from '@/assets/brands/mercedes-logo.png';
-import bmwLogo from '@/assets/brands/bmw-logo.png';
-import landroverLogo from '@/assets/brands/landrover-logo.png';
-import dodgeLogo from '@/assets/brands/dodge-logo.png';
-import audiLogo from '@/assets/brands/audi-logo.png';
-import fordLogo from '@/assets/brands/ford-logo.png';
-import rangeRoverLogo from '@/assets/brands/range-rover.png';
-import chevroletLogo from '@/assets/brands/chevrolet-logo.png';
+import { api } from '@/services/api';
+import { Loader2 } from 'lucide-react';
 
-const brands = [
-  { name: 'Toyota', logo: toyotaLogo, count: '120+ Models' },
-  { name: 'Porsche', logo: porscheLogo, count: '35+ Models' },
-  { name: 'Kia', logo: kiaLogo, count: '85+ Models' },
-  { name: 'Nissan', logo: nissanLogo, count: '95+ Models' },
-  { name: 'Mercedes-Benz', logo: mercedesLogo, count: '75+ Models' },
-  { name: 'BMW', logo: bmwLogo, count: '60+ Models' },
-  { name: 'Land Rover', logo: landroverLogo, count: '25+ Models' },
-  { name: 'Dodge', logo: dodgeLogo, count: '40+ Models' },
-  { name: 'Audi', logo: audiLogo, count: '50+ Models' },
-  { name: 'Ford', logo: fordLogo, count: '110+ Models' },
-  { name: 'Chevrolet', logo: chevroletLogo, count: '20+ Models' },
-  { name: 'Range Rover', logo: rangeRoverLogo, count: '10+ Models' },
-];
+interface Brand {
+  _id: string;
+  name: string;
+  logo: string;
+  count: number;
+}
 
 const BrandSection = () => {
   const navigate = useNavigate();
+  const [brands, setBrands] = useState<Brand[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchBrands = async () => {
+      try {
+        setIsLoading(true);
+        const response = await api.getBrands();
+        if (response.error) {
+          throw new Error(response.error);
+        }
+        if (response.data?.data?.brands) {
+          setBrands(response.data.data.brands);
+        } else {
+          setBrands([]);
+        }
+      } catch (err) {
+        console.error('Failed to fetch brands:', err);
+        setError('Failed to load brands. Please try again later.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchBrands();
+  }, []);
 
   const handleBrandClick = (brandName) => {
     navigate(`/buy-cars?brand=${encodeURIComponent(brandName)}`);
@@ -47,8 +56,27 @@ const BrandSection = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {brands.map((brand, index) => (
+        {isLoading && (
+          <div className="flex items-center justify-center min-h-[300px]">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        )}
+
+        {error && (
+          <div className="text-center text-destructive my-8">
+            <p>{error}</p>
+          </div>
+        )}
+
+        {!isLoading && !error && brands.length === 0 && (
+          <div className="text-center text-muted-foreground my-8">
+            <p>No brands available at the moment.</p>
+          </div>
+        )}
+
+        {!isLoading && !error && brands.length > 0 && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {brands.map((brand, index) => (
             <div
               key={brand.name}
               className={`brand-card group cursor-pointer fade-in-up stagger-delay-${(index % 4) + 1}`}
@@ -66,20 +94,23 @@ const BrandSection = () => {
                   <h3 className="font-semibold text-lg text-foreground group-hover:text-primary transition-colors duration-300">
                     {brand.name}
                   </h3>
-                  <p className="text-sm text-muted-foreground">{brand.count}</p>
+                  <p className="text-sm text-muted-foreground">{brand.count}+ Models</p>
                 </div>
               </div>
             </div>
           ))}
-        </div>
-
-        <div className="text-center mt-12 fade-in-up stagger-delay-4">
-          <div className="inline-flex items-center gap-2 text-muted-foreground">
-            <div className="w-12 h-px bg-gradient-to-r from-transparent to-primary"></div>
-            <span className="text-sm font-medium">And many more premium brands</span>
-            <div className="w-12 h-px bg-gradient-to-l from-transparent to-primary"></div>
           </div>
-        </div>
+        )}
+
+        {!isLoading && !error && brands.length > 0 && (
+          <div className="text-center mt-12 fade-in-up stagger-delay-4">
+            <div className="inline-flex items-center gap-2 text-muted-foreground">
+              <div className="w-12 h-px bg-gradient-to-r from-transparent to-primary"></div>
+              <span className="text-sm font-medium">And many more premium brands</span>
+              <div className="w-12 h-px bg-gradient-to-l from-transparent to-primary"></div>
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );

@@ -135,23 +135,41 @@ const AdminCarReview = () => {
       setErrorMessage(null);
       setLoading(true);
       
-      const filters: CarReviewFilters = {};
-      if (statusFilter !== 'all') {
-        filters.status = statusFilter as 'pending' | 'approved' | 'rejected';
-      }
+      // Use the /cars/listed endpoint to get cars with "listed" status that need admin review
+      const response = await api.request('/cars/listed');
       
-      const response = await carReviewService.getCarsUnderReview(filters);
+      console.log('API Response:', response); // Debug log
       
       if (response.error) {
+        console.error('API Error:', response.error);
         throw new Error(response.error);
       }
       
-      setCars(response.data || []);
+      // Handle the response structure with cars nested under response.data.cars
+      const carsList = Array.isArray(response.data?.cars) ? response.data.cars : [];
+      
+      console.log('Extracted cars list:', carsList); // Debug log
+      
+      // Apply status filter if not 'all'
+      const filteredCars = statusFilter === 'all' 
+        ? carsList 
+        : carsList.filter(car => car.status === statusFilter);
+      
+      if (!filteredCars.length && carsList.length > 0) {
+        setErrorMessage(`No cars found with status: ${statusFilter}`);
+      } else if (!carsList.length) {
+        setErrorMessage('No cars found pending review at this time');
+      } else {
+        setErrorMessage(null); // Clear any previous error messages
+      }
+      
+      setCars(filteredCars);
     } catch (error: any) {
       console.error('Error fetching cars:', error);
-      const msg = typeof error?.message === 'string' ? error.message : 'Failed to fetch cars. Please try again.';
-      setErrorMessage(msg);
-      toast({ title: 'Error', description: msg, variant: 'destructive' });
+      // Use user-friendly message instead of technical error
+      setErrorMessage('No cars found at this time');
+      // Don't show toast for network errors to avoid spam
+      console.log('Cars fetch error details:', error.message);
     } finally {
       setLoading(false);
     }
@@ -159,12 +177,30 @@ const AdminCarReview = () => {
 
   const fetchStats = async () => {
     try {
-      const response = await carReviewService.getReviewStats();
-      if (response.data) {
-        setStats(response.data);
+      // Get cars from the listed endpoint and calculate stats from the response
+      const response = await api.request('/cars/listed');
+      
+      if (response.error) {
+        console.error('Error fetching listed cars for stats:', response.error);
+        return;
       }
+      
+      const carsList = Array.isArray(response.data?.cars) ? response.data.cars : [];
+      
+      // Count cars by status
+      const pending = carsList.filter(car => car.status === 'pending' || car.status === 'listed').length;
+      const approved = carsList.filter(car => car.status === 'approved' || car.status === 'available').length;
+      const rejected = carsList.filter(car => car.status === 'rejected').length;
+      
+      setStats({
+        pending,
+        approved,
+        rejected
+      });
     } catch (error) {
       console.error('Error fetching stats:', error);
+      // Don't show error toast for stats - just log it
+      console.log('Stats fetch failed, using default values');
     }
   };
 
@@ -174,9 +210,23 @@ const AdminCarReview = () => {
     try {
       let response;
       if (reviewAction === 'approve') {
-        response = await carReviewService.approveCar(selectedCar.id, reviewNotes);
+        response = await api.request(`/cars/${selectedCar.id}/status`, { 
+          method: 'PUT',
+          body: JSON.stringify({ 
+            status: 'available',
+            notes: reviewNotes,
+            pending_review: false
+          })
+        });
       } else {
-        response = await carReviewService.rejectCar(selectedCar.id, reviewNotes);
+        response = await api.request(`/cars/${selectedCar.id}/status`, { 
+          method: 'PUT',
+          body: JSON.stringify({ 
+            status: 'rejected',
+            notes: reviewNotes,
+            pending_review: false
+          })
+        });
       }
       
       if (response.error) {
@@ -240,6 +290,28 @@ const AdminCarReview = () => {
     return `https://wa.me/${cleanNumber}?text=${encodeURIComponent(defaultMessage)}`;
   };
 
+  // Helper functions to extract owner details from populated or legacy fields
+  const getOwnerName = (car: CarReview): string => {
+    if (typeof car.owner === 'object' && car.owner?.fullname) {
+      return car.owner.fullname;
+    }
+    return car.sellerName || 'Unknown';
+  };
+
+  const getOwnerPhone = (car: CarReview): string => {
+    if (typeof car.owner === 'object' && car.owner?.phone) {
+      return car.owner.phone;
+    }
+    return car.sellerPhone || '';
+  };
+
+  const getOwnerEmail = (car: CarReview): string => {
+    if (typeof car.owner === 'object' && car.owner?.email) {
+      return car.owner.email;
+    }
+    return '';
+  };
+
   const getListingTypeBadge = (car: CarReview) => {
     // Check if it's a rental car based on type field or dailyRate
     const isRental = car.type === 'rental' || car.dailyRate !== undefined;
@@ -254,8 +326,12 @@ const AdminCarReview = () => {
     switch (status) {
       case 'pending':
         return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Pending</Badge>;
+      case 'listed':
+        return <Badge variant="secondary" className="bg-orange-100 text-orange-800">Listed</Badge>;
       case 'approved':
         return <Badge variant="secondary" className="bg-green-100 text-green-800">Approved</Badge>;
+      case 'available':
+        return <Badge variant="secondary" className="bg-emerald-100 text-emerald-800">Available</Badge>;
       case 'rejected':
         return <Badge variant="secondary" className="bg-red-100 text-red-800">Rejected</Badge>;
       default:

@@ -1,8 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
+type ListingType = 'sell' | 'rent';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+<<<<<<< HEAD
 import SellCarTab from '@/components/SellCarTab';
 import RentCarTab from '@/components/RentCarTab';
+=======
+import SellCarTab, { SellCarTabProps } from '@/components/SellCarTab';
+>>>>>>> c3cceab (User portal integration)
 import CarRentTab from '@/components/CarRentTab';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -34,7 +39,17 @@ const ListCar: React.FC = () => {
     return 'sell';
   }, [location.search]);
 
-  const [tab, setTab] = useState<'sell' | 'rent'>(initialTab as 'sell' | 'rent');
+  const [tab, setTab] = useState<ListingType>(initialTab as ListingType);
+  const [isLocked, setIsLocked] = useState<boolean>(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    setIsLocked(
+      params.has('rent') || params.has('sell') || 
+      location.search === '?rent' || location.search === '?sell' ||
+      location.search.includes('rent') || location.search.includes('sell')
+    );
+  }, [location.search]);
 
   useEffect(() => {
     setIsLoading(true);
@@ -75,10 +90,14 @@ const ListCar: React.FC = () => {
               ) : (
                 <>
                   <TabsContent value="sell" className="mt-0">
-                    <SellCarTab />
+                    <SellCarTab listingType={tab} isLocked={isLocked} />
                   </TabsContent>
                   <TabsContent value="rent" className="mt-0">
+<<<<<<< HEAD
                     <RentCarTab />
+=======
+                    <SellCarTab listingType={tab} isLocked={isLocked} />
+>>>>>>> c3cceab (User portal integration)
                   </TabsContent>
                 </>
               )}

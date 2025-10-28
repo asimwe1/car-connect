@@ -15,7 +15,14 @@ import { api } from '@/services/api';
 import { useInView } from 'react-intersection-observer';
 import { notificationService } from '@/services/notifications';
 
-const SellCarTab = () => {
+type ListingType = 'sell' | 'rent';
+
+export interface SellCarTabProps {
+  listingType: ListingType;
+  isLocked: boolean;
+}
+
+const SellCarTab: React.FC<SellCarTabProps> = ({ listingType, isLocked }) => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();

@@ -16,9 +16,9 @@ interface SessionState {
 
 class SessionManager {
   private config: SessionConfig = {
-    timeoutMinutes: 30, // 30 minutes session timeout
+    timeoutMinutes: 60, // 60 minutes session timeout
     warningMinutes: 5,  // Show warning 5 minutes before timeout
-    checkIntervalSeconds: 30 // Check every 30 seconds
+    checkIntervalSeconds: 60 // Check every 60 seconds
   };
 
   private state: SessionState = {

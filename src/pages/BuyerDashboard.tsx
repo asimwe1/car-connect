@@ -56,16 +56,26 @@ const BuyerDashboard: React.FC = () => {
         const [bookingsRes, wishlistRes] = await Promise.all([api.getMyBookings(), api.getWishlist()]);
         if (!isMounted) return; // Exit if unmounted
 
+        console.log('Bookings Response:', bookingsRes); // Debug log
+        console.log('Bookings Response Data:', bookingsRes.data); // Debug log
         console.log('Wishlist Response:', wishlistRes); // Debug log
-        if (bookingsRes.error) throw new Error(`Bookings fetch failed: ${bookingsRes.error}`);
-        if (wishlistRes.error) throw new Error(`Wishlist fetch failed: ${wishlistRes.error}`);
+        
+        if (bookingsRes.error) {
+          console.error('Bookings error:', bookingsRes.error);
+          throw new Error(`Bookings fetch failed: ${bookingsRes.error}`);
+        }
+        if (wishlistRes.error) {
+          console.error('Wishlist error:', wishlistRes.error);
+          throw new Error(`Wishlist fetch failed: ${wishlistRes.error}`);
+        }
 
         // API layer normalization:
-        // - getWishlist(): data is an array of cars
-        // - getMyBookings(): data expected to be an array of bookings
-        const wishlistCount = Array.isArray(wishlistRes.data) ? wishlistRes.data.length : 0;
+        // - getWishlist(): returns { wishlist: { cars: [] } }
+        // - getMyBookings(): data is an array of bookings
+        const wishlistCount = wishlistRes.data?.wishlist?.cars?.length || 0;
         const bookingsCount = Array.isArray(bookingsRes.data) ? bookingsRes.data.length : 0;
 
+        console.log('Stats calculated:', { wishlist: wishlistCount, bookings: bookingsCount }); // Debug log
         setStats({ wishlist: wishlistCount, bookings: bookingsCount });
       } catch (error) {
         if (!isMounted) return; // Exit if unmounted
@@ -77,24 +87,12 @@ const BuyerDashboard: React.FC = () => {
       }
     };
 
+    // Initial fetch of dashboard data
     fetchDashboardData();
 
-    // Refresh on window focus for near real-time updates
-    const handleFocus = () => {
-      fetchDashboardData();
-    };
-    window.addEventListener('focus', handleFocus);
-
-    // Periodic refresh every 30 seconds
-    const intervalId = window.setInterval(() => {
-      fetchDashboardData();
-    }, 30000);
-
-    // Cleanup function to prevent memory leaks
+    // Cleanup function
     return () => {
       isMounted = false;
-      window.removeEventListener('focus', handleFocus);
-      window.clearInterval(intervalId);
     };
   }, [isAuthenticated, navigate, location.pathname]);
 

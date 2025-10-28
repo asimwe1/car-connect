@@ -10,6 +10,7 @@ import { Search, Car, Fuel, Settings, Palette, MapPin, Heart } from "lucide-reac
 import { useToast } from "@/hooks/use-toast";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { api } from "@/services/api";
+import { useWishlistStore } from "@/store/useWishlistStore";
 
 interface Car {
   createdAt: string | number | Date;
@@ -42,12 +43,12 @@ const BuyCars: React.FC = () => {
   const [selectedTransmission, setSelectedTransmission] = useState("all");
   const [selectedBodyType, setSelectedBodyType] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
-  const [wishlistIds, setWishlistIds] = useState<string[]>([]);
   const navigate = useNavigate();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
+  const { wishlist, addToWishlist, removeFromWishlist, isInWishlist } = useWishlistStore();
 
-  // Fetch cars and wishlist on mount
+  // Fetch cars on mount
   useEffect(() => {
     const brandFromUrl = searchParams.get("brand");
     if (brandFromUrl && brandFromUrl !== "all") {
@@ -98,14 +99,17 @@ const BuyCars: React.FC = () => {
   const fetchWishlist = async () => {
     try {
       const response = await api.getWishlist();
-      if (response.data?.cars) {
-        setWishlistIds(response.data.cars.map((item: { car_id: string }) => item.car_id));
-      } else {
-        setWishlistIds([]);
+      if (response.data?.wishlist?.cars) {
+        const cars = response.data.wishlist.cars;
+        // Update Zustand store
+        cars.forEach(car => {
+          if (!isInWishlist(car._id)) {
+            addToWishlist(car._id);
+          }
+        });
       }
     } catch (error) {
       console.error("Error fetching wishlist:", error);
-      setWishlistIds([]);
       toast({
         title: "Error",
         description: "Failed to load wishlist. Please try again.",
@@ -187,15 +191,15 @@ const BuyCars: React.FC = () => {
 
   const handleAddToWishlist = async (carId: string) => {
     try {
-      if (wishlistIds.includes(carId)) {
+      if (isInWishlist(carId)) {
         const response = await api.removeFromWishlist(carId);
         if (response.error) throw new Error(response.error);
-        setWishlistIds(prev => prev.filter(id => id !== carId));
+        removeFromWishlist(carId);
         toast({ title: "Removed from Wishlist", description: "Car removed from your wishlist." });
       } else {
         const response = await api.addToWishlist(carId);
         if (response.error) throw new Error(response.error);
-        setWishlistIds(prev => [...prev, carId]);
+        addToWishlist(carId);
         toast({ title: "Added to Wishlist", description: "Car added to your wishlist." });
       }
     } catch (error) {
@@ -393,13 +397,13 @@ const BuyCars: React.FC = () => {
                     variant="ghost"
                     size="icon"
                     className={`absolute top-2 right-2 bg-white/80 hover:bg-white ${
-                      wishlistIds.includes(car._id) ? "text-red-500" : "text-gray-500"
+                      isInWishlist(car._id) ? "text-red-500" : "text-gray-500"
                     } hover:text-red-600`}
                     onClick={() => handleAddToWishlist(car._id)}
                     disabled={car.status !== "available"}
                   >
                     <Heart
-                      className={`h-4 w-4 ${wishlistIds.includes(car._id) ? "fill-red-500" : ""}`}
+                      className={`h-4 w-4 ${isInWishlist(car._id) ? "fill-red-500" : ""}`}
                     />
                   </Button>
                 </div>

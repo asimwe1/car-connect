@@ -69,12 +69,13 @@ class RealTimeChatService {
       const socketUrl = 'https://carhubconnect.onrender.com';
       this.socket = io(`${socketUrl}/messages`, {
         auth: { token },
-        transports: ['websocket', 'polling'],
+        transports: ['websocket'],  // Only use WebSocket, no polling
         timeout: 20000,
-        forceNew: true,
+        forceNew: false,  // Don't force new connection
         reconnection: true,
-        reconnectionAttempts: 5,
-        reconnectionDelay: 1000
+        reconnectionAttempts: 3,
+        reconnectionDelay: 2000,
+        reconnectionDelayMax: 10000
       });
 
       this.socket.on('connect', () => {

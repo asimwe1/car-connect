@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useChat } from '@/contexts/ChatContext';
 import { api } from '@/services/api';
 import { adminRealtimeService } from '@/services/adminRealtimeService';
-import { activityService, ActivityData } from '@/services/activityService';
+import { getActivityService, ActivityData } from '@/services/activityService';
 import { Eye, Users, Calendar, MessageCircle } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
@@ -59,13 +59,18 @@ const AdminDashboard = () => {
       return;
     }
 
-    fetchDashboardData();
-    fetchActivities();
+    // Initial data fetch
+    const initializeServices = async () => {
+      try {
+        await fetchDashboardData();
+        await fetchActivities();
+      } catch (error) {
+        console.error('Error initializing services:', error);
+        setErrorMessage('Failed to initialize dashboard data');
+      }
+    };
 
-    refreshIntervalRef.current = setInterval(() => {
-      fetchDashboardData(true);
-      fetchActivities(true);
-    }, 30000);
+    initializeServices();
 
     const unsubscribeCarViews = adminRealtimeService.subscribe('car_views', (data) => {
       setStats((prev) => ({ ...prev, carViewsToday: data.count }));
@@ -114,7 +119,8 @@ const AdminDashboard = () => {
     });
 
     // Subscribe to activity service updates
-    const unsubscribeActivityUpdates = activityService.subscribe('activities_updated', (activities) => {
+    const service = getActivityService();
+    const unsubscribeActivityUpdates = service.subscribe('activities_updated', (activities) => {
       setRecentActivity(activities.slice(0, 15));
     });
 
@@ -150,6 +156,9 @@ const AdminDashboard = () => {
   }, [isAuthenticated, user, navigate, chatContext]);
 
   const fetchActivities = async (silent = false) => {
+    if (!silent) {
+      setLoading(true);
+    }
     try {
       const activities = await activityService.fetchActivities(silent);
       setRecentActivity(activities.slice(0, 15));
@@ -161,6 +170,10 @@ const AdminDashboard = () => {
           description: "Could not fetch latest activity data",
           variant: "destructive"
         });
+      }
+    } finally {
+      if (!silent) {
+        setLoading(false);
       }
     }
   };

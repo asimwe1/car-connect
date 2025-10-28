@@ -283,10 +283,6 @@ class ApiService {
     return this.request('/admin/stats');
   }
 
-  async getAdminActivity() {
-    return this.request('/admin/activity');
-  }
-
   async getAdminCarViews() {
     return this.request('/admin/car-views');
   }

@@ -52,52 +52,134 @@ class ActivityService {
     }
   }
 
-  // Fetch activities from backend
+  // Mock activities for development
   public async fetchActivities(silent = false): Promise<ActivityData[]> {
     try {
-      const response = await api.getAdminActivity();
-      
-      if (response.error) {
-        console.error('Failed to fetch activities:', response.error);
-        return this.activities;
-      }
+      // Generate mock activities
+      const mockActivities: ActivityData[] = [
+        {
+          id: `view-${Date.now()}-1`,
+          type: 'car_view',
+          message: 'Toyota Camry was viewed',
+          timestamp: new Date(),
+          priority: 'low',
+          metadata: {
+            carId: 'mock-car-1',
+            userId: 'mock-user-1'
+          }
+        },
+        {
+          id: `booking-${Date.now()}-1`,
+          type: 'booking',
+          message: 'New booking for Honda Civic',
+          timestamp: new Date(Date.now() - 3600000), // 1 hour ago
+          priority: 'high',
+          metadata: {
+            bookingId: 'mock-booking-1',
+            carId: 'mock-car-2',
+            userId: 'mock-user-2'
+          }
+        },
+        {
+          id: `message-${Date.now()}-1`,
+          type: 'message',
+          message: 'New message from John Doe',
+          timestamp: new Date(Date.now() - 7200000), // 2 hours ago
+          priority: 'medium',
+          metadata: {
+            messageId: 'mock-message-1',
+            senderId: 'mock-user-3',
+            recipientId: 'mock-admin-1'
+          }
+        },
+        {
+          id: `order-${Date.now()}-1`,
+          type: 'order',
+          message: 'New order: BMW 3 Series',
+          timestamp: new Date(Date.now() - 10800000), // 3 hours ago
+          priority: 'high',
+          metadata: {
+            orderId: 'mock-order-1',
+            carId: 'mock-car-3',
+            userId: 'mock-user-4',
+            amount: 35000
+          }
+        }
+      ];
 
-      const rawActivities = response.data || [];
-      const newActivities = this.parseActivities(rawActivities);
-      
-      // Generate contextual activities (with reduced frequency)
-      if (Math.random() < 0.3) { // 30% chance
-        await this.generateContextualActivities();
-      }
-      
-      if (Math.random() < 0.2) { // 20% chance
-        await this.generateUserBehaviorActivities();
-      }
-      
-      if (Math.random() < 0.15) { // 15% chance
-        await this.generateTimeBasedActivities();
-      }
-      
-      // Only update if we have new data
-      if (newActivities.length > 0) {
-        this.activities = newActivities;
-        this.lastFetchTime = new Date();
-        this.emit('activities_updated', newActivities);
-      }
+      // Update state with mock data
+      this.activities = mockActivities;
+      this.lastFetchTime = new Date();
+      this.emit('activities_updated', mockActivities);
 
-      return newActivities;
+      return mockActivities;
     } catch (error) {
       console.error('Error fetching activities:', error);
       return this.activities;
     }
   }
 
-  // Parse raw activity data from backend
-  private parseActivities(rawActivities: any[]): ActivityData[] {
-    return rawActivities.map((activity, index) => ({
-      id: activity.id || `activity-${Date.now()}-${index}`,
-      type: this.mapActivityType(activity.type),
-      message: activity.message || activity.description || 'System activity',
+  // Process different types of activities
+  private processCarViewActivities(data: any[]): ActivityData[] {
+    return data.map((view, index) => ({
+      id: `view-${Date.now()}-${index}`,
+      type: 'car_view',
+      message: `Car ${view.make} ${view.model} was viewed`,
+      timestamp: new Date(view.timestamp || Date.now()),
+      priority: 'low',
+      metadata: {
+        carId: view._id,
+        userId: view.viewedBy
+      }
+    }));
+  }
+
+  private processBookingActivities(data: any[]): ActivityData[] {
+    return data.map((booking, index) => ({
+      id: `booking-${Date.now()}-${index}`,
+      type: 'booking',
+      message: `New booking for ${booking.car?.make} ${booking.car?.model}`,
+      timestamp: new Date(booking.createdAt || Date.now()),
+      priority: 'high',
+      metadata: {
+        bookingId: booking._id,
+        carId: booking.car?._id,
+        userId: booking.user
+      }
+    }));
+  }
+
+  private processMessageActivities(data: any[]): ActivityData[] {
+    return data.map((message, index) => ({
+      id: `message-${Date.now()}-${index}`,
+      type: 'message',
+      message: `New message from ${message.sender?.fullname}`,
+      timestamp: new Date(message.createdAt || Date.now()),
+      priority: 'medium',
+      metadata: {
+        messageId: message._id,
+        senderId: message.sender?._id,
+        recipientId: message.recipient?._id
+      }
+    }));
+  }
+
+  private processOrderActivities(data: any[]): ActivityData[] {
+    return data.map((order, index) => ({
+      id: `order-${Date.now()}-${index}`,
+      type: 'order',
+      message: `New order: ${order.car?.make} ${order.car?.model}`,
+      timestamp: new Date(order.createdAt || Date.now()),
+      priority: 'high',
+      metadata: {
+        orderId: order._id,
+        carId: order.car?._id,
+        userId: order.user,
+        amount: order.amount
+      }
+    }));
+
+    return activities.map(activity => ({
       timestamp: new Date(activity.timestamp || activity.createdAt || Date.now()),
       priority: this.mapPriority(activity.priority || activity.level),
       metadata: activity.metadata || {}
@@ -697,5 +779,14 @@ class ActivityService {
 }
 
 // Create singleton instance
-export const activityService = new ActivityService();
+let activityServiceInstance: ActivityService | null = null;
+
+export const getActivityService = () => {
+  if (!activityServiceInstance) {
+    activityServiceInstance = new ActivityService();
+  }
+  return activityServiceInstance;
+};
+
+export const activityService = getActivityService();
 export default activityService;

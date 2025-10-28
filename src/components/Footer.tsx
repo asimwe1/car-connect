@@ -8,24 +8,6 @@ const Footer = () => {
   return (
     <footer className="bg-[#0B2559] text-white py-8">
       <div className="container mx-auto px-4">
-        {/* Newsletter Section */}
-        <div className="bg-[#12306E]/60 rounded-lg p-8 mb-12 text-center">
-          <h2 className="text-2xl font-bold mb-4">CarConnect</h2>
-          <p className="text-blue-100 mb-6">
-            We help you to buy or sell your car at suitable terms
-          </p>
-          <div className="flex max-w-md mx-auto gap-2">
-            <Input
-              type="tel"
-              placeholder="Enter phone (optional)"
-              className="bg-white/10 border-white/20 text-white placeholder:text-blue-200"
-            />
-            <Button className="btn-hero" asChild>
-              <a href="/signup">Sign Up</a>
-            </Button>
-          </div>
-        </div>
-
         {/* Footer Links */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-2">
           {/* Company */}

@@ -17,8 +17,8 @@ const Navbar = () => {
     { name: 'Home', path: '/' },
     { name: 'About', path: '/about' },
     { name: 'Buy Cars', path: '/buy-cars' },
-    { name: 'Sell Car', path: '/list-car?tab=sell', tab: 'sell', protected: true },
-    { name: 'Rent Car', path: '/list-car?tab=rent', tab: 'rent', protected: true },
+    { name: 'Sell My Car', path: '/list-car?sell', tab: 'sell', protected: true },
+    { name: 'Rent My Car', path: '/list-car?rent', tab: 'rent', protected: true },
     { name: 'Contact', path: '/contact' },
   ];
 

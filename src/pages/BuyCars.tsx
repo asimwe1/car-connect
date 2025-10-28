@@ -64,6 +64,7 @@ const BuyCars: React.FC = () => {
       setLoading(true);
       const params = {
         status: "available",
+        sellEnabled: true, // Only fetch cars enabled for selling
         page: 1,
         limit: 1000,
       };

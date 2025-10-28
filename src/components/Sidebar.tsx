@@ -12,7 +12,7 @@ import {
   AlertDialogTrigger,
   AlertDialogFooter,
 } from '@/components/ui/alert-dialog';
-import { BarChart3, Car, Plus, DollarSign, MessageCircle, LogOut, ArrowLeft } from 'lucide-react';
+import { BarChart3, Car, Plus, DollarSign, MessageCircle, LogOut, ArrowLeft, Tag, CheckCircle } from 'lucide-react';
 
 interface SidebarProps {
   handleSignOut: () => void;
@@ -25,6 +25,8 @@ const Sidebar: React.FC<SidebarProps> = ({ handleSignOut }) => {
     { icon: BarChart3, label: 'Dashboard', href: '/admin-dashboard' },
     { icon: Car, label: 'Manage Cars', href: '/admin/cars' },
     { icon: Plus, label: 'Add New Car', href: '/admin/add-car' },
+    { icon: Tag, label: 'Brand Management', href: '/admin/brand-management' },
+    { icon: CheckCircle, label: 'Car Review', href: '/admin/car-review' },
     { icon: DollarSign, label: 'Orders', href: '/admin/orders' },
     { icon: MessageCircle, label: 'Manage Users', href: '/admin/manage-users' },
   ];

@@ -22,8 +22,8 @@ const menuItems = [
     { icon: User, label: 'Dashboard', href: '/buyer-dashboard', active: true },
     { icon: Heart, label: 'Wishlist', href: '/wishlist' },
     { icon: Calendar, label: 'Bookings', href: '/bookings' },
-    { icon: Car, label: 'Buy Cars', href: '/buy-cars' },
-    // { icon: MessageCircle, label: 'Support', href: '/support' },
+    { icon: Car, label: 'Buy Cars', href: '/buy-cars' },    
+    // { icon: Car, label: 'Rent Car', href: '/rent-cars' },
 ];
 
 

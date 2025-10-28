@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import SellCarTab from '@/components/SellCarTab';
+import RentCarTab from '@/components/RentCarTab';
 import CarRentTab from '@/components/CarRentTab';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -77,7 +78,7 @@ const ListCar: React.FC = () => {
                     <SellCarTab />
                   </TabsContent>
                   <TabsContent value="rent" className="mt-0">
-                    <CarRentTab />
+                    <RentCarTab />
                   </TabsContent>
                 </>
               )}

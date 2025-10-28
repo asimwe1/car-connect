@@ -37,6 +37,9 @@ import AdminOrders from "./pages/AdminOrders";
 import AdminSupportChat from "./pages/AdminSupportChat";
 import AdminCustomerChatDashboard from "./pages/AdminCustomerChatDashboard";
 import AdminManageUsers from "./pages/AdminManageUsers";
+import AdminBrandManagement from "./pages/AdminBrandManagement";
+import AdminCarReview from "./pages/AdminCarReview";
+import RentCar from "./pages/RentCar";
 import EditCar from "./pages/EditCar";
 import TestDriveBooking from "./pages/TestDriveBooking";
 import PageLoader from "./components/PageLoader";
@@ -74,6 +77,8 @@ const App = () => (
                     <Route path="/about" element={<About />} />
                     <Route path="/contact" element={<Contact />} />
                     <Route path="/buy-cars" element={<BuyCars />} />
+                    <Route path="/rent-car" element={<RentCar />} />
+                    <Route path="/rent-cars" element={<RentCar />} />
                     <Route path="/car/:id" element={<CarDetails />} />
                     <Route path="/terms" element={<Terms />} />
                     <Route path="/faq" element={<FAQ />} />
@@ -169,6 +174,16 @@ const App = () => (
                     <Route path="/admin/manage-users" element={
                       <ProtectedRoute adminOnly>
                         <AdminManageUsers />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/admin/brand-management" element={
+                      <ProtectedRoute adminOnly>
+                        <AdminBrandManagement />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/admin/car-review" element={
+                      <ProtectedRoute adminOnly>
+                        <AdminCarReview />
                       </ProtectedRoute>
                     } />
                     <Route path="/admin/orders" element={

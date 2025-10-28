@@ -8,8 +8,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
-import { Bell, Check, Trash2, AlertCircle, CheckCircle, Info, AlertTriangle } from 'lucide-react';
+import { Bell, Check, Trash2, AlertCircle, CheckCircle, Info, AlertTriangle, Car } from 'lucide-react';
 import { notificationService, Notification, NotificationState } from '@/services/notifications';
+import { useNavigate } from 'react-router-dom';
 
 const NotificationBell: React.FC = () => {
   const [notificationState, setNotificationState] = useState<NotificationState>({
@@ -17,6 +18,7 @@ const NotificationBell: React.FC = () => {
     unreadCount: 0,
     isConnected: false
   });
+  const navigate = useNavigate();
 
   useEffect(() => {
     const unsubscribe = notificationService.subscribe(setNotificationState);
@@ -48,6 +50,8 @@ const NotificationBell: React.FC = () => {
         return 'bg-orange-100 text-orange-800';
       case 'admin':
         return 'bg-red-100 text-red-800';
+      case 'car_listing':
+        return 'bg-indigo-100 text-indigo-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -64,6 +68,21 @@ const NotificationBell: React.FC = () => {
     if (minutes < 60) return `${minutes}m ago`;
     if (hours < 24) return `${hours}h ago`;
     return `${days}d ago`;
+  };
+
+  const handleNotificationClick = (notification: Notification) => {
+    notificationService.markAsRead(notification.id);
+    
+    // Handle different notification types
+    if (notification.category === 'car_listing') {
+      navigate('/admin/car-review');
+    } else if (notification.category === 'chat') {
+      navigate('/admin/support-chat');
+    } else if (notification.category === 'order') {
+      navigate('/admin/orders');
+    } else if (notification.category === 'booking') {
+      navigate('/admin/bookings');
+    }
   };
 
   return (
@@ -115,7 +134,7 @@ const NotificationBell: React.FC = () => {
               <DropdownMenuItem
                 key={notification.id}
                 className={`p-3 cursor-pointer ${!notification.read ? 'bg-accent/50' : ''}`}
-                onClick={() => notificationService.markAsRead(notification.id)}
+                onClick={() => handleNotificationClick(notification)}
               >
                 <div className="flex items-start gap-3 w-full">
                   {getNotificationIcon(notification.type)}

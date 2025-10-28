@@ -1,0 +1,71 @@
+[1mdiff --git a/src/components/Footer.tsx b/src/components/Footer.tsx[m
+[1mindex 5d89efd..22fecc2 100644[m
+[1m--- a/src/components/Footer.tsx[m
+[1m+++ b/src/components/Footer.tsx[m
+[36m@@ -12,7 +12,7 @@[m [mconst Footer = () => {[m
+         <div className="bg-[#12306E]/60 rounded-lg p-8 mb-12 text-center">[m
+           <h2 className="text-2xl font-bold mb-4">CarConnect</h2>[m
+           <p className="text-blue-100 mb-6">[m
+[31m-            We help you to buy your favorite car and make sure it's delivered to your door[m
+[32m+[m[32m            We help you to buy or sell your car at suitable terms[m
+           </p>[m
+           <div className="flex max-w-md mx-auto gap-2">[m
+             <Input[m
+[36m@@ -46,11 +46,11 @@[m [mconst Footer = () => {[m
+             <h3 className="font-semibold text-lg mb-4">Quick Links</h3>[m
+             <ul className="space-y-2">[m
+               <li><Link to="/buy-cars" className="text-white hover:text-blue-200 transition-colors">Buy Cars</Link></li>[m
+[31m-              <li><Link to="/list-car?sell" className="text-white hover:text-blue-200 transition-colors">Sell Cars</Link></li>[m
+[31m-              <li><Link to="/list-car?rent" className="text-white hover:text-blue-200 transition-colors">Rent Cars</Link></li>[m
+[32m+[m[32m              <li><Link to="/list-car?sell" className="text-white hover:text-blue-200 transition-colors">Sell My Car</Link></li>[m
+[32m+[m[32m              <li><Link to="/list-car?rent" className="text-white hover:text-blue-200 transition-colors">Rent My Car</Link></li>[m
+               <li><Link to="/contact" className="text-white hover:text-blue-200 transition-colors">Get in Touch</Link></li>[m
+[31m-              <li><Link to="/support" className="text-white hover:text-blue-200 transition-colors">Help center</Link></li>[m
+[31m-              <li><Link to="/support" className="text-white hover:text-blue-200 transition-colors">Live chat</Link></li>[m
+[32m+[m[32m              {/* <li><Link to="/support" className="text-white hover:text-blue-200 transition-colors">Help center</Link></li> */}[m
+[32m+[m[32m              {/* <li><Link to="/support" className="text-white hover:text-blue-200 transition-colors">Live chat</Link></li> */}[m
+               <li><Link to="/how-it-works" className="text-white hover:text-blue-200 transition-colors">How it works</Link></li>[m
+             </ul>[m
+           </div>[m
+[36m@@ -59,14 +59,14 @@[m [mconst Footer = () => {[m
+           <div>[m
+             <h3 className="font-semibold text-lg mb-4">Our Brands</h3>[m
+             <ul className="space-y-2">[m
+[31m-              <li><Link to="/buy-cars" className="text-white hover:text-blue-200 transition-colors">Toyota</Link></li>[m
+[31m-              <li><Link to="/buy-cars" className="text-white hover:text-blue-200 transition-colors">Porsche</Link></li>[m
+[31m-              <li><Link to="/buy-cars" className="text-white hover:text-blue-200 transition-colors">Audi</Link></li>[m
+[31m-              <li><Link to="/buy-cars" className="text-white hover:text-blue-200 transition-colors">BMW</Link></li>[m
+[31m-              <li><Link to="/buy-cars" className="text-white hover:text-blue-200 transition-colors">Ford</Link></li>[m
+[31m-              <li><Link to="/buy-cars" className="text-white hover:text-blue-200 transition-colors">Nissan</Link></li>[m
+[31m-              <li><Link to="/buy-cars" className="text-white hover:text-blue-200 transition-colors">Peugeot</Link></li>[m
+[31m-              <li><Link to="/buy-cars" className="text-white hover:text-blue-200 transition-colors">Volkswagen</Link></li>[m
+[32m+[m[32m              <li><Link to="/buy-cars?brand=Toyota" className="text-white hover:text-blue-200 transition-colors">Toyota</Link></li>[m
+[32m+[m[32m              <li><Link to="/buy-cars?brand=Porsche" className="text-white hover:text-blue-200 transition-colors">Porsche</Link></li>[m
+[32m+[m[32m              <li><Link to="/buy-cars?brand=Audi" className="text-white hover:text-blue-200 transition-colors">Audi</Link></li>[m
+[32m+[m[32m              <li><Link to="/buy-cars?brand=BMW" className="text-white hover:text-blue-200 transition-colors">BMW</Link></li>[m
+[32m+[m[32m              <li><Link to="/buy-cars?brand=Ford" className="text-white hover:text-blue-200 transition-colors">Ford</Link></li>[m
+[32m+[m[32m              <li><Link to="/buy-cars?brand=Nissan" className="text-white hover:text-blue-200 transition-colors">Nissan</Link></li>[m
+[32m+[m[32m              <li><Link to="/buy-cars?brand=Mercedes-Benz" className="text-white hover:text-blue-200 transition-colors">Mercedes-Benz</Link></li>[m
+[32m+[m[32m              <li><Link to="/buy-cars?brand=Kia" className="text-white hover:text-blue-200 transition-colors">Kia</Link></li>[m
+             </ul>[m
+           </div>[m
+ [m
+[36m@@ -87,8 +87,8 @@[m [mconst Footer = () => {[m
+         </div>[m
+ [m
+         {/* Bottom Bar */}[m
+[31m-        <div className="border-t h-4 border-white/20 pt-8 flex flex-col md:flex-row items-center justify-between">[m
+[31m-          <p className="text-blue-200">© 2025 car.connect.rw. All rights reserved.</p>[m
+[32m+[m[32m        <div className="border-t h-4 border-white/20 pt-8 flex flex-col items-center justify-center space-y-4">[m
+[32m+[m[41m          [m
+ [m
+           <div className="flex items-center gap-4">[m
+             <a[m
+[36m@@ -129,6 +129,7 @@[m [mconst Footer = () => {[m
+               <FaXTwitter className="h-5 w-5" />[m
+             </a>[m
+           </div>[m
+[32m+[m[32m          <p className="text-blue-200">© 2025 car.connect.rw. All rights reserved.</p>[m
+         </div>[m
+       </div>[m
+     </footer>[m

@@ -298,6 +298,69 @@ class ApiService {
   async getAdminPendingBookings() {
     return this.request('/admin/pending-bookings');
   }
+
+  // Brand management methods
+  async getBrands() {
+    return this.request('/brands');
+  }
+
+  async getActiveBrands() {
+    return this.request('/brands/active');
+  }
+
+  async createBrand(brandData: any) {
+    return this.request('/brands', { method: 'POST', body: JSON.stringify(brandData) });
+  }
+
+  async updateBrand(id: string, brandData: any) {
+    return this.request(`/brands/${id}`, { method: 'PUT', body: JSON.stringify(brandData) });
+  }
+
+  async deleteBrand(id: string) {
+    return this.request(`/brands/${id}`, { method: 'DELETE' });
+  }
+
+  async toggleBrandStatus(id: string) {
+    return this.request(`/brands/${id}/toggle`, { method: 'PATCH' });
+  }
+
+  // Car review methods
+  async getCarsUnderReview(params?: { status?: string; make?: string; sellerId?: string; page?: number; limit?: number }) {
+    const searchParams = new URLSearchParams();
+    if (params?.status) searchParams.append('status', params.status);
+    if (params?.make) searchParams.append('make', params.make);
+    if (params?.sellerId) searchParams.append('sellerId', params.sellerId);
+    if (params?.page) searchParams.append('page', params.page.toString());
+    if (params?.limit) searchParams.append('limit', params.limit.toString());
+
+    return this.request(`/cars/review${searchParams.toString() ? `?${searchParams.toString()}` : ''}`);
+  }
+
+  async getCarReview(id: string) {
+    return this.request(`/cars/review/${id}`);
+  }
+
+  async approveCar(id: string, notes?: string) {
+    return this.request(`/cars/review/${id}/approve`, { 
+      method: 'POST', 
+      body: JSON.stringify({ notes }) 
+    });
+  }
+
+  async rejectCar(id: string, notes?: string) {
+    return this.request(`/cars/review/${id}/reject`, { 
+      method: 'POST', 
+      body: JSON.stringify({ notes }) 
+    });
+  }
+
+  async getReviewStats() {
+    return this.request('/cars/review/stats');
+  }
+
+  async getCarsBySeller(sellerId: string) {
+    return this.request(`/cars/review/seller/${sellerId}`);
+  }
 }
 
 // Create singleton instance

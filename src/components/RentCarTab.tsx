@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
-import { Upload, Shield, Zap, Users, Car, CheckCircle, DollarSign, X, Image, Video } from 'lucide-react';
+import { Upload, Shield, Zap, Users, Car, CheckCircle, DollarSign, X, Image, Video, Calendar, Clock } from 'lucide-react';
 import { uploadImages, uploadVideo } from '@/services/upload';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
@@ -15,7 +15,7 @@ import { api } from '@/services/api';
 import { useInView } from 'react-intersection-observer';
 import { notificationService } from '@/services/notifications';
 
-const SellCarTab = () => {
+const RentCarTab = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
@@ -26,14 +26,15 @@ const SellCarTab = () => {
     make: '',
     model: '',
     year: '',
-    price: '',
+    dailyRate: '',
     mileage: '',
     seats: '',
     transmission: '',
     fuel: '',
     color: '',
     location: '',
-    description: ''
+    description: '',
+    availability: 'flexible' // flexible, weekdays, weekends, specific dates
   });
   
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
@@ -46,12 +47,12 @@ const SellCarTab = () => {
     triggerOnce: true,
   });
 
-  const { ref: whySellRef, inView: whySellInView } = useInView({
+  const { ref: whyRentRef, inView: whyRentInView } = useInView({
     threshold: 0.1,
     triggerOnce: true,
   });
 
-  const { ref: soldCarsRef, inView: soldCarsInView } = useInView({
+  const { ref: benefitsRef, inView: benefitsInView } = useInView({
     threshold: 0.1,
     triggerOnce: true,
   });
@@ -167,7 +168,7 @@ const SellCarTab = () => {
       { key: 'make', label: 'Make' },
       { key: 'model', label: 'Model' },
       { key: 'year', label: 'Year' },
-      { key: 'price', label: 'Price' },
+      { key: 'dailyRate', label: 'Daily Rate' },
       { key: 'mileage', label: 'Mileage' },
       { key: 'transmission', label: 'Transmission' },
       { key: 'fuel', label: 'Fuel Type' },
@@ -189,10 +190,10 @@ const SellCarTab = () => {
     return true;
   };
 
-  const handleListCar = async () => {
+  const handleRentCar = async () => {
     try {
       if (!isAuthenticated) {
-        toast({ title: 'Sign in required', description: 'Please sign in to list your car.' });
+        toast({ title: 'Sign in required', description: 'Please sign in to rent your car.' });
         navigate('/signin');
         return;
       }
@@ -201,13 +202,13 @@ const SellCarTab = () => {
 
       setIsSubmitting(true);
 
-      // Build payload matching backend expectations
+      // Build payload for rental car submission
       const images = uploadedImages || [];
       const payload = {
         make: formData.make,
         model: formData.model,
         year: Number(formData.year),
-        price: Number(formData.price),
+        dailyRate: Number(formData.dailyRate),
         mileage: Number(formData.mileage) || 0,
         fuelType: formData.fuel,
         transmission: formData.transmission || 'automatic',
@@ -216,9 +217,11 @@ const SellCarTab = () => {
         location: formData.location || undefined,
         seats: formData.seats ? Number(formData.seats) : undefined,
         color: formData.color || undefined,
+        availability: formData.availability,
         images,
         primaryImage: images[0] || undefined,
         video: uploadedVideo || undefined,
+        type: 'rental', // Mark as rental submission
       } as any;
 
       const res = await api.createCar(payload);
@@ -230,73 +233,80 @@ const SellCarTab = () => {
         make: formData.make,
         model: formData.model,
         year: Number(formData.year),
-        type: 'sell',
+        type: 'rent',
         sellerName: user?.fullname || 'Unknown User'
       });
 
-      toast({ title: 'Car listed!', description: 'Your car has been submitted for review. You will be notified once it\'s approved.' });
-      navigate('/admin-dashboard');
+      toast({ title: 'Car submitted!', description: 'Your car has been submitted for rental review. You will be notified once it\'s approved.' });
+      navigate('/buyer-dashboard');
     } catch (err: any) {
-      toast({ title: 'Failed to list car', description: err?.message || 'Please try again.', variant: 'destructive' });
+      toast({ title: 'Failed to submit car', description: err?.message || 'Please try again.', variant: 'destructive' });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const sellingSteps = [
+  const rentingSteps = [
     {
       icon: Upload,
-      title: "Upload Your Car",
-      description: "Add photos, details and set your price"
-    },
-    {
-      icon: DollarSign,
-      title: "Get Offers",
-      description: "Receive competitive offers from buyers"
+      title: "Submit Your Car",
+      description: "Add photos, details and set your daily rate"
     },
     {
       icon: CheckCircle,
-      title: "Sell Securely",
-      description: "Complete the sale with our secure platform"
+      title: "Get Approved",
+      description: "Our team reviews and approves your listing"
+    },
+    {
+      icon: DollarSign,
+      title: "Start Earning",
+      description: "Earn money when customers rent your car"
     }
   ];
 
-  const whySellFeatures = [
+  const whyRentFeatures = [
     {
-      icon: Shield,
-      title: "Secure Transactions",
-      description: "All payments are processed securely through our platform"
+      icon: DollarSign,
+      title: "Earn Extra Income",
+      description: "Turn your idle car into a source of income"
     },
     {
-      icon: Zap,
-      title: "Fast Payments",
-      description: "Get paid quickly after your car is sold"
+      icon: Shield,
+      title: "Secure Platform",
+      description: "All rentals are managed through our secure platform"
     },
     {
       icon: Users,
-      title: "Wide Reach",
-      description: "Access thousands of potential buyers"
+      title: "Wide Customer Base",
+      description: "Access thousands of potential renters"
+    },
+    {
+      icon: Clock,
+      title: "Flexible Schedule",
+      description: "Choose when your car is available for rent"
     }
   ];
 
-  const recentlySold = [
+  const rentalBenefits = [
     {
-      title: "Toyota Land Cruiser 2020",
-      price: 45000,
-      image: "/placeholder.svg",
-      soldDate: "2 days ago"
+      icon: Calendar,
+      title: "Flexible Availability",
+      description: "Set your own availability schedule - weekdays, weekends, or specific dates"
     },
     {
-      title: "Honda CR-V 2019",
-      price: 32000,
-      image: "/placeholder.svg",
-      soldDate: "5 days ago"
+      icon: Shield,
+      title: "Insurance Coverage",
+      description: "Your car is covered by comprehensive insurance during rentals"
     },
     {
-      title: "Mercedes C-Class 2021",
-      price: 55000,
-      image: "/placeholder.svg",
-      soldDate: "1 week ago"
+      icon: Zap,
+      title: "Quick Payments",
+      description: "Get paid quickly after each successful rental"
+    },
+    {
+      icon: Users,
+      title: "Verified Renters",
+      description: "All renters are verified and background checked"
     }
   ];
 
@@ -304,26 +314,26 @@ const SellCarTab = () => {
     <div className="space-y-12">
       {/* Hero Banner */}
       <div className="bg-gradient-to-r from-primary via-primary-light to-primary rounded-xl p-8 text-center text-primary-foreground fade-in-up">
-        <h2 className="text-4xl font-bold mb-4">Turn Your Car Into Cash Fast</h2>
-        <p className="text-xl opacity-90 mb-6">Join thousands of sellers who trust CarConnect.rw</p>
+        <h2 className="text-4xl font-bold mb-4">Earn Money From Your Car</h2>
+        <p className="text-xl opacity-90 mb-6">Join our rental platform and turn your car into a source of income</p>
         <Button 
           size="lg" 
           className="bg-white text-primary hover:bg-gray-100 font-semibold px-8 py-4"
-          onClick={() => document.getElementById('car-form')?.scrollIntoView({ behavior: 'smooth' })}
+          onClick={() => document.getElementById('rent-form')?.scrollIntoView({ behavior: 'smooth' })}
         >
-          Start Selling Now
+          Start Renting Now
         </Button>
       </div>
 
-      {/* Selling Steps */}
+      {/* Renting Steps */}
       <div ref={stepsRef} className={`${stepsInView ? 'fade-in-up' : 'opacity-0'}`}>
         <div className="text-center mb-8">
           <h3 className="text-3xl font-bold text-foreground mb-4">How It Works</h3>
-          <p className="text-muted-foreground">Simple steps to sell your car</p>
+          <p className="text-muted-foreground">Simple steps to start earning from your car</p>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {sellingSteps.map((step, index) => (
+          {rentingSteps.map((step, index) => (
             <Card key={index} className={`text-center p-6 brand-card fade-in-up stagger-delay-${index + 1}`}>
               <div className="mx-auto w-16 h-16 bg-gradient-to-r from-primary to-primary-light rounded-full flex items-center justify-center mb-4">
                 <step.icon className="w-8 h-8 text-primary-foreground" />
@@ -338,16 +348,16 @@ const SellCarTab = () => {
         </div>
       </div>
 
-      {/* Car Upload Form */}
-      <div id="car-form" className="bg-gradient-to-r from-card to-accent/10 rounded-xl p-8 fade-in-up">
-        <h3 className="text-2xl font-bold text-foreground mb-6">List Your Car</h3>
+      {/* Car Rental Form */}
+      <div id="rent-form" className="bg-gradient-to-r from-card to-accent/10 rounded-xl p-8 fade-in-up">
+        <h3 className="text-2xl font-bold text-foreground mb-6">Submit Your Car for Rental</h3>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div>
             <Label htmlFor="make">Make *</Label>
             <Input
               id="make"
-              placeholder="e.g., Mercedes-Benz"
+              placeholder="e.g., Toyota"
               value={formData.make}
               onChange={(e) => handleInputChange('make', e.target.value)}
               className="search-input"
@@ -378,13 +388,13 @@ const SellCarTab = () => {
           </div>
 
           <div>
-            <Label htmlFor="price">Price (RWF) *</Label>
+            <Label htmlFor="dailyRate">Daily Rate (RWF) *</Label>
             <Input
-              id="price"
+              id="dailyRate"
               type="number"
-              placeholder="e.g., 25000"
-              value={formData.price}
-              onChange={(e) => handleInputChange('price', e.target.value)}
+              placeholder="e.g., 50000"
+              value={formData.dailyRate}
+              onChange={(e) => handleInputChange('dailyRate', e.target.value)}
               className="search-input"
             />
           </div>
@@ -467,6 +477,21 @@ const SellCarTab = () => {
               onChange={(e) => handleInputChange('location', e.target.value)}
               className="search-input"
             />
+          </div>
+
+          <div>
+            <Label htmlFor="availability">Availability *</Label>
+            <Select value={formData.availability} onValueChange={(value) => handleInputChange('availability', value)}>
+              <SelectTrigger className="search-input">
+                <SelectValue placeholder="Select availability" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="flexible">Flexible</SelectItem>
+                <SelectItem value="weekdays">Weekdays Only</SelectItem>
+                <SelectItem value="weekends">Weekends Only</SelectItem>
+                <SelectItem value="specific">Specific Dates</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
@@ -581,20 +606,20 @@ const SellCarTab = () => {
           )}
         </div>
 
-        <Button className="w-full mt-8 btn-hero text-lg py-4" disabled={isUploading || isSubmitting} onClick={handleListCar}>
-          {isSubmitting ? 'Listing...' : 'List My Car'}
+        <Button className="w-full mt-8 btn-hero text-lg py-4" disabled={isUploading || isSubmitting} onClick={handleRentCar}>
+          {isSubmitting ? 'Submitting...' : 'Submit My Car for Rental'}
         </Button>
       </div>
 
-      {/* Why Sell With Us */}
-      <div ref={whySellRef} className={`${whySellInView ? 'fade-in-up' : 'opacity-0'}`}>
+      {/* Why Rent With Us */}
+      <div ref={whyRentRef} className={`${whyRentInView ? 'fade-in-up' : 'opacity-0'}`}>
         <div className="text-center mb-8">
-          <h3 className="text-3xl font-bold text-foreground mb-4">Why Sell With CarConnect.rw?</h3>
-          <p className="text-muted-foreground">Experience the difference with our premium selling platform</p>
+          <h3 className="text-3xl font-bold text-foreground mb-4">Why Rent Your Car With CarConnect?</h3>
+          <p className="text-muted-foreground">Experience the difference with our premium rental platform</p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {whySellFeatures.map((feature, index) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {whyRentFeatures.map((feature, index) => (
             <Card key={index} className={`text-center p-6 brand-card fade-in-up stagger-delay-${index + 1}`}>
               <div className="mx-auto w-12 h-12 bg-gradient-to-r from-primary to-primary-light rounded-full flex items-center justify-center mb-4">
                 <feature.icon className="w-6 h-6 text-primary-foreground" />
@@ -606,28 +631,21 @@ const SellCarTab = () => {
         </div>
       </div>
 
-      {/* Recently Sold Cars */}
-      <div ref={soldCarsRef} className={`${soldCarsInView ? 'fade-in-up' : 'opacity-0'}`}>
+      {/* Rental Benefits */}
+      <div ref={benefitsRef} className={`${benefitsInView ? 'fade-in-up' : 'opacity-0'}`}>
         <div className="text-center mb-8">
-          <h3 className="text-3xl font-bold text-foreground mb-4">Recently Sold</h3>
-          <p className="text-muted-foreground">See what others have successfully sold</p>
+          <h3 className="text-3xl font-bold text-foreground mb-4">Rental Benefits</h3>
+          <p className="text-muted-foreground">What you get when you rent your car with us</p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {recentlySold.map((car, index) => (
-            <Card key={index} className={`overflow-hidden brand-card fade-in-up stagger-delay-${index + 1}`}>
-              <img 
-                src={car.image} 
-                alt={car.title}
-                className="w-full h-40 object-cover"
-              />
-              <CardContent className="p-4">
-                <h4 className="font-semibold text-foreground mb-2">{car.title}</h4>
-                <div className="flex justify-between items-center">
-                  <div className="text-2xl font-bold text-primary">{formatPrice(car.price)}</div>
-                  <Badge variant="secondary">{car.soldDate}</Badge>
-                </div>
-              </CardContent>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {rentalBenefits.map((benefit, index) => (
+            <Card key={index} className={`text-center p-6 brand-card fade-in-up stagger-delay-${index + 1}`}>
+              <div className="mx-auto w-12 h-12 bg-gradient-to-r from-primary to-primary-light rounded-full flex items-center justify-center mb-4">
+                <benefit.icon className="w-6 h-6 text-primary-foreground" />
+              </div>
+              <h4 className="font-semibold text-lg mb-2 text-foreground">{benefit.title}</h4>
+              <p className="text-muted-foreground text-sm">{benefit.description}</p>
             </Card>
           ))}
         </div>
@@ -636,4 +654,4 @@ const SellCarTab = () => {
   );
 };
 
-export default SellCarTab
+export default RentCarTab;

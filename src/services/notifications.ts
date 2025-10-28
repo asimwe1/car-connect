@@ -8,7 +8,7 @@ interface Notification {
   message: string;
   timestamp: Date;
   read: boolean;
-  category: 'system' | 'user' | 'order' | 'booking' | 'chat' | 'admin';
+  category: 'system' | 'user' | 'order' | 'booking' | 'chat' | 'admin' | 'car_listing';
   data?: any;
 }
 
@@ -294,6 +294,11 @@ class NotificationService {
 
   notifyNewChatMessage(userId: string) {
     this.simulateNotification('info', 'chat', 'New Support Message', `User ${userId.slice(-6)} sent a message`);
+  }
+
+  notifyCarListing(carData: { id: string; make: string; model: string; year: number; type: 'sell' | 'rent'; sellerName: string }) {
+    const listingType = carData.type === 'sell' ? 'selling' : 'renting';
+    this.simulateNotification('info', 'car_listing', 'New Car Listing', `${carData.sellerName} has listed their ${carData.year} ${carData.make} ${carData.model} for ${listingType}`);
   }
 
   notifySystemAlert(message: string) {

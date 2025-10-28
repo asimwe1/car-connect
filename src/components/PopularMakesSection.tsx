@@ -30,7 +30,7 @@ interface Car {
 const PopularMakesSection = () => {
   const [cars, setCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeMake, setActiveMake] = useState('audi');
+  const [activeMake, setActiveMake] = useState('toyota');
   const [currentPage, setCurrentPage] = useState(0);
   const { ref, inView } = useInView({
     triggerOnce: true,
@@ -39,7 +39,7 @@ const PopularMakesSection = () => {
   const navigate = useNavigate();
 
   const makes = [
-    { id: 'audi', label: 'Audi' },
+    { id: 'toyota', label: 'toyota' },
     { id: 'ford', label: 'Ford' },
     { id: 'mercedes', label: 'Mercedes Benz' },
   ];

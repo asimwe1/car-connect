@@ -64,17 +64,15 @@ const Footer = () => {
             <ul className="space-y-2">
               <li><Link to="/buy-cars?brand=Toyota" className="text-white hover:text-blue-200 transition-colors">Toyota</Link></li>
               <li><Link to="/buy-cars?brand=Porsche" className="text-white hover:text-blue-200 transition-colors">Porsche</Link></li>
-              <li><Link to="/buy-cars?brand=Audi" className="text-white hover:text-blue-200 transition-colors">Audi</Link></li>
               <li><Link to="/buy-cars?brand=BMW" className="text-white hover:text-blue-200 transition-colors">BMW</Link></li>
               <li><Link to="/buy-cars?brand=Ford" className="text-white hover:text-blue-200 transition-colors">Ford</Link></li>
               <li><Link to="/buy-cars?brand=Nissan" className="text-white hover:text-blue-200 transition-colors">Nissan</Link></li>
-              <li><Link to="/buy-cars?brand=Mercedes-Benz" className="text-white hover:text-blue-200 transition-colors">Mercedes-Benz</Link></li>
               <li>
                 <button 
                   onClick={handleMoreBrandsClick}
                   className="text-white hover:text-blue-200 transition-colors cursor-pointer"
                 >
-                  More
+                  More Brands
                 </button>
               </li>
             </ul>
@@ -87,8 +85,6 @@ const Footer = () => {
               <li><Link to="/buy-cars" className="text-white hover:text-blue-200 transition-colors">Sedan</Link></li>
               <li><Link to="/buy-cars" className="text-white hover:text-blue-200 transition-colors">Hatchback</Link></li>
               <li><Link to="/buy-cars" className="text-white hover:text-blue-200 transition-colors">SUV</Link></li>
-              <li><Link to="/buy-cars" className="text-white hover:text-blue-200 transition-colors">Hybrid</Link></li>
-              <li><Link to="/buy-cars" className="text-white hover:text-blue-200 transition-colors">Electric</Link></li>
               <li><Link to="/buy-cars" className="text-white hover:text-blue-200 transition-colors">Coupe</Link></li>
               <li><Link to="/buy-cars" className="text-white hover:text-blue-200 transition-colors">Truck</Link></li>
               <li><Link to="/buy-cars" className="text-white hover:text-blue-200 transition-colors">Convertible</Link></li>

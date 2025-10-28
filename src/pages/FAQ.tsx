@@ -107,7 +107,7 @@ const FAQ = () => {
         </div>
       </div>
       
-      <Footer />
+      {/* <Footer /> */}
     </div>
   );
 };

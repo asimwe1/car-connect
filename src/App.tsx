@@ -56,7 +56,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <ChatProvider>
-        <BrowserRouter>
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <AuthPromptProvider>
             <TooltipProvider>
               <Toaster />
@@ -195,6 +195,11 @@ const App = () => (
                     <Route path="/admin/edit-car/:id" element={
                       <ProtectedRoute adminOnly>
                         <EditCar />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/admin/order/:id" element={
+                      <ProtectedRoute adminOnly>
+                        <AdminOrderDetails />
                       </ProtectedRoute>
                     } />
 

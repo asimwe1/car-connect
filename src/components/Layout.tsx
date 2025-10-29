@@ -2,7 +2,6 @@ import React from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import FloatingActions from "@/components/FloatingActions";
 
 const Layout: React.FC = () => {
   const location = useLocation();
@@ -18,7 +17,7 @@ const Layout: React.FC = () => {
         <Outlet />
       </main>
       {!hideGlobalChrome && <Footer />}
-      {!hideGlobalChrome && <FloatingActions />}
+      {/* {!hideGlobalChrome && <FloatingActions />} */}
     </div>
   );
 };

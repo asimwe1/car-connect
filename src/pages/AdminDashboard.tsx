@@ -10,10 +10,10 @@ import { Eye, Users, Calendar, MessageCircle } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import StatsCards from '@/components/StatsCards';
-import RealtimeMetrics from '@/components/RealtimeMetrics';
+// import RealtimeMetrics from '@/components/RealtimeMetrics';
 import QuickActions from '@/components/QuickActions';
 import RecentActivity from '@/components/RecentActivity';
-import CustomerMessagesSupport from '@/components/CustomerMessagesSupport';
+// import CustomerMessagesSupport from '@/components/CustomerMessagesSupport';
 
 interface Stats {
   totalCars: number;
@@ -298,13 +298,13 @@ const AdminDashboard = () => {
           {/* KPI cards - tighter gaps on mobile */}
           <div className="space-y-3 sm:space-y-4">
             <StatsCards stats={stats} />
-            <RealtimeMetrics stats={stats} />
+            {/* <RealtimeMetrics stats={stats} /> */}
             <QuickActions />
           </div>
           {/* Two-column section collapses to single column on small screens */}
-          <div className="mt-4 sm:mt-6 grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-2 lg:gap-6">
+          <div className="mt-4 sm:mt-6 grid grid-cols-1 gap-3 sm:gap-4 lg:gap-6">
             <RecentActivity recentActivity={recentActivity} />
-            <CustomerMessagesSupport />
+            {/* <CustomerMessagesSupport /> */}
           </div>
           </div>
         </div>

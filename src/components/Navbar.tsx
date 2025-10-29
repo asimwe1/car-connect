@@ -88,12 +88,14 @@ const Navbar = () => {
             {isAuthenticated ? (
               <>
                 <NotificationBell />
-                <Link to="/buyer-dashboard">
+                {user?.role === 'user' && (
+                  <Link to="/buyer-dashboard">
                   <Button variant="ghost" size="sm">
                     <User className="w-4 h-4 mr-2" />
                     Dashboard
                   </Button>
                 </Link>
+              )}
                 {user?.role === 'admin' && (
                   <Link to="/admin-dashboard">
                     <Button variant="ghost" size="sm">

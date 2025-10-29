@@ -339,11 +339,11 @@ const AdminCarReview = () => {
     }
   };
 
-  const filteredCars = cars.filter(car =>
-    car.make.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    car.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    car.sellerName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredCars = Array.isArray(cars) ? cars.filter(car =>
+    (car.make || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (car.model || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    getOwnerName(car).toLowerCase().includes(searchTerm.toLowerCase())
+  ) : [];
 
   if (!isAuthenticated || user?.role !== 'admin') {
     return (
@@ -443,8 +443,10 @@ const AdminCarReview = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="listed">Listed</SelectItem>
                       <SelectItem value="pending">Pending</SelectItem>
                       <SelectItem value="approved">Approved</SelectItem>
+                      <SelectItem value="available">Available</SelectItem>
                       <SelectItem value="rejected">Rejected</SelectItem>
                     </SelectContent>
                   </Select>
@@ -472,14 +474,14 @@ const AdminCarReview = () => {
                 ))}
               </div>
             ) : errorMessage ? (
-              <Card className="bg-destructive/10 border-destructive/30 mb-8">
+              <Card className="bg-muted/50 border-muted mb-8">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between gap-4">
                     <div>
-                      <h3 className="font-semibold text-destructive">Cars failed to load</h3>
+                      <h3 className="font-semibold text-muted-foreground">No Cars Available</h3>
                       <p className="text-sm text-muted-foreground mt-1">{errorMessage}</p>
                     </div>
-                    <Button onClick={fetchCars} variant="destructive">Retry</Button>
+                    <Button onClick={fetchCars} variant="outline">Refresh</Button>
                   </div>
                 </CardContent>
               </Card>
@@ -548,7 +550,7 @@ const AdminCarReview = () => {
 
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <User className="h-3 w-3" />
-                          <span>{car.sellerName}</span>
+                          <span>{getOwnerName(car)}</span>
                         </div>
 
                         <div className="flex gap-2 flex-wrap">
@@ -708,16 +710,22 @@ const AdminCarReview = () => {
 
                       <div className="space-y-4">
                         <div>
-                          <Label className="text-sm font-medium">Seller Information</Label>
+                          <Label className="text-sm font-medium">Owner Information</Label>
                           <div className="mt-2 space-y-2">
                             <div className="flex justify-between">
                               <span className="text-muted-foreground">Name:</span>
-                              <span className="font-medium">{selectedCar.sellerName}</span>
+                              <span className="font-medium">{getOwnerName(selectedCar)}</span>
                             </div>
                             <div className="flex justify-between">
                               <span className="text-muted-foreground">Phone:</span>
-                              <span className="font-medium">{selectedCar.sellerPhone}</span>
+                              <span className="font-medium">{getOwnerPhone(selectedCar)}</span>
                             </div>
+                            {getOwnerEmail(selectedCar) && (
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Email:</span>
+                                <span className="font-medium">{getOwnerEmail(selectedCar)}</span>
+                              </div>
+                            )}
                             <div className="flex justify-between">
                               <span className="text-muted-foreground">Listed:</span>
                               <span className="font-medium">
@@ -755,16 +763,16 @@ const AdminCarReview = () => {
                                 </Button>
                               )}
                             </div>
-                            {selectedCar.sellerPhone && (
+                            {getOwnerPhone(selectedCar) && (
                               <div className="flex gap-2">
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => window.open(generateWhatsAppLink(selectedCar.sellerPhone), '_blank')}
+                                  onClick={() => window.open(generateWhatsAppLink(getOwnerPhone(selectedCar)), '_blank')}
                                   className="flex items-center gap-2"
                                 >
                                   <Phone className="h-4 w-4" />
-                                  Contact Seller
+                                  Contact Owner
                                   <ExternalLink className="h-3 w-3" />
                                 </Button>
                               </div>
@@ -810,7 +818,7 @@ const AdminCarReview = () => {
                   {selectedCar && (
                     <div className="p-4 bg-muted rounded-lg">
                       <h4 className="font-medium">{selectedCar.make} {selectedCar.model} ({selectedCar.year})</h4>
-                      <p className="text-sm text-muted-foreground">by {selectedCar.sellerName}</p>
+                      <p className="text-sm text-muted-foreground">by {getOwnerName(selectedCar)}</p>
                     </div>
                   )}
                   <div className="grid gap-2">

@@ -161,7 +161,7 @@ const AdminDashboard = () => {
       setLoading(true);
     }
     try {
-      const activities = await activityService.fetchActivities(silent);
+      const activities = await activityServiceRef.current.fetchActivities(silent);
       setRecentActivity(activities.slice(0, 15));
     } catch (error) {
       console.error('Failed to fetch activities:', error);
@@ -194,43 +194,34 @@ const AdminDashboard = () => {
         ordersRes,
         bookingsRes,
         conversationsRes,
-        metricsRes,
-        statsRes,
-        activityRes,
+        activityService
       ] = await Promise.all([
         api.getCars({ page: 1, limit: 1 }),
         api.getUsers({ page: 1, limit: 1 }),
         api.getAdminOrders({ page: 1, limit: 1 }),
         api.getAdminBookings({ page: 1, limit: 1 }),
         api.getAdminConversations().catch(() => ({ data: [] })),
-        api.getAdminMetrics().catch(() => ({ data: {} })),
-        api.getAdminStats().catch(() => ({ data: {} })),
-        api.getAdminActivity().catch(() => ({ data: [] })),
+        Promise.resolve(getActivityService()),
       ]);
 
-      const carsRaw: any = (carsRes as any)?.data;
-      const usersRaw: any = (usersRes as any)?.data;
-      const ordersRaw: any = (ordersRes as any)?.data;
-      const bookingsRaw: any = (bookingsRes as any)?.data;
-      const conversationsRaw: any = (conversationsRes as any)?.data;
-      const metricsRaw: any = (metricsRes as any)?.data;
-      const statsRaw: any = (statsRes as any)?.data;
-      const activityRaw: any = (activityRes as any)?.data;
+      const carsData = carsRes?.data;
+      const usersData = usersRes?.data;
+      const ordersData = ordersRes?.data;
+      const bookingsData = bookingsRes?.data;
+      const conversationsData = conversationsRes?.data || [];
 
-      const totalCars = typeof carsRaw?.total === 'number' ? carsRaw.total : Array.isArray(carsRaw?.items) ? carsRaw.items.length : Array.isArray(carsRaw) ? carsRaw.length : 0;
-      const totalUsers = typeof usersRaw?.total === 'number' ? usersRaw.total : Array.isArray(usersRaw?.items) ? usersRaw.items.length : Array.isArray(usersRaw) ? usersRaw.length : 0;
-      const totalOrders = typeof ordersRaw?.total === 'number' ? ordersRaw.total : Array.isArray(ordersRaw?.items) ? ordersRaw.items.length : Array.isArray(ordersRaw) ? ordersRaw.length : 0;
-      const recentBookings = typeof bookingsRaw?.total === 'number' ? bookingsRaw.total : Array.isArray(bookingsRaw?.items) ? bookingsRaw.items.length : Array.isArray(bookingsRaw) ? bookingsRaw.length : 0;
+      const totalCars = carsData?.total || 0;
+      const totalUsers = usersData?.total || 0;
+      const totalOrders = ordersData?.total || 0;
+      const recentBookings = bookingsData?.total || 0;
+      const unreadMessages = conversationsData.reduce((acc: number, conv: any) => acc + (conv.unreadCount || 0), 0);
 
       // Calculate real metrics from actual data
-      const carViewsToday = metricsRaw?.carViewsToday || 0;
-      const newUsersThisWeek = metricsRaw?.newUsersThisWeek || 0;
-      const pendingBookings = metricsRaw?.pendingBookings || 0;
-
-      const conversations = Array.isArray(conversationsRaw) ? conversationsRaw : [];
-      const unreadMessages = conversations.reduce((total, conv) => total + (conv.unreadCount || 0), 0);
-
-      const totalRevenue = statsRaw?.totalRevenue || 0;
+      // These values will be updated via WebSocket
+      const carViewsToday = 0;
+      const newUsersThisWeek = 0;
+      const pendingBookings = bookingsData?.pendingCount || 0;
+      const totalRevenue = ordersData?.totalRevenue || 0;
 
       setStats({
         totalCars,

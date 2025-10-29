@@ -98,13 +98,13 @@ const Sidebar: React.FC<SidebarProps> = ({ handleSignOut }) => {
           ))}
         </nav>
         <div className="p-4 mt-[9rem] border-t border-border space-y-2">
-          <Link
+          {/* <Link
             to="/admin/support-chat"
             className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent/50"
           >
             <MessageCircle className="w-4 h-4" />
             Support
-          </Link>
+          </Link> */}
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button

@@ -523,7 +523,7 @@ const AdminBrandManagement = () => {
                           <p className="text-sm text-muted-foreground">{brand.count}</p>
                         </div>
 
-                        <div className="flex gap-2 flex-wrap">
+                        <div className="flex gap-2 flex-wrap justify-end">
                           <Button
                             variant="outline"
                             size="sm"
@@ -532,14 +532,14 @@ const AdminBrandManagement = () => {
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button
+                          {/* <Button
                             variant="outline"
                             size="sm"
                             onClick={() => handleToggleStatus(brand.id)}
                             className="flex-1 sm:flex-none"
                           >
                             {brand.isActive ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                          </Button>
+                          </Button> */}
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button

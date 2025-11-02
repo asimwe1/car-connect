@@ -378,7 +378,11 @@ const BuyCars: React.FC = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredCars.map((car) => (
-              <Card key={car._id} className="overflow-hidden hover:shadow-lg transition-shadow group">
+              <Card 
+                key={car._id} 
+                className="overflow-hidden hover:shadow-lg transition-shadow group cursor-pointer"
+                onClick={() => navigate(`/car/${car._id}`)}
+              >
                 <div className="relative">
                   <img
                     src={car.primaryImage || car.images?.[0] || "/placeholder-car.jpg"}
@@ -402,7 +406,10 @@ const BuyCars: React.FC = () => {
                     className={`absolute top-2 right-2 bg-white/80 hover:bg-white ${
                       isInWishlist(car._id) ? "text-red-500" : "text-gray-500"
                     } hover:text-red-600`}
-                    onClick={() => handleAddToWishlist(car._id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleAddToWishlist(car._id);
+                    }}
                     disabled={car.status !== "available"}
                   >
                     <Heart
@@ -439,7 +446,14 @@ const BuyCars: React.FC = () => {
                   </div>
                   <div className="flex items-center justify-between">
                     <p className="text-lg font-bold text-primary">{formatPrice(car.price)}</p>
-                    <Button size="sm" onClick={() => navigate(`/car/${car._id}`)} disabled={car.status !== "available"}>
+                    <Button 
+                      size="sm" 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/car/${car._id}`);
+                      }} 
+                      disabled={car.status !== "available"}
+                    >
                       View Details
                     </Button>
                   </div>

@@ -69,7 +69,10 @@ class ApiService {
 
     for (let attempt = 0; attempt <= retries; attempt++) {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000);
+      // Increase timeout for auth operations (forgot password, etc.)
+      const isAuthOperation = endpoint.includes('/auth/');
+      const timeoutDuration = isAuthOperation ? 120000 : 60000; // 2 minutes for auth operations
+      const timeoutId = setTimeout(() => controller.abort(), timeoutDuration);
 
       try {
         const response = await fetch(url, { ...config, signal: controller.signal });

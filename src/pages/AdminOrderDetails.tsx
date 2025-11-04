@@ -56,7 +56,6 @@ const AdminOrderDetails = () => {
       }
 
       try {
-        // Verify authentication
         const meResponse = await api.request('/auth/me');
         if (meResponse.error || !meResponse.data?.user) {
           throw new Error('Authentication check failed');
@@ -76,7 +75,7 @@ const AdminOrderDetails = () => {
       setLoading(true);
       setErrorMessage(null);
 
-      const response = await api.request(`/bookings/${id}`);
+      const response = await api.getBookingById(id);
       
       if (response.error) {
         throw new Error(response.error);
@@ -87,7 +86,11 @@ const AdminOrderDetails = () => {
         throw new Error('Order not found');
       }
 
-      // Transform booking data to match Order interface
+      console.log('Raw booking data:', booking);
+      console.log('Car data from booking:', booking.car);
+      console.log('Car images from booking:', booking.car?.images);
+      console.log('Car primaryImage from booking:', booking.car?.primaryImage);
+
       const normalized: Order = {
         _id: String(booking._id || ''),
         amount: booking.amount || 0,
@@ -103,14 +106,18 @@ const AdminOrderDetails = () => {
           make: String(booking.car?.make || 'Unknown'),
           model: String(booking.car?.model || ''),
           year: Number(booking.car?.year || new Date().getFullYear()),
-          images: booking.car?.images || [],
-          primaryImage: booking.car?.primaryImage,
+          images: Array.isArray(booking.car?.images) ? booking.car.images : [],
+          primaryImage: booking.car?.primaryImage || undefined,
           price: booking.car?.price,
           dailyRate: booking.car?.dailyRate,
         },
         paymentRef: booking.paymentRef,
         notes: booking.notes,
       };
+
+      console.log('Normalized order:', normalized);
+      console.log('Normalized car images:', normalized.car.images);
+      console.log('Normalized car primaryImage:', normalized.car.primaryImage);
 
       setOrder(normalized);
     } catch (error) {
@@ -236,7 +243,9 @@ const AdminOrderDetails = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <div className="space-y-4">
+                      {/* Left Column – Customer & Vehicle */}
+                      <div className="space-y-6">
+                        {/* Customer Information */}
                         <div>
                           <h3 className="font-semibold mb-2">Customer Information</h3>
                           <div className="space-y-2">
@@ -253,6 +262,7 @@ const AdminOrderDetails = () => {
                           </div>
                         </div>
 
+                        {/* Vehicle Details */}
                         <div>
                           <h3 className="font-semibold mb-2">Vehicle Details</h3>
                           <div className="space-y-2">
@@ -260,18 +270,58 @@ const AdminOrderDetails = () => {
                               <Car className="h-4 w-4 text-muted-foreground" />
                               <span>{order.car.make} {order.car.model} ({order.car.year})</span>
                             </div>
-                            {order.car.primaryImage && (
-                              <img 
-                                src={order.car.primaryImage} 
-                                alt={`${order.car.make} ${order.car.model}`}
-                                className="rounded-lg w-full max-w-xs object-cover"
-                              />
-                            )}
+
+                            {/* Car Image with debugging */}
+                            <div className="mt-3">
+                              {console.log('Car data for image:', {
+                                primaryImage: order.car.primaryImage,
+                                images: order.car.images,
+                                imagesLength: order.car.images?.length
+                              })}
+                              
+                              {order.car.primaryImage ? (
+                                <img 
+                                  src={order.car.primaryImage} 
+                                  alt={`${order.car.make} ${order.car.model}`}
+                                  className="rounded-lg w-full max-w-xs h-48 object-cover border"
+                                  loading="lazy"
+                                  onError={(e) => {
+                                    console.error('Primary image failed to load:', order.car.primaryImage);
+                                    const target = e.target as HTMLImageElement;
+                                    if (order.car.images && order.car.images.length > 0) {
+                                      console.log('Trying first image from array:', order.car.images[0]);
+                                      target.src = order.car.images[0];
+                                    } else {
+                                      target.src = '/placeholder.svg';
+                                    }
+                                  }}
+                                />
+                              ) : order.car.images && order.car.images.length > 0 ? (
+                                <img 
+                                  src={order.car.images[0]} 
+                                  alt={`${order.car.make} ${order.car.model}`}
+                                  className="rounded-lg w-full max-w-xs h-48 object-cover border"
+                                  loading="lazy"
+                                  onError={(e) => {
+                                    console.error('Images[0] failed to load:', order.car.images[0]);
+                                    const target = e.target as HTMLImageElement;
+                                    target.src = '/placeholder.svg';
+                                  }}
+                                />
+                              ) : (
+                                <div className="flex items-center justify-center w-full max-w-xs h-48 bg-muted rounded-lg border">
+                                  <Car className="h-10 w-10 text-muted-foreground" />
+                                  <div className="ml-2 text-sm text-muted-foreground">No image available</div>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
 
-                      <div className="space-y-4">
+                      {/* Right Column – Order & Additional Info */}
+                      <div className="space-y-6">
+                        {/* Order Details */}
                         <div>
                           <h3 className="font-semibold mb-2">Order Details</h3>
                           <div className="space-y-2">
@@ -302,6 +352,7 @@ const AdminOrderDetails = () => {
                           </div>
                         </div>
 
+                        {/* Additional Information */}
                         {(order.notes || order.paymentRef) && (
                           <div>
                             <h3 className="font-semibold mb-2">Additional Information</h3>

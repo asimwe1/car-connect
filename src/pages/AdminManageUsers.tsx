@@ -3,8 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Link } from 'react-router-dom';
-import { Users, Search, MapPin, Phone, Calendar, ArrowLeft } from 'lucide-react';
+import { Users, Search, MapPin, Phone, Calendar, ArrowLeft, Mail, Eye } from 'lucide-react';
 import { api } from '@/services/api';
 import Sidebar from '@/components/Sidebar';
 import { useAuth } from '@/contexts/AuthContext';
@@ -13,7 +14,8 @@ import { useNavigate } from 'react-router-dom';
 interface User {
   _id: string;
   fullname: string;
-  phone: string;
+  phone: string | null;
+  email: string | null;
   role: 'user' | 'admin';
   createdAt: string;
   location?: string;
@@ -26,6 +28,8 @@ const AdminManageUsers = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [totalUsers, setTotalUsers] = useState(0);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [showUserDetails, setShowUserDetails] = useState(false);
 
   useEffect(() => {
     if (!user || user.role !== 'admin') {
@@ -56,10 +60,16 @@ const AdminManageUsers = () => {
 
   const filteredUsers = users.filter(user =>
     user.fullname.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.phone.includes(searchTerm)
+    (user.phone && user.phone.includes(searchTerm)) ||
+    (user.email && user.email.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const getLocationFromPhone = (phone: string) => {
+  const getLocationFromPhone = (phone: string | null | undefined) => {
+    // Handle null/undefined phone numbers
+    if (!phone || typeof phone !== 'string') {
+      return 'Unknown';
+    }
+    
     // Simple location detection based on phone number patterns
     if (phone.startsWith('+1')) return 'United States';
     if (phone.startsWith('+44')) return 'United Kingdom';
@@ -74,6 +84,7 @@ const AdminManageUsers = () => {
     if (phone.startsWith('+254')) return 'Kenya';
     if (phone.startsWith('+256')) return 'Uganda';
     if (phone.startsWith('+255')) return 'Tanzania';
+    if (phone.startsWith('+250')) return 'Rwanda';
     return 'Unknown';
   };
 
@@ -156,10 +167,25 @@ const AdminManageUsers = () => {
                         {user.role}
                       </Badge>
                     </div>
-                    <CardDescription className="flex items-center gap-1">
-                      <Phone className="h-3 w-3" />
-                      {user.phone}
-                    </CardDescription>
+                    <div className="space-y-1">
+                      {user.phone && (
+                        <CardDescription className="flex items-center gap-1">
+                          <Phone className="h-3 w-3" />
+                          {user.phone}
+                        </CardDescription>
+                      )}
+                      {user.email && (
+                        <CardDescription className="flex items-center gap-1">
+                          <Mail className="h-3 w-3" />
+                          {user.email}
+                        </CardDescription>
+                      )}
+                      {!user.phone && !user.email && (
+                        <CardDescription className="text-muted-foreground">
+                          No contact information
+                        </CardDescription>
+                      )}
+                    </div>
                   </CardHeader>
                   <CardContent className="pt-0">
                     <div className="space-y-2">
@@ -170,6 +196,20 @@ const AdminManageUsers = () => {
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Calendar className="h-3 w-3" />
                         <span>Joined {formatDate(user.createdAt)}</span>
+                      </div>
+                      <div className="mt-3">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="w-full"
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setShowUserDetails(true);
+                          }}
+                        >
+                          <Eye className="h-3 w-3 mr-1" />
+                          View Details
+                        </Button>
                       </div>
                     </div>
                   </CardContent>
@@ -189,6 +229,65 @@ const AdminManageUsers = () => {
           </div>
         </div>
       </div>
+
+      {/* User Details Modal */}
+      <Dialog open={showUserDetails} onOpenChange={setShowUserDetails}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>User Details</DialogTitle>
+          </DialogHeader>
+          {selectedUser && (
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-semibold text-lg">{selectedUser.fullname}</h3>
+                <Badge variant={selectedUser.role === 'admin' ? 'default' : 'secondary'} className="mt-1">
+                  {selectedUser.role}
+                </Badge>
+              </div>
+              
+              <div className="space-y-3">
+                <div className="border-b pb-3">
+                  <h4 className="font-medium text-sm text-muted-foreground mb-2">Contact Information</h4>
+                  {selectedUser.phone && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Phone className="h-4 w-4 text-muted-foreground" />
+                      <span>{selectedUser.phone}</span>
+                    </div>
+                  )}
+                  {selectedUser.email && (
+                    <div className="flex items-center gap-2 text-sm mt-1">
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                      <span>{selectedUser.email}</span>
+                    </div>
+                  )}
+                  {!selectedUser.phone && !selectedUser.email && (
+                    <p className="text-sm text-muted-foreground">No contact information available</p>
+                  )}
+                </div>
+
+                <div className="border-b pb-3">
+                  <h4 className="font-medium text-sm text-muted-foreground mb-2">Location</h4>
+                  <div className="flex items-center gap-2 text-sm">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                    <span>{getLocationFromPhone(selectedUser.phone)}</span>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-medium text-sm text-muted-foreground mb-2">Account Information</h4>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span>Joined {formatDate(selectedUser.createdAt)}</span>
+                  </div>
+                  <div className="text-sm text-muted-foreground mt-1">
+                    <span>User ID: {selectedUser._id}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

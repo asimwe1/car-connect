@@ -73,11 +73,8 @@ const AdminOrders = () => {
       setErrorMessage(null);
       setLoading(true);
       
-      // Use the API service which handles authentication via cookies
-      const response = await api.request('/bookings', {
-        method: 'GET',
-        credentials: 'include'
-      });
+      // Use the getAdminBookings method
+      const response = await api.getAdminBookings();
       
       if (response.error) {
         throw new Error(response.error);

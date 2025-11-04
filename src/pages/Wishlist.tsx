@@ -41,10 +41,27 @@ const Wishlist: React.FC = () => {
   const fetchWishlist = async () => {
     try {
       setLoading(true);
+      console.log('Fetching wishlist...');
       const response = await api.getWishlist();
-      if (response.error) throw new Error(response.error);
-      // API layer normalized to return cars array directly
-      const cars = (response.data as any) || [];
+      console.log('Wishlist response:', response);
+      
+      if (response.error) {
+        console.error('API returned error:', response.error);
+        throw new Error(response.error);
+      }
+      
+      // Handle different response structures from backend
+      let cars = [];
+      if (response.data?.wishlist?.cars) {
+        cars = response.data.wishlist.cars;
+      } else if (Array.isArray(response.data)) {
+        cars = response.data;
+      } else if (response.data?.cars) {
+        cars = response.data.cars;
+      }
+      
+      console.log('Processed cars:', cars);
+      
       // Add title for display
       const mappedCars = cars.map(car => ({
         ...car,

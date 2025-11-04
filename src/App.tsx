@@ -14,6 +14,8 @@ import Index from "./pages/Index";
 import SignUp from "./pages/SignUp";
 import SignIn from "./pages/SignIn";
 import VerifyOTP from "./pages/VerifyOTP";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import Contact from "./pages/Contact";
 import BuyerDashboard from "./pages/BuyerDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -49,6 +51,8 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import SessionWarning from "./components/SessionWarning";
 import ScrollToTop from "./components/ScrollToTop";
 import AdminOrderDetails from "./pages/AdminOrderDetails";
+import ResetPasswordVerify from "./pages/ResetPasswordVerify";
+import ResetPasswordFinal from "./pages/ResetPasswordFinal";
 
 const queryClient = new QueryClient();
 
@@ -86,6 +90,8 @@ const App = () => (
                     <Route path="/blog" element={<Blog />} />
                     <Route path="/services" element={<Services />} />
                     <Route path="/how-it-works" element={<HowItWorks />} />
+                    <Route path="/reset-password-verify" element={<ResetPasswordVerify />} />
+                    <Route path="/reset-password-final" element={<ResetPasswordFinal />} />
 
                     {/* Auth routes - redirect if already authenticated */}
                     <Route path="/signup" element={
@@ -101,6 +107,16 @@ const App = () => (
                     <Route path="/verify-otp" element={
                       <ProtectedRoute requireAuth={false}>
                         <VerifyOTP />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/forgot-password" element={
+                      <ProtectedRoute requireAuth={false}>
+                        <ForgotPassword />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/reset-password" element={
+                      <ProtectedRoute requireAuth={false}>
+                        <ResetPassword />
                       </ProtectedRoute>
                     } />
 

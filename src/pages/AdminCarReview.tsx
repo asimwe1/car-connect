@@ -37,7 +37,6 @@ import {
 } from '@/components/ui/select';
 import { 
   Search, 
-  Eye, 
   CheckCircle, 
   XCircle, 
   ArrowLeft,
@@ -553,35 +552,36 @@ const AdminCarReview = () => {
                           <span>{getOwnerName(car)}</span>
                         </div>
 
-                        <div className="flex gap-2 flex-wrap">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex gap-2 flex-wrap">
+                            {car.status === 'pending' && (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => openReviewDialog(car, 'approve')}
+                                  className="flex-1 sm:flex-none text-green-600 hover:text-green-700"
+                                >
+                                  <CheckCircle className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => openReviewDialog(car, 'reject')}
+                                  className="flex-1 sm:flex-none text-red-600 hover:text-red-700"
+                                >
+                                  <XCircle className="h-4 w-4" />
+                                </Button>
+                              </>
+                            )}
+                          </div>
                           <Button
-                            variant="outline"
                             size="sm"
-                            onClick={() => openDetailDialog(car)}
-                            className="flex-1 sm:flex-none"
+                            onClick={() => navigate(`/admin/view-car/${(car as any)._id || (car as any).id}`)}
+                            className="bg-primary text-primary-foreground hover:bg-primary/90"
                           >
-                            <Eye className="h-4 w-4" />
+                            View Details
                           </Button>
-                          {car.status === 'pending' && (
-                            <>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openReviewDialog(car, 'approve')}
-                                className="flex-1 sm:flex-none text-green-600 hover:text-green-700"
-                              >
-                                <CheckCircle className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openReviewDialog(car, 'reject')}
-                                className="flex-1 sm:flex-none text-red-600 hover:text-red-700"
-                              >
-                                <XCircle className="h-4 w-4" />
-                              </Button>
-                            </>
-                          )}
                         </div>
                       </div>
                     </CardContent>

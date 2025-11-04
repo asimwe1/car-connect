@@ -4,9 +4,9 @@ import { clearAllStorageAndCookies } from '../utils/cookies';
 import { sessionManager } from '../services/sessionManager';
 
 interface AuthContextType extends AuthState {
-  login: (phone: string, password: string) => Promise<{ success: boolean; message?: string }>;
-  register: (fullname: string, phone: string, password: string) => Promise<{ success: boolean; message?: string }>;
-  verifyOtp: (phone: string, otpCode: string) => Promise<{ success: boolean; message?: string }>;
+  login: (credentials: { phone?: string; email?: string; password: string }) => Promise<{ success: boolean; message?: string; user?: User }>;
+  register: (userData: { fullname: string; phone?: string; email?: string; password: string }) => Promise<{ success: boolean; message?: string; otpSent?: boolean }>;
+  verifyOtp: (data: { phone?: string; email?: string; otpCode: string }) => Promise<{ success: boolean; message?: string }>;
   logout: () => Promise<void>;
   checkAuth: (preserveExistingUser?: boolean) => Promise<void>;
   setAuthenticatedUser: (user: User) => void;
@@ -76,9 +76,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const login = async (phone: string, password: string) => {
+  const login = async (credentials: { phone?: string; email?: string; password: string }) => {
     try {
-      const response = await api.login({ phone, password });
+      const response = await api.login(credentials);
 
       if (response.data && typeof response.data === 'object' && 'success' in response.data && response.data.success) {
         // Set user data from login response
@@ -104,9 +104,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const register = async (fullname: string, phone: string, password: string) => {
+  const register = async (userData: { fullname: string; phone?: string; email?: string; password: string }) => {
     try {
-      const response = await api.register({ fullname, phone, password });
+      const response = await api.register(userData);
 
       if (response.data && typeof response.data === 'object' && 'success' in response.data && response.data.success) {
         return {
@@ -124,9 +124,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const verifyOtp = async (phone: string, otpCode: string) => {
+  const verifyOtp = async (data: { phone?: string; email?: string; otpCode: string }) => {
     try {
-      const response = await api.verifyOtp({ phone, otpCode });
+      const response = await api.verifyOtp(data);
 
       if (response.data && typeof response.data === 'object' && 'success' in response.data && response.data.success) {
         // After successful OTP verification, get user data from backend

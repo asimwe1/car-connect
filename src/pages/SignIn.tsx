@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff, Phone, Lock } from 'lucide-react';
+import { Eye, EyeOff, Phone, Lock, Mail } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -13,10 +13,10 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import SEO from '@/components/SEO';
 import { CountryCodeSelector } from '@/components/CountryCodeSelector';
-import { getCountryByCode } from '@/data/countryCodes';
-import { api } from '@/services/api';
+import { getCountryByCode, countryCodes } from '@/data/countryCodes';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-const schema = z.object({
+const phoneSchema = z.object({
   phone: z
     .string()
     .min(8)
@@ -26,7 +26,14 @@ const schema = z.object({
   remember: z.boolean().optional(),
 });
 
-type FormValues = z.infer<typeof schema>;
+const emailSchema = z.object({
+  email: z.string().email('Please enter a valid email address'),
+  password: z.string().min(1, 'Password is required'),
+  remember: z.boolean().optional(),
+});
+
+type PhoneFormValues = z.infer<typeof phoneSchema>;
+type EmailFormValues = z.infer<typeof emailSchema>;
 
 const SignIn = () => {
   const rememberDefault = false;
@@ -34,77 +41,129 @@ const SignIn = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState('RW'); // Default to Rwanda
   const [localPhoneNumber, setLocalPhoneNumber] = useState('');
+  const [activeTab, setActiveTab] = useState('phone');
 
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { setAuthenticatedUser } = useAuth();
+  const { login, setAuthenticatedUser } = useAuth();
 
-  const { register: rhfRegister, handleSubmit, formState: { errors }, setValue, watch } = useForm<FormValues>({
-    resolver: zodResolver(schema),
+  const phoneForm = useForm<PhoneFormValues>({
+    resolver: zodResolver(phoneSchema),
     defaultValues: { phone: '', password: '', remember: rememberDefault },
   });
 
-  const rememberMe = watch('remember');
+  const emailForm = useForm<EmailFormValues>({
+    resolver: zodResolver(emailSchema),
+    defaultValues: { email: '', password: '', remember: rememberDefault },
+  });
+
+  const phoneRememberMe = phoneForm.watch('remember');
+  const emailRememberMe = emailForm.watch('remember');
 
   useEffect(() => {
-    const rememberedPhone = localStorage.getItem('rememberPhone');
-    if (rememberedPhone) {
-      setValue('phone', rememberedPhone);
-      setValue('remember', true);
+    const rememberedData = localStorage.getItem('rememberData');
+    if (rememberedData) {
+      try {
+        const parsed = JSON.parse(rememberedData);
+        if (parsed.type === 'phone') {
+          phoneForm.setValue('phone', parsed.value);
+          phoneForm.setValue('remember', true);
 
-      const countryCodes = getCountryByCode('all');
-      let matchedCountry = null;
-      let localPart = rememberedPhone;
+          const allCountries = countryCodes; // Use the array directly
+          let matchedCountry = null;
+          let localPart = parsed.value;
 
-      countryCodes.sort((a, b) => b.dialCode.length - a.dialCode.length);
-      for (const country of countryCodes) {
-        if (rememberedPhone.startsWith(country.dialCode)) {
-          matchedCountry = country;
-          localPart = rememberedPhone.substring(country.dialCode.length);
-          break;
+          allCountries.sort((a, b) => b.dialCode.length - a.dialCode.length);
+          for (const country of allCountries) {
+            if (parsed.value.startsWith(country.dialCode)) {
+              matchedCountry = country;
+              localPart = parsed.value.substring(country.dialCode.length);
+              break;
+            }
+          }
+
+          if (matchedCountry) {
+            setSelectedCountry(matchedCountry.code);
+            setLocalPhoneNumber(localPart);
+          }
+        } else if (parsed.type === 'email') {
+          setActiveTab('email');
+          emailForm.setValue('email', parsed.value);
+          emailForm.setValue('remember', true);
         }
-      }
-
-      if (matchedCountry) {
-        setSelectedCountry(matchedCountry.code);
-        setLocalPhoneNumber(localPart);
+      } catch (error) {
+        console.error('Error parsing remembered data:', error);
       }
     }
-  }, [setValue]);
+  }, [phoneForm, emailForm]);
 
-  const onSubmit = async (data: FormValues) => {
+  const onPhoneSubmit = async (data: PhoneFormValues) => {
     setIsLoading(true);
     try {
-      const result = await api.login({ phone: data.phone, password: data.password });
-      if (result.error || !result.data?.success) {
+      const result = await login({ phone: data.phone, password: data.password });
+      if (!result.success) {
         toast({
-          title: 'Error',
-          description: result.error || result.data?.message || 'Invalid phone number or password.',
+          title: 'Login Error',
+          description: result.message || 'Invalid phone number or password.',
           variant: 'destructive',
         });
         return;
       }
-
-      const user = result.data.user;
-      if (!user) {
-        toast({
-          title: 'Error',
-          description: 'No user data returned from login.',
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      setAuthenticatedUser(user);
 
       if (data.remember) {
-        localStorage.setItem('rememberPhone', data.phone);
+        localStorage.setItem('rememberData', JSON.stringify({ type: 'phone', value: data.phone }));
       } else {
-        localStorage.removeItem('rememberPhone');
+        localStorage.removeItem('rememberData');
       }
 
-      const isAdmin = user.role === 'admin';
-      navigate(isAdmin ? '/admin-dashboard' : '/buyer-dashboard');
+      // AuthContext login method already sets the user, so we can get it from result
+      const user = result.user;
+      if (user) {
+        const isAdmin = user.role === 'admin';
+        navigate(isAdmin ? '/admin-dashboard' : '/buyer-dashboard');
+      } else {
+        navigate('/buyer-dashboard');
+      }
+    } catch (error: unknown) {
+      console.error('SignIn error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const onEmailSubmit = async (data: EmailFormValues) => {
+    setIsLoading(true);
+    try {
+      const result = await login({ email: data.email, password: data.password });
+      if (!result.success) {
+        toast({
+          title: 'Login Error',
+          description: result.message || 'Invalid email or password.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      if (data.remember) {
+        localStorage.setItem('rememberData', JSON.stringify({ type: 'email', value: data.email }));
+      } else {
+        localStorage.removeItem('rememberData');
+      }
+
+      // AuthContext login method already sets the user, so we can get it from result
+      const user = result.user;
+      if (user) {
+        const isAdmin = user.role === 'admin';
+        navigate(isAdmin ? '/admin-dashboard' : '/buyer-dashboard');
+      } else {
+        navigate('/buyer-dashboard');
+      }
     } catch (error: unknown) {
       console.error('SignIn error:', error);
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
@@ -124,7 +183,7 @@ const SignIn = () => {
 
     const country = getCountryByCode(selectedCountry);
     const fullNumber = country ? `${country.dialCode}${localNumber}` : `+${localNumber}`;
-    setValue('phone', fullNumber, { shouldValidate: true });
+    phoneForm.setValue('phone', fullNumber, { shouldValidate: true });
   };
 
   const handleCountryChange = (countryCode: string) => {
@@ -133,11 +192,11 @@ const SignIn = () => {
     if (localPhoneNumber) {
       const country = getCountryByCode(countryCode);
       const fullNumber = country ? `${country.dialCode}${localPhoneNumber}` : `+${localPhoneNumber}`;
-      setValue('phone', fullNumber, { shouldValidate: true });
+      phoneForm.setValue('phone', fullNumber, { shouldValidate: true });
     } else {
       const country = getCountryByCode(countryCode);
       const fullNumber = country ? country.dialCode : '';
-      setValue('phone', fullNumber, { shouldValidate: true });
+      phoneForm.setValue('phone', fullNumber, { shouldValidate: true });
     }
   };
 
@@ -154,80 +213,163 @@ const SignIn = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
-              <div className="flex gap-2">
-                <CountryCodeSelector
-                  value={selectedCountry}
-                  onValueChange={handleCountryChange}
-                  disabled={isLoading}
-                />
-                <div className="relative flex-1">
-                  <Phone className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="phone"
-                    type="tel"
-                    placeholder="7XX XXX XXX"
-                    value={localPhoneNumber}
-                    className={`search-input pl-8 ${errors.phone ? 'border-destructive' : ''}`}
-                    required
-                    onChange={handleLocalNumberChange}
-                  />
-                  <input type="hidden" {...rhfRegister('phone')} />
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="phone">Phone Number</TabsTrigger>
+              <TabsTrigger value="email">
+                Email Address
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="phone">
+              <form onSubmit={phoneForm.handleSubmit(onPhoneSubmit)} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone Number</Label>
+                  <div className="flex gap-2">
+                    <CountryCodeSelector
+                      value={selectedCountry}
+                      onValueChange={handleCountryChange}
+                      disabled={isLoading}
+                    />
+                    <div className="relative flex-1">
+                      <Phone className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="phone"
+                        type="tel"
+                        placeholder="7XX XXX XXX"
+                        value={localPhoneNumber}
+                        className={`search-input pl-8 ${phoneForm.formState.errors.phone ? 'border-destructive' : ''}`}
+                        required
+                        onChange={handleLocalNumberChange}
+                        disabled={isLoading}
+                      />
+                      <input type="hidden" {...phoneForm.register('phone')} />
+                    </div>
+                  </div>
+                  {phoneForm.formState.errors.phone && (
+                    <p className="text-sm text-destructive mt-1">{phoneForm.formState.errors.phone.message}</p>
+                  )}
                 </div>
-              </div>
-              {errors.phone && (
-                <p className="text-sm text-destructive mt-1">{errors.phone.message}</p>
-              )}
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Enter your password"
-                  {...rhfRegister('password')}
-                  className={`search-input pl-8 pr-10 ${errors.password ? 'border-destructive' : ''}`}
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-                {errors.password && (
-                  <p className="text-sm text-destructive mt-1">{errors.password.message}</p>
-                )}
-              </div>
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone-password">Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="phone-password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Enter your password"
+                      {...phoneForm.register('password')}
+                      className={`search-input pl-8 pr-10 ${phoneForm.formState.errors.password ? 'border-destructive' : ''}`}
+                      required
+                      disabled={isLoading}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                    {phoneForm.formState.errors.password && (
+                      <p className="text-sm text-destructive mt-1">{phoneForm.formState.errors.password.message}</p>
+                    )}
+                  </div>
+                </div>
 
-            {/* <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 select-none text-sm text-muted-foreground">
-                <Checkbox
-                  id="remember"
-                  checked={!!rememberMe}
-                  onCheckedChange={(v) => setValue('remember', !!v)}
-                />
-                <span>Remember me</span>
-              </label> */}
-              {/* <Link
-                to="/forgot-password"
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Forgot your password?
-              </Link> */}
-            {/* </div> */}
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-2 select-none text-sm text-muted-foreground">
+                    <Checkbox
+                      id="phone-remember"
+                      checked={!!phoneRememberMe}
+                      onCheckedChange={(v) => phoneForm.setValue('remember', !!v)}
+                    />
+                    <span>Remember me</span>
+                  </label>
+                  <Link
+                    to="/forgot-password"
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Forgot your password?
+                  </Link>
+                </div>
 
-            <Button type="submit" className="btn-hero w-full" disabled={isLoading}>
-              {isLoading ? 'Signing In...' : 'Sign In'}
-            </Button>
-          </form>
+                <Button type="submit" className="btn-hero w-full" disabled={isLoading}>
+                  {isLoading ? 'Signing In...' : 'Sign In'}
+                </Button>
+              </form>
+            </TabsContent>
+
+            <TabsContent value="email">
+              <form onSubmit={emailForm.handleSubmit(onEmailSubmit)} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email Address</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="Enter your email address"
+                      {...emailForm.register('email')}
+                      className={`search-input pl-8 ${emailForm.formState.errors.email ? 'border-destructive' : ''}`}
+                      required
+                      disabled={isLoading}
+                    />
+                  </div>
+                  {emailForm.formState.errors.email && (
+                    <p className="text-sm text-destructive mt-1">{emailForm.formState.errors.email.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="email-password">Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="email-password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Enter your password"
+                      {...emailForm.register('password')}
+                      className={`search-input pl-8 pr-10 ${emailForm.formState.errors.password ? 'border-destructive' : ''}`}
+                      required
+                      disabled={isLoading}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                    {emailForm.formState.errors.password && (
+                      <p className="text-sm text-destructive mt-1">{emailForm.formState.errors.password.message}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-2 select-none text-sm text-muted-foreground">
+                    <Checkbox
+                      id="email-remember"
+                      checked={!!emailRememberMe}
+                      onCheckedChange={(v) => emailForm.setValue('remember', !!v)}
+                    />
+                    <span>Remember me</span>
+                  </label>
+                  <Link
+                    to="/forgot-password"
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Forgot your password?
+                  </Link>
+                </div>
+
+                <Button type="submit" className="btn-hero w-full" disabled={isLoading}>
+                  {isLoading ? 'Signing In...' : 'Sign In'}
+                </Button>
+              </form>
+            </TabsContent>
+          </Tabs>
 
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">

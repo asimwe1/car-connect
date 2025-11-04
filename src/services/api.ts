@@ -202,7 +202,16 @@ class ApiService {
   }
 
   async getCarById(id: string) {
-    return this.request(`/cars/${id}`);
+    return this.request(`/cars/car/${id}`);
+  }
+
+  // Add specific methods for different car endpoints
+  async getMyCars() {
+    return this.request('/cars/me/mine');
+  }
+
+  async getListedCars() {
+    return this.request('/cars/listed');
   }
 
   async createCar(carData: any) {
@@ -222,6 +231,60 @@ class ApiService {
   async deleteCar(id: string) {
     return this.request(`/cars/${id}`, {
       method: 'DELETE',
+    });
+  }
+
+  // Car management endpoints
+  async listCar(carId: string) {
+    return this.request(`/cars/${carId}/list`, {
+      method: 'POST',
+    });
+  }
+
+  async verifyCar(carId: string) {
+    return this.request(`/cars/${carId}/verify`, {
+      method: 'POST',
+    });
+  }
+
+  async rejectCar(carId: string) {
+    return this.request(`/cars/${carId}/reject`, {
+      method: 'POST',
+    });
+  }
+
+  // Car image management
+  async addCarImages(carId: string, images: File[]) {
+    const formData = new FormData();
+    images.forEach((image, index) => {
+      formData.append(`images`, image);
+    });
+
+    return this.request(`/cars/${carId}/images`, {
+      method: 'POST',
+      body: formData,
+      headers: {}, // Don't set Content-Type for FormData
+    });
+  }
+
+  async removeCarImage(carId: string, imageId: string) {
+    return this.request(`/cars/${carId}/images`, {
+      method: 'DELETE',
+      body: JSON.stringify({ imageId }),
+    });
+  }
+
+  async setPrimaryImage(carId: string, imageId: string) {
+    return this.request(`/cars/${carId}/primary-image`, {
+      method: 'POST',
+      body: JSON.stringify({ imageId }),
+    });
+  }
+
+  async reorderCarImages(carId: string, imageOrder: string[]) {
+    return this.request(`/cars/${carId}/images/reorder`, {
+      method: 'POST',
+      body: JSON.stringify({ imageOrder }),
     });
   }
 

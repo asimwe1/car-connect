@@ -13,8 +13,13 @@ import SEO from '@/components/SEO';
 import { api } from '@/services/api';
 
 const schema = z.object({
-  otpCode: z.string().min(4, 'OTP code must be at least 4 digits').max(6, 'OTP code must be at most 6 digits'),
-  newPassword: z.string().min(8, 'Password must be at least 8 characters'),
+  otpCode: z.string()
+    .min(4, 'OTP code must be at least 4 digits')
+    .max(10, 'OTP code must be at most 10 digits')
+    .regex(/^\d+$/, 'OTP code must contain only numbers'),
+  newPassword: z.string()
+    .min(8, 'Password must be at least 8 characters')
+    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 'Password must contain at least one lowercase letter, one uppercase letter, and one number'),
   confirmPassword: z.string().min(8, 'Confirm password is required')
 }).refine((data) => data.newPassword === data.confirmPassword, {
   message: 'Passwords do not match',
@@ -27,10 +32,13 @@ interface ResetData {
   phone?: string;
   email?: string;
   method: 'phone' | 'email';
+  timestamp?: number; // For session expiry validation
 }
 
 const ResetPassword = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [resetData, setResetData] = useState<ResetData | null>(null);
@@ -47,7 +55,7 @@ const ResetPassword = () => {
     const storedData = localStorage.getItem('passwordResetData');
     if (!storedData) {
       toast({
-        title: 'Error',
+        title: 'Session Expired',
         description: 'No reset session found. Please start the password reset process again.',
         variant: 'destructive',
       });
@@ -57,10 +65,24 @@ const ResetPassword = () => {
 
     try {
       const parsed = JSON.parse(storedData) as ResetData;
+      
+      // Check if session is expired (1 hour)
+      if (parsed.timestamp && Date.now() - parsed.timestamp > 60 * 60 * 1000) {
+        localStorage.removeItem('passwordResetData');
+        toast({
+          title: 'Session Expired',
+          description: 'Your reset session has expired. Please start the password reset process again.',
+          variant: 'destructive',
+        });
+        navigate('/forgot-password');
+        return;
+      }
+      
       setResetData(parsed);
     } catch (error) {
+      localStorage.removeItem('passwordResetData');
       toast({
-        title: 'Error',
+        title: 'Invalid Session',
         description: 'Invalid reset session. Please start the password reset process again.',
         variant: 'destructive',
       });
@@ -68,10 +90,64 @@ const ResetPassword = () => {
     }
   }, [navigate, toast]);
 
+  // Cooldown timer effect
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendCooldown]);
+
+  const handleResendOTP = async () => {
+    if (!resetData || resendCooldown > 0) return;
+    
+    setIsResending(true);
+    try {
+      // Use the same forgot password endpoint to resend OTP
+      const resendPayload = {
+        ...(resetData.phone && { phone: resetData.phone }),
+        ...(resetData.email && { email: resetData.email }),
+      };
+
+      const result = await api.forgotPassword(resendPayload);
+      
+      if (result.error || !result.data?.success) {
+        toast({
+          title: 'Resend Failed',
+          description: result.error || result.data?.message || 'Failed to resend verification code.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Update timestamp for new session
+      const updatedResetData = { ...resetData, timestamp: Date.now() };
+      localStorage.setItem('passwordResetData', JSON.stringify(updatedResetData));
+      setResetData(updatedResetData);
+      
+      // Start cooldown (60 seconds)
+      setResendCooldown(60);
+      
+      toast({
+        title: 'OTP Resent',
+        description: `New verification code sent to your ${resetData.method === 'phone' ? 'phone' : 'email'}.`,
+      });
+    } catch (error) {
+      console.error('Resend OTP error:', error);
+      toast({
+        title: 'Resend Failed',
+        description: 'Failed to resend verification code. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsResending(false);
+    }
+  };
+
   const onSubmit = async (data: FormValues) => {
     if (!resetData) {
       toast({
-        title: 'Error',
+        title: 'Session Error',
         description: 'No reset session found. Please start the password reset process again.',
         variant: 'destructive',
       });
@@ -81,20 +157,40 @@ const ResetPassword = () => {
 
     setIsLoading(true);
     try {
+      // Prepare payload for Twilio-based backend
       const resetPayload = {
-        otpCode: data.otpCode,
+        otpCode: data.otpCode.trim(),
         newPassword: data.newPassword,
         ...(resetData.phone && { phone: resetData.phone }),
         ...(resetData.email && { email: resetData.email }),
       };
 
+      console.log('Attempting password reset with Twilio OTP verification');
       const result = await api.resetPasswordWithOtp(resetPayload);
+      
       if (result.error || !result.data?.success) {
-        toast({
-          title: 'Error',
-          description: result.error || result.data?.message || 'Failed to reset password.',
-          variant: 'destructive',
-        });
+        // Handle specific Twilio error cases
+        const errorMessage = result.error || result.data?.message || 'Failed to reset password.';
+        
+        if (errorMessage.toLowerCase().includes('expired') || errorMessage.toLowerCase().includes('invalid')) {
+          toast({
+            title: 'Invalid or Expired OTP',
+            description: 'The verification code is invalid or has expired. Please request a new code.',
+            variant: 'destructive',
+          });
+        } else if (errorMessage.toLowerCase().includes('attempt')) {
+          toast({
+            title: 'Too Many Attempts',
+            description: 'Too many failed attempts. Please wait before trying again.',
+            variant: 'destructive',
+          });
+        } else {
+          toast({
+            title: 'Reset Failed',
+            description: errorMessage,
+            variant: 'destructive',
+          });
+        }
         return;
       }
 
@@ -110,11 +206,21 @@ const ResetPassword = () => {
     } catch (error: unknown) {
       console.error('Reset password error:', error);
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
-      toast({
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive',
-      });
+      
+      // Handle network and other errors
+      if (errorMessage.toLowerCase().includes('network') || errorMessage.toLowerCase().includes('fetch')) {
+        toast({
+          title: 'Network Error',
+          description: 'Unable to connect to the server. Please check your internet connection and try again.',
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Error',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -158,7 +264,8 @@ const ResetPassword = () => {
                   className={`search-input pl-8 ${errors.otpCode ? 'border-destructive' : ''}`}
                   required
                   disabled={isLoading}
-                  maxLength={6}
+                  maxLength={10}
+                  autoComplete="one-time-code"
                 />
               </div>
               {errors.otpCode && (
@@ -225,15 +332,26 @@ const ResetPassword = () => {
             </Button>
           </form>
 
-          <div className="mt-6 text-center">
+          <div className="mt-6 text-center space-y-3">
             <p className="text-sm text-muted-foreground">
-              Didn't receive a code?{' '}
-              <Link
-                to="/forgot-password"
-                className="text-primary hover:text-primary-light font-medium transition-colors"
-              >
-                Send again
-              </Link>
+              Didn't receive a code?
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleResendOTP}
+              disabled={isResending || resendCooldown > 0 || !resetData}
+              className="w-full"
+            >
+              {isResending ? 'Resending...' : 
+               resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 
+               'Resend Verification Code'}
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              {resetData?.method === 'phone' 
+                ? `Code sent to ${resetData?.phone?.replace(/(\+\d{1,3})\d{6,10}(\d{4})/, '$1****$2')}`
+                : `Code sent to ${resetData?.email?.replace(/(.{2}).*(@.*)/, '$1****$2')}`
+              }
             </p>
           </div>
         </CardContent>

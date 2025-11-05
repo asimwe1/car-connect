@@ -69,13 +69,7 @@ const onPhoneSubmit = async (data: PhoneFormValues) => {
     try {
       console.log('Starting forgot password request for phone:', data.phone);
       
-      // Execute reCAPTCHA
-      const recaptchaToken = await window.grecaptcha.execute(
-        import.meta.env.VITE_RECAPTCHA_SITE_KEY,
-        { action: 'forgot_password' }
-      );
-
-      const result = await api.forgotPassword({ phone: data.phone, recaptchaToken });
+      const result = await api.forgotPassword({ phone: data.phone });
 
       // Check if component is still mounted before updating state
       if (!isMountedRef.current) {
@@ -84,20 +78,41 @@ const onPhoneSubmit = async (data: PhoneFormValues) => {
       }
 
       if (result.error || !result.data?.success) {
-        toast({
-          title: 'Error',
-          description: result.error || result.data?.message || 'Failed to send reset code.',
-          variant: 'destructive',
-        });
+        const errorMessage = result.error || result.data?.message || 'Failed to send reset code.';
+        
+        // Handle specific Twilio error cases for phone
+        if (errorMessage.toLowerCase().includes('rate') || errorMessage.toLowerCase().includes('limit')) {
+          toast({
+            title: 'Too Many Requests',
+            description: 'Too many attempts. Please wait a few minutes before trying again.',
+            variant: 'destructive',
+          });
+        } else if (errorMessage.toLowerCase().includes('invalid') && errorMessage.toLowerCase().includes('phone')) {
+          toast({
+            title: 'Invalid Phone Number',
+            description: 'Please enter a valid phone number with country code.',
+            variant: 'destructive',
+          });
+        } else {
+          toast({
+            title: 'Error',
+            description: errorMessage,
+            variant: 'destructive',
+          });
+        }
         return;
       }
 
-      // Store for reset password verification
-      localStorage.setItem('passwordResetData', JSON.stringify({ phone: data.phone, method: 'phone' }));
+      // Store for reset password verification - Twilio flow
+      localStorage.setItem('passwordResetData', JSON.stringify({ 
+        phone: data.phone, 
+        method: 'phone',
+        timestamp: Date.now() // Add timestamp for session management
+      }));
 
       toast({
-        title: 'Reset Code Sent',
-        description: 'Please check your phone for the verification code.',
+        title: 'OTP Sent Successfully',
+        description: 'Please check your phone for the verification code. The code will expire in 1 hour.',
       });
 
       navigate('/reset-password');
@@ -134,13 +149,7 @@ const onEmailSubmit = async (data: EmailFormValues) => {
     try {
       console.log('Starting forgot password request for email:', data.email);
       
-      // Execute reCAPTCHA
-      const recaptchaToken = await window.grecaptcha.execute(
-        import.meta.env.VITE_RECAPTCHA_SITE_KEY,
-        { action: 'forgot_password' }
-      );
-
-      const result = await api.forgotPassword({ email: data.email, recaptchaToken });
+      const result = await api.forgotPassword({ email: data.email });
       
       // Check if component is still mounted before updating state
       if (!isMountedRef.current) {
@@ -149,20 +158,41 @@ const onEmailSubmit = async (data: EmailFormValues) => {
       }
 
       if (result.error || !result.data?.success) {
-        toast({
-          title: 'Error',
-          description: result.error || result.data?.message || 'Failed to send reset code.',
-          variant: 'destructive',
-        });
+        const errorMessage = result.error || result.data?.message || 'Failed to send reset code.';
+        
+        // Handle specific Twilio error cases for email
+        if (errorMessage.toLowerCase().includes('rate') || errorMessage.toLowerCase().includes('limit')) {
+          toast({
+            title: 'Too Many Requests',
+            description: 'Too many attempts. Please wait a few minutes before trying again.',
+            variant: 'destructive',
+          });
+        } else if (errorMessage.toLowerCase().includes('invalid') && errorMessage.toLowerCase().includes('email')) {
+          toast({
+            title: 'Invalid Email',
+            description: 'Please enter a valid email address.',
+            variant: 'destructive',
+          });
+        } else {
+          toast({
+            title: 'Error',
+            description: errorMessage,
+            variant: 'destructive',
+          });
+        }
         return;
       }
 
-      // Store for reset password verification
-      localStorage.setItem('passwordResetData', JSON.stringify({ email: data.email, method: 'email' }));
+      // Store for reset password verification - Twilio flow
+      localStorage.setItem('passwordResetData', JSON.stringify({ 
+        email: data.email, 
+        method: 'email',
+        timestamp: Date.now() // Add timestamp for session management
+      }));
 
       toast({
-        title: 'Reset Code Sent',
-        description: 'Please check your email for the verification code.',
+        title: 'OTP Sent Successfully',
+        description: 'Please check your email for the verification code. The code will expire in 1 hour.',
       });
 
       navigate('/reset-password');
@@ -315,9 +345,6 @@ const onEmailSubmit = async (data: EmailFormValues) => {
           </div>
         </CardContent>
       </Card>
-      
-      {/* Hidden reCAPTCHA container */}
-      <div id="recaptcha-container" className="hidden"></div>
     </div>
   );
 };

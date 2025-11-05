@@ -154,14 +154,7 @@ class ApiService {
     });
   }
 
-  async verifyResetOTP(data: { otp: string }) {
-    return this.request('/auth/verify-reset-otp', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async forgotPassword(data: { phone?: string; email?: string; recaptchaToken?: string }) {
+  async forgotPassword(data: { phone?: string; email?: string }) {
     return this.request('/auth/forgot-password', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -173,6 +166,13 @@ class ApiService {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` },
       body: JSON.stringify({ password }),
+    });
+  }
+
+  async verifyResetOTP(data: { phone?: string; email?: string; otp: string }) {
+    return this.request<{ message: string; success: boolean; token: string }>('/auth/verify-otp', {
+      method: 'POST',
+      body: JSON.stringify(data),
     });
   }
 

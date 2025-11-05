@@ -17,11 +17,11 @@ const FloatingSocialIcons = () => {
   };
 
   return (
-    <div className="fixed bottom-20 right-4 z-40 flex flex-col space-y-3 hidden sm:flex">
+    <div className="fixed bottom-32 right-4 z-40 flex flex-col space-y-3 hidden sm:flex">
       {/* WhatsApp Icon */}
       <div
         onClick={handleWhatsApp}
-        className="group relative bg-green-500 hover:bg-green-600 text-white p-3 rounded-full shadow-lg cursor-pointer transition-all duration-300 hover:scale-110 animate-pulse hover:animate-none"
+        className="group relative bg-green-500 hover:bg-green-600 text-white p-3 rounded-full shadow-lg cursor-pointer transition-all duration-300 hover:scale-110"
         title="Chat on WhatsApp"
       >
         <MessageCircle className="h-6 w-6" />
@@ -36,7 +36,7 @@ const FloatingSocialIcons = () => {
       {/* Facebook Icon */}
       <div
         onClick={handleFacebook}
-        className="group relative bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full shadow-lg cursor-pointer transition-all duration-300 hover:scale-110 animate-pulse hover:animate-none"
+        className="group relative bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full shadow-lg cursor-pointer transition-all duration-300 hover:scale-110"
         title="Follow us on Facebook"
       >
         <Facebook className="h-6 w-6" />

@@ -50,6 +50,7 @@ import ListCar from "./pages/ListCar";
 import ProtectedRoute from "./components/ProtectedRoute";
 import SessionWarning from "./components/SessionWarning";
 import ScrollToTop from "./components/ScrollToTop";
+import FloatingSocialIcons from "./components/FloatingSocialIcons";
 import AdminOrderDetails from "./pages/AdminOrderDetails";
 import ResetPasswordVerify from "./pages/ResetPasswordVerify";
 import ResetPasswordFinal from "./pages/ResetPasswordFinal";
@@ -75,6 +76,7 @@ const App = () => (
                 </Helmet>
                 <SessionWarning />
                 <ScrollToTop />
+                <FloatingSocialIcons />
                 <Routes>
                   <Route element={<Layout />}>
                     {/* Public routes */}

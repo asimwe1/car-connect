@@ -47,7 +47,8 @@ class NotificationService {
       const isDev = import.meta.env.DEV;
       if (isDev) {
         console.log('WebSocket disabled in development mode, using demo notifications');
-        this.useDemoNotifications();
+        // useDemoNotifications was removed in refactors; fall back to addDemoNotifications
+        this.addDemoNotifications();
         return;
       }
 

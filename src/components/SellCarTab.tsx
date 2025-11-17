@@ -249,7 +249,7 @@ const SellCarTab: React.FC<SellCarTabProps> = ({ listingType, isLocked }) => {
         mileage: Number(formData.mileage) || 0,
         fuelType: formData.fuel,
         transmission: formData.transmission || 'automatic',
-        status: 'pending', // Set to pending for admin review
+        status: 'listed', // Set to pending for admin review
         description: formData.description || undefined,
         location: formData.location || undefined,
         seats: formData.seats ? Number(formData.seats) : undefined,

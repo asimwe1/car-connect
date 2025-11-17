@@ -293,11 +293,21 @@ class ApiService {
 
   // Admin methods
   async getUsers() {
-    return this.request('/admin/users');
+    return this.request('/users');
   }
 
   async getOrders() {
-    return this.request('/admin/orders');
+    return this.request('/orders');
+  }
+
+  // Backwards-compatible admin orders method with pagination/query support
+  async getAdminOrders(params?: { page?: number; limit?: number; q?: string; status?: string }) {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.append('page', params.page.toString());
+    if (params?.limit) searchParams.append('limit', params.limit.toString());
+    if (params?.q) searchParams.append('q', params.q);
+    if (params?.status) searchParams.append('status', params.status);
+    return this.request(`/orders${searchParams.toString() ? `?${searchParams.toString()}` : ''}`);
   }
 
   async getActivityLogs() {
@@ -306,6 +316,11 @@ class ApiService {
 
   // Messages methods
   async getConversations() {
+    return this.request('/messages/conversations');
+  }
+
+  // Alias for admin dashboard compatibility
+  async getAdminConversations() {
     return this.request('/messages/conversations');
   }
 

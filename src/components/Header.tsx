@@ -63,8 +63,8 @@ const Header: React.FC<HeaderProps> = ({
           Welcome back, {user?.fullname || 'Admin'} • Last updated: {lastUpdateString}
         </p>
       </div>
-      <div className="flex flex-col space-y-3 md:flex-row md:items-center md:space-y-0 md:gap-4">
-        <div className="relative">
+      <div className="flex flex-col space-y-3 md:flex-row md:items-center md:space-y-0 md:gap-4 w-full">
+        <div className="relative w-full md:w-auto">
           <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search..."
@@ -73,7 +73,7 @@ const Header: React.FC<HeaderProps> = ({
             className="search-input pl-10 w-full md:w-80"
           />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap md:flex-nowrap md:justify-end">
           <Button
             variant="outline"
             size="sm"

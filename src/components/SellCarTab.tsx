@@ -343,7 +343,7 @@ const SellCarTab: React.FC<SellCarTabProps> = ({ listingType, isLocked }) => {
       {/* Hero Banner */}
       <div className="bg-gradient-to-r from-primary via-primary-light to-primary rounded-xl p-8 text-center text-primary-foreground fade-in-up">
         <h2 className="text-4xl font-bold mb-4">Turn Your Car Into Cash Fast</h2>
-        <p className="text-xl opacity-90 mb-6">Join thousands of sellers who trust CarConnect.rw</p>
+        <p className="text-xl opacity-90 mb-6">Join thousands of sellers who trust connectify.rw</p>
         <Button 
           size="lg" 
           className="bg-white text-primary hover:bg-gray-100 font-semibold px-8 py-4"
@@ -629,7 +629,7 @@ const SellCarTab: React.FC<SellCarTabProps> = ({ listingType, isLocked }) => {
       {/* Why Sell With Us */}
       <div ref={whySellRef} className={`${whySellInView ? 'fade-in-up' : 'opacity-0'}`}>
         <div className="text-center mb-8">
-          <h3 className="text-3xl font-bold text-foreground mb-4">Why Sell With CarConnect.rw?</h3>
+          <h3 className="text-3xl font-bold text-foreground mb-4">Why Sell With connectify.rw?</h3>
           <p className="text-muted-foreground">Experience the difference with our premium selling platform</p>
         </div>
         

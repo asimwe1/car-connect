@@ -69,7 +69,7 @@ const Contact = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-accent/10 to-primary/5 py-12">
-      <SEO title="Contact – CarConnect Rwanda" description="Have questions? Contact CarConnect for support, partnerships, or media inquiries." />
+      <SEO title="Contact – connectify Rwanda" description="Have questions? Contact connectify for support, partnerships, or media inquiries." />
       <div className="max-w-6xl mx-auto px-4">
         <div className="text-center mb-12 fade-in-up">
           <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-primary-light bg-clip-text text-transparent">
@@ -214,18 +214,18 @@ const Contact = () => {
                     <ul className="text-muted-foreground space-y-1">
                       <li>
                         <a 
-                          href="mailto:customer@car-connect.rw" 
+                          href="mailto:customer@connectify.rw" 
                           className="text-blue-400 hover:text-blue-300 transition-colors"
                         >
-                          customer@car-connect.rw
+                          customer@connectify.rw
                         </a>
                       </li>
                       <li>
                         <a 
-                          href="mailto:support@car-connect.rw" 
+                          href="mailto:support@connectify.rw" 
                           className="text-blue-400 hover:text-blue-300 transition-colors"
                         >
-                          support@car-connect.rw
+                          support@connectify.rw
                         </a>
                       </li>
                     </ul>

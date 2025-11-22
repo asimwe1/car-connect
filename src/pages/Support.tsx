@@ -64,7 +64,7 @@ const Support = () => {
       _id: 'welcome-1',
       content: `Hello ${user?.fullname || 'there'}! 👋
 
-Welcome to CarConnect Support! Our support team is here to help you with:
+Welcome to connectify Support! Our support team is here to help you with:
 
 • Questions about buying or selling cars
 • Account and profile assistance  

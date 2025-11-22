@@ -614,7 +614,7 @@ const RentCarTab = () => {
       {/* Why Rent With Us */}
       <div ref={whyRentRef} className={`${whyRentInView ? 'fade-in-up' : 'opacity-0'}`}>
         <div className="text-center mb-8">
-          <h3 className="text-3xl font-bold text-foreground mb-4">Why Rent Your Car With CarConnect?</h3>
+          <h3 className="text-3xl font-bold text-foreground mb-4">Why Rent Your Car With connectify?</h3>
           <p className="text-muted-foreground">Experience the difference with our premium rental platform</p>
         </div>
         

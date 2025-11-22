@@ -56,7 +56,7 @@ const Blog = () => {
       {/* Hero Section */}
       <section className="py-16 bg-gradient-to-r from-primary to-primary-dark text-white">
         <div className="container mx-auto px-4 text-center">
-          <h1 className="text-4xl font-bold mb-4 animate-fade-in">CarConnect Blog</h1>
+          <h1 className="text-4xl font-bold mb-4 animate-fade-in">connectify Blog</h1>
           <p className="text-xl max-w-2xl mx-auto animate-slide-up">
             Stay updated with the latest automotive news, tips, and insights from Rwanda's car experts.
           </p>

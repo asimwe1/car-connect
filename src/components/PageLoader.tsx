@@ -23,7 +23,7 @@ const PageLoader = ({ children }: PageLoaderProps) => {
         <div className="text-center space-y-4">
           <LoadingSpinner size="lg" />
           <div className="space-y-2">
-            <h2 className="text-xl font-semibold">car.connect</h2>
+            <h2 className="text-xl font-semibold">connectify</h2>
             <p className="text-muted-foreground">Loading your perfect car experience...</p>
           </div>
         </div>

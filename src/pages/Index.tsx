@@ -28,8 +28,8 @@ const Index = () => {
   return (
     <div className="min-h-screen">
       <Helmet>
-        <title>CarConnect – Find Your Perfect Car</title>
-        <meta name="description" content="Explore premium brands, buy or rent cars, and book test drives on CarConnect." />
+        <title>connectify – Find Your Perfect Car</title>
+        <meta name="description" content="Explore premium brands, buy or rent cars, and book test drives on connectify." />
         <link rel="canonical" href="https://CarConnect-rw.vercel.app/" />
       </Helmet>
       <HeroSection />

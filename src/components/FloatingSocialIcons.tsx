@@ -5,7 +5,7 @@ const FloatingSocialIcons = () => {
   const handleWhatsApp = () => {
     // Replace with your WhatsApp business number (format: +countrycodephonenumber)
     const phoneNumber = "+250788881400"; // Update this with your actual WhatsApp business number
-    const message = "Hello! I'm interested in learning more about CarConnect services.";
+    const message = "Hello! I'm interested in learning more about connectify services.";
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };

@@ -24,7 +24,7 @@ const AdminLayout: React.FC = () => {
         <aside className="hidden md:block w-64 bg-card/80 backdrop-blur-sm border-r border-border min-h-screen">
           <div className="p-6">
             <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary-light bg-clip-text text-transparent">
-              CarConnect
+              connectify
             </h1>
             <p className="text-sm text-muted-foreground mt-1">Admin</p>
           </div>

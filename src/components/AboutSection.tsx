@@ -1,6 +1,6 @@
 import React from 'react';
 import { useInView } from 'react-intersection-observer';
-import carconnectImg from '@/assets/carconnect.jpg';
+import connectifyImg from '@/assets/carconnect.jpg';
 
 const AboutSection = () => {
   const { ref, inView } = useInView({
@@ -16,7 +16,7 @@ const AboutSection = () => {
             <div className={`transition-all duration-700 delay-200 ${inView ? 'animate-slide-up' : 'opacity-0'}`}>
               <h2 className="text-3xl font-bold mb-6 text-white">Who Are We?</h2>
               <p className="text-gray-300 leading-relaxed mb-6">
-                CarConnect is Rwanda's premier automotive marketplace, connecting car buyers and sellers across the country. 
+                connectify is Rwanda's premier automotive marketplace, connecting car buyers and sellers across the country. 
                 We believe that finding your perfect vehicle should be simple, transparent, and enjoyable.
               </p>
               <p className="text-gray-300 leading-relaxed mb-6">
@@ -40,7 +40,7 @@ const AboutSection = () => {
               <div className="flex justify-center items-center">
                 <div className="relative bg-gradient-to-br from-gray-800 to-gray-900 p-8 rounded-2xl shadow-2xl">
                   <img
-                    src={carconnectImg}
+                    src={connectifyImg}
                     alt="Car Connect Logo"
                     className="w-full max-w-md h-auto rounded-lg"
                   />

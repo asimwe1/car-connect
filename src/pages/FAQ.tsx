@@ -11,12 +11,12 @@ import {
 const FAQ = () => {
   const faqs = [
     {
-      question: "How do I create an account on CarConnect?",
+      question: "How do I create an account on connectify?",
       answer: "Creating an account is simple! Click the 'Sign Up' button in the top right corner, enter your phone number and create a password. You'll receive an OTP verification code to complete the registration process."
     },
     {
-      question: "Is it free to list my car on CarConnect?",
-      answer: "Yes, listing your car on CarConnect is completely free for individual sellers. We only charge a small commission when your car sells successfully, ensuring you only pay when you get results."
+      question: "Is it free to list my car on connectify?",
+      answer: "Yes, listing your car on connectify is completely free for individual sellers. We only charge a small commission when your car sells successfully, ensuring you only pay when you get results."
     },
     {
       question: "How do I schedule a test drive?",
@@ -61,7 +61,7 @@ const FAQ = () => {
           <div className="text-center mb-12">
             <h1 className="text-4xl font-bold mb-4 animate-fade-in">Frequently Asked Questions</h1>
             <p className="text-xl text-muted-foreground animate-slide-up">
-              Find answers to the most common questions about CarConnect
+              Find answers to the most common questions about connectify
             </p>
           </div>
           

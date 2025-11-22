@@ -50,7 +50,7 @@ const BuyerSidebar = () => {
                     </button>
                 </div>
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary-light bg-clip-text text-transparent">
-                    CarConnect
+                    connectify
                 </h1>
                 <p className="text-sm text-muted-foreground mt-1">Buyer Dashboard</p>
             </div>

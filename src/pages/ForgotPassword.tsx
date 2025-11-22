@@ -243,7 +243,7 @@ const onEmailSubmit = async (data: EmailFormValues) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-accent/20 to-primary/10 flex items-center justify-center p-4">
-      <SEO title="Forgot Password – CarConnect Rwanda" description="Reset your CarConnect account password using your phone number or email address." />
+      <SEO title="Forgot Password – connectify Rwanda" description="Reset your connectify account password using your phone number or email address." />
       <Card className="w-full max-w-md bg-card/80 backdrop-blur-sm border border-border shadow-card">
         <CardHeader className="space-y-1 text-center">
           <div className="flex items-center justify-center mb-2">

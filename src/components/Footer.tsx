@@ -117,7 +117,7 @@ const Footer = () => {
               <FaFacebookF className="h-5 w-5" />
             </a>
             <a
-              href="https://www.instagram.com/car.connect.rw/"
+              href="https://www.instagram.com/connectify.rw/"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Instagram"
@@ -138,7 +138,7 @@ const Footer = () => {
           
           <div className="hidden md:block w-px h-6 bg-white/20"></div>
           
-          <p className="text-blue-200">© 2025 car.connect.rw. All rights reserved.</p>
+          <p className="text-blue-200">© 2025 connectify.rw. All rights reserved.</p>
         </div>
       </div>
     </footer>

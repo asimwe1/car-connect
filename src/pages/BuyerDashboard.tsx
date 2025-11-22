@@ -133,7 +133,7 @@ const BuyerDashboard: React.FC = () => {
           <div className="md:hidden bg-card/80 backdrop-blur-sm border-b border-border p-4">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary-light bg-clip-text text-transparent">CarConnect</h1>
+                <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary-light bg-clip-text text-transparent">connectify</h1>
                 <p className="text-xs text-muted-foreground">Buyer Dashboard</p>
               </div>
               <Button variant="ghost" size="sm" onClick={() => navigate('/')}>
@@ -178,7 +178,7 @@ const BuyerDashboard: React.FC = () => {
                   <ArrowLeft className="h-4 w-4 mr-1" /> Back to Home
                 </button>
               </div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary-light bg-clip-text text-transparent">CarConnect</h1>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary-light bg-clip-text text-transparent">connectify</h1>
               <p className="text-sm text-muted-foreground mt-1">Buyer Dashboard</p>
             </div>
             
@@ -320,7 +320,7 @@ const BuyerDashboard: React.FC = () => {
                   <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                     <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full animate-pulse"></div>
                     <div className="flex-1">
-                      <p className="font-medium text-blue-800 dark:text-blue-200">🎉 Welcome to CarConnect!</p>
+                      <p className="font-medium text-blue-800 dark:text-blue-200">🎉 Welcome to connectify!</p>
                       <p className="text-sm text-blue-600 dark:text-blue-400">Start browsing our extensive car collection</p>
                     </div>
                     <span className="text-sm text-blue-500 dark:text-blue-400">Just now</span>

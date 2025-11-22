@@ -207,7 +207,7 @@ const AdminSupportChat = () => {
 
     const welcomeMessage = {
       _id: Date.now().toString(),
-      content: `Hello! I'm your CarConnect system assistant. You clicked on ${statType} (${statValue}). What would you like to know about ${statType.toLowerCase()}? I can help you with:
+      content: `Hello! I'm your connectify system assistant. You clicked on ${statType} (${statValue}). What would you like to know about ${statType.toLowerCase()}? I can help you with:
 
 • Detailed statistics and analytics
 • System performance insights

@@ -51,7 +51,7 @@ const AuthPromptModal: React.FC<{ open: boolean; setOpen: (v: boolean) => void; 
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-2xl">Join CarConnect</DialogTitle>
+          <DialogTitle className="text-2xl">Join connectify</DialogTitle>
           <DialogDescription>
             Create an account or sign in to continue. You'll be redirected back to your action.
           </DialogDescription>

@@ -227,7 +227,7 @@ const BuyCars: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-accent/20 to-primary/10 p-8">
-      <SEO title="Buy Cars – CarConnect Rwanda" description="Browse verified cars for sale in Rwanda. Filter by make, model, year, fuel type, transmission, and more." />
+      <SEO title="Buy Cars – connectify Rwanda" description="Browse verified cars for sale in Rwanda. Filter by make, model, year, fuel type, transmission, and more." />
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold mb-4">Find Your Perfect Car</h1>

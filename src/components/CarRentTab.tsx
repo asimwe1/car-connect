@@ -120,7 +120,7 @@ const CarRentTab = () => {
     {
       name: "Marie Uwimana",
       rating: 5,
-      text: "Great experience renting from CarConnect. Highly recommended!",
+      text: "Great experience renting from connectify. Highly recommended!",
       date: "1 week ago"
     },
     {
@@ -268,7 +268,7 @@ const CarRentTab = () => {
       {/* Why Rent With Us Section */}
       <div ref={whyRentRef} className={`${whyRentInView ? 'fade-in-up' : 'opacity-0'}`}>
         <div className="text-center mb-8">
-          <h3 className="text-3xl font-bold text-foreground mb-4">Why Rent With CarConnect?</h3>
+          <h3 className="text-3xl font-bold text-foreground mb-4">Why Rent With connectify?</h3>
           <p className="text-muted-foreground max-w-2xl mx-auto">
             Experience the difference with our premium car rental service
           </p>

@@ -152,7 +152,7 @@ const Services = () => {
             <Car className="h-16 w-16 text-primary mx-auto mb-6" />
             <h2 className="text-4xl font-bold mb-6">Ready to Find Your Perfect Car?</h2>
             <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
-              Join thousands of satisfied customers who have found their dream cars through CarConnect. 
+              Join thousands of satisfied customers who have found their dream cars through connectify. 
               Start your journey today with Rwanda's most trusted automotive marketplace.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">

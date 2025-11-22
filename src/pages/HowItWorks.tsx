@@ -83,10 +83,10 @@ const HowItWorks = () => {
       {/* Hero Section */}
       <section className="py-20 bg-gradient-to-r from-primary to-primary-dark text-white">
         <div className="container mx-auto px-4 text-center">
-          <h1 className="text-5xl font-bold mb-6 animate-fade-in">How CarConnect Works</h1>
+          <h1 className="text-5xl font-bold mb-6 animate-fade-in">How connectify Works</h1>
           <p className="text-xl max-w-3xl mx-auto leading-relaxed animate-slide-up">
             Simple, secure, and transparent process for buying and selling cars in Rwanda. 
-            Join thousands of satisfied customers who trust CarConnect.
+            Join thousands of satisfied customers who trust connectify.
           </p>
         </div>
       </section>
@@ -175,7 +175,7 @@ const HowItWorks = () => {
       <section className="py-16">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4 animate-fade-in">Why Choose CarConnect?</h2>
+            <h2 className="text-4xl font-bold mb-4 animate-fade-in">Why Choose connectify?</h2>
             <p className="text-xl text-muted-foreground animate-slide-up">
               We provide a secure, transparent, and efficient marketplace
             </p>
@@ -205,7 +205,7 @@ const HowItWorks = () => {
           <div className="max-w-3xl mx-auto animate-fade-in">
             <h2 className="text-4xl font-bold mb-6">Ready to Get Started?</h2>
             <p className="text-xl mb-8 leading-relaxed">
-              Join thousands of satisfied customers who have successfully bought and sold cars through CarConnect.
+              Join thousands of satisfied customers who have successfully bought and sold cars through connectify.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" className="bg-white text-primary hover:bg-white/90">

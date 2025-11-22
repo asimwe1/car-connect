@@ -70,7 +70,7 @@ const App = () => (
                 <Helmet>
                   <meta charSet="utf-8" />
                   <meta name="viewport" content="width=device-width, initial-scale=1" />
-                  <title>CarConnect Rwanda – Buy, Sell, Rent Premium Cars</title>
+                  <title>connectify Rwanda – Buy, Sell, Rent Premium Cars</title>
                   <meta name="description" content="Find, buy, sell, or rent premium cars in Rwanda. Browse verified listings with financing options and test drives." />
                   <link rel="canonical" href="https://carhubconnect.onrender.com/" />
                 </Helmet>

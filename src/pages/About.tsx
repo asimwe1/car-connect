@@ -25,13 +25,13 @@ const About = () => {
 
   return (
     <div className="min-h-screen">
-      <SEO title="About – CarConnect Rwanda" description="Learn about CarHub, our mission, and the team connecting Rwanda with premium vehicles." />
+      <SEO title="About – connectify Rwanda" description="Learn about CarHub, our mission, and the team connecting Rwanda with premium vehicles." />
       <Navbar />
       
       {/* Hero Section */}
       <section className="py-20 bg-gradient-to-r from-primary to-primary-dark text-white">
         <div className="container mx-auto px-4 text-center">
-          <h1 className="text-5xl font-bold mb-6 animate-fade-in">About CarConnect</h1>
+          <h1 className="text-5xl font-bold mb-6 animate-fade-in">About connectify</h1>
           <p className="text-xl max-w-3xl mx-auto leading-relaxed animate-slide-up">
             We're revolutionizing the car buying experience in Rwanda by connecting 
             buyers with the best vehicles and most trusted sellers across the country.
@@ -46,7 +46,7 @@ const About = () => {
             <div className="animate-fade-in">
               <h2 className="text-4xl font-bold mb-6">Our Mission</h2>
               <p className="text-muted-foreground leading-relaxed mb-6">
-                At CarConnect, we believe that buying a car should be an exciting and 
+                At connectify, we believe that buying a car should be an exciting and 
                 transparent experience. Our mission is to create Rwanda's most trusted 
                 automotive marketplace where buyers can find their perfect vehicle with 
                 confidence and sellers can reach genuine customers.
@@ -90,7 +90,7 @@ const About = () => {
       </section>
 
       {/* Team Section */}
-      <section className="py-16">
+      {/* <section className="py-16">
         <div className="container mx-auto px-4">
           <h2 className="text-4xl font-bold text-center mb-12 animate-fade-in">Meet Our Team</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -112,7 +112,7 @@ const About = () => {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Values Section */}
       <section className="py-16 bg-secondary/30">

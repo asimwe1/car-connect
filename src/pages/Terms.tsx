@@ -15,7 +15,7 @@ const Terms = () => {
             <section className="mb-8">
               <h2 className="text-2xl font-semibold mb-4">1. Acceptance of Terms</h2>
               <p className="text-muted-foreground leading-relaxed">
-                By accessing and using CarConnect, you accept and agree to be bound by the terms 
+                By accessing and using connectify, you accept and agree to be bound by the terms 
                 and provision of this agreement. These Terms of Service apply to all visitors, 
                 users, and others who access or use the service.
               </p>
@@ -24,7 +24,7 @@ const Terms = () => {
             <section className="mb-8">
               <h2 className="text-2xl font-semibold mb-4">2. Use License</h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                Permission is granted to temporarily download one copy of CarConnect materials 
+                Permission is granted to temporarily download one copy of connectify materials 
                 for personal, non-commercial transitory viewing only. This is the grant of a license, 
                 not a transfer of title, and under this license you may not:
               </p>
@@ -91,7 +91,7 @@ const Terms = () => {
               <p className="text-muted-foreground leading-relaxed">
                 If you have any questions about these Terms of Service, please contact us at:
                 <br />
-                Email: legal@carconnect.rw
+                Email: legal@connectify.rw
                 <br />
                 Phone: +250 123 456 789
                 <br />

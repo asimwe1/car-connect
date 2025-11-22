@@ -38,7 +38,7 @@ const Sidebar: React.FC<SidebarProps> = ({ handleSignOut }) => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary-light bg-clip-text text-transparent">
-              CarConnect
+              connectify
             </h1>
             <p className="text-xs text-muted-foreground">Admin Dashboard</p>
           </div>
@@ -77,7 +77,7 @@ const Sidebar: React.FC<SidebarProps> = ({ handleSignOut }) => {
       <div className="hidden md:block fixed w-64 bg-card/80 backdrop-blur-sm border-r border-border h-screen flex flex-col">
         <div className="p-6">
           <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary-light bg-clip-text text-transparent">
-            CarConnect
+            connectify
           </h1>
           <p className="text-sm text-muted-foreground mt-1">Admin Dashboard</p>
         </div>

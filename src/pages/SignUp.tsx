@@ -14,6 +14,7 @@ import SEO from '@/components/SEO';
 import { CountryCodeSelector } from '@/components/CountryCodeSelector';
 import { getCountryByCode } from '@/data/countryCodes';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { handleError } from '@/utils/errorMessages';
 
 const phoneSchema = z.object({
   fullname: z.string().min(1, 'Full name is required'),
@@ -45,11 +46,11 @@ const SignUp = () => {
   const [selectedCountry, setSelectedCountry] = useState('RW'); // Default to Rwanda
   const [localPhoneNumber, setLocalPhoneNumber] = useState(''); // Store local number separately
   const [activeTab, setActiveTab] = useState<'phone' | 'email'>('phone');
-  
+
   const { toast } = useToast();
   const navigate = useNavigate();
   const { register } = useAuth();
-  
+
   const phoneForm = useForm<PhoneFormValues>({
     resolver: zodResolver(phoneSchema),
     defaultValues: { fullname: '', phone: '', password: '', confirmPassword: '' }
@@ -60,96 +61,96 @@ const SignUp = () => {
     defaultValues: { fullname: '', email: '', password: '', confirmPassword: '' }
   });
 
-const onPhoneSubmit = async (data: PhoneFormValues) => {
-  setIsLoading(true);
+  const onPhoneSubmit = async (data: PhoneFormValues) => {
+    setIsLoading(true);
 
-  try {
-    const result = await register({
-      fullname: data.fullname,
-      phone: data.phone,
-      password: data.password
-    });
-    if (!result.success) {
+    try {
+      const result = await register({
+        fullname: data.fullname,
+        phone: data.phone,
+        password: data.password
+      });
+      if (!result.success) {
+        toast({
+          title: "Error",
+          description: result.message || "An unexpected error occurred",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: 'Registration Successful',
+        description: 'You have successfully signed up'
+      });
+      navigate('/signin');
+
+    } catch (error: any) {
+      const errorMessage = handleError('SignUp (Phone)', error);
       toast({
         title: "Error",
-        description: result.message || "An unexpected error occurred",
+        description: errorMessage,
         variant: "destructive",
       });
-      return;
+    } finally {
+      setIsLoading(false);
     }
+  };
 
-    toast({
-      title: 'Registration Successful',
-      description: 'You have successfully signed up'
-    });
-    navigate('/signin');
+  const onEmailSubmit = async (data: EmailFormValues) => {
+    setIsLoading(true);
 
-  } catch (error: any) {
-    console.error('SignUp error:', error);
-    toast({
-      title: "Error",
-      description: error.message || "An unexpected error occurred",
-      variant: "destructive",
-    });
-  } finally {
-    setIsLoading(false);
-  }
-};
+    try {
+      const result = await register({
+        fullname: data.fullname,
+        email: data.email,
+        password: data.password
+      });
+      if (!result.success) {
+        const errorMessage = result.message || "An unexpected error occurred";
 
-const onEmailSubmit = async (data: EmailFormValues) => {
-  setIsLoading(true);
-
-  try {
-    const result = await register({
-      fullname: data.fullname,
-      email: data.email,
-      password: data.password
-    });
-    if (!result.success) {
-      const errorMessage = result.message || "An unexpected error occurred";
-      
-      // Only show "not supported" message for specific backend rejection errors
-      if (errorMessage.toLowerCase().includes('email not supported') || 
+        // Only show "not supported" message for specific backend rejection errors
+        if (errorMessage.toLowerCase().includes('email not supported') ||
           errorMessage.toLowerCase().includes('only phone number') ||
           errorMessage.toLowerCase().includes('phone number required')) {
-        toast({
-          title: "Email Registration Not Fully Supported",
-          description: "The backend currently has limited email support. You may try phone number registration for the most reliable experience.",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Registration Error",
-          description: errorMessage,
-          variant: "destructive",
-        });
+          toast({
+            title: "Email Registration Not Fully Supported",
+            description: "The backend currently has limited email support. You may try phone number registration for the most reliable experience.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Registration Error",
+            description: errorMessage,
+            variant: "destructive",
+          });
+        }
+        return;
       }
-      return;
-    }
 
-    toast({
-      title: 'Registration Successful',
-      description: 'You have successfully signed up. Please check your email for verification.'
-    });
-    
-    // Navigate to OTP verification if needed, otherwise to signin
-    if (result.otpSent) {
-      navigate('/verify-otp', { state: { email: data.email } });
-    } else {
-      navigate('/signin');
-    }
+      toast({
+        title: 'Registration Successful',
+        description: 'You have successfully signed up. Please check your email for verification.'
+      });
 
-  } catch (error: any) {
-    console.error('SignUp error:', error);
-    toast({
-      title: "Error",
-      description: error.message || "An unexpected error occurred",
-      variant: "destructive",
-    });
-  } finally {
-    setIsLoading(false);
-  }
-};
+      // Navigate to OTP verification if needed, otherwise to signin
+      if (result.otpSent) {
+        navigate('/verify-otp', { state: { email: data.email } });
+      } else {
+        navigate('/signin');
+      }
+
+    } catch (error: any) {
+      const errorMessage = handleError('SignUp (Email)', error);
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-accent/20 to-primary/10 flex items-center justify-center p-4">
@@ -171,7 +172,7 @@ const onEmailSubmit = async (data: EmailFormValues) => {
                 Email Address
               </TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="phone" className="mt-6">
               <form onSubmit={phoneForm.handleSubmit(onPhoneSubmit)} className="space-y-4">
                 <div className="space-y-2">

@@ -15,6 +15,7 @@ import SEO from '@/components/SEO';
 import { CountryCodeSelector } from '@/components/CountryCodeSelector';
 import { getCountryByCode, countryCodes } from '@/data/countryCodes';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { handleError } from '@/utils/errorMessages';
 
 const phoneSchema = z.object({
   phone: z
@@ -125,8 +126,7 @@ const SignIn = () => {
         navigate('/buyer-dashboard');
       }
     } catch (error: unknown) {
-      console.error('SignIn error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+      const errorMessage = handleError('SignIn (Phone)', error);
       toast({
         title: 'Error',
         description: errorMessage,
@@ -165,8 +165,7 @@ const SignIn = () => {
         navigate('/buyer-dashboard');
       }
     } catch (error: unknown) {
-      console.error('SignIn error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+      const errorMessage = handleError('SignIn (Email)', error);
       toast({
         title: 'Error',
         description: errorMessage,
@@ -220,7 +219,7 @@ const SignIn = () => {
                 Email Address
               </TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="phone">
               <form onSubmit={phoneForm.handleSubmit(onPhoneSubmit)} className="space-y-4">
                 <div className="space-y-2">

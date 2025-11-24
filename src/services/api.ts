@@ -1,3 +1,5 @@
+import { getUserFriendlyError, logError } from '@/utils/errorMessages';
+
 export interface User {
   _id: string;
   id: string;
@@ -14,6 +16,7 @@ export interface AuthState {
 }
 
 const IS_DEVELOPMENT = import.meta.env.DEV;
+const IS_PRODUCTION = import.meta.env.PROD;
 const RAW_API_BASE = import.meta.env.VITE_API_URL || 'https://carhubconnect.onrender.com/api';
 
 // API Base URL - always use HTTPS for production backend
@@ -22,7 +25,7 @@ const API_BASE_URL = (() => {
     // In development, use direct HTTPS URL to avoid proxy CORS issues
     return 'https://carhubconnect.onrender.com/api';
   }
-  
+
   try {
     const url = new URL(RAW_API_BASE);
     // In production, ensure HTTPS
@@ -40,8 +43,10 @@ class ApiService {
 
   constructor(baseURL: string) {
     this.baseURL = baseURL;
-    console.log('API Service initialized with base URL:', this.baseURL);
-    console.log('API Service version: 3.0 - HTTPS only for production backend');
+    if (IS_DEVELOPMENT) {
+      console.log('API Service initialized with base URL:', this.baseURL);
+      console.log('API Service version: 3.0 - HTTPS only for production backend');
+    }
   }
 
   private async request<T = any>(
@@ -50,8 +55,11 @@ class ApiService {
     retries = 3
   ): Promise<{ data?: T; error?: string }> {
     const url = `${this.baseURL}${endpoint}`;
-    console.log('API Request:', { method: options.method || 'GET', url, endpoint });
-    
+
+    if (IS_DEVELOPMENT) {
+      console.log('API Request:', { method: options.method || 'GET', url, endpoint });
+    }
+
     const token = this.getToken();
     const defaultHeaders: HeadersInit = {
       'Content-Type': 'application/json',
@@ -81,47 +89,54 @@ class ApiService {
         const data = await response.json().catch(() => ({ message: response.statusText }));
 
         if (!response.ok) {
-          const errorMessage = data.message || `HTTP ${response.status}: ${response.statusText}`;
+          const rawErrorMessage = data.message || `HTTP ${response.status}: ${response.statusText}`;
+          logError(`API Error [${endpoint}]`, rawErrorMessage);
+
+          // Convert to user-friendly message
+          const userFriendlyError = getUserFriendlyError(rawErrorMessage);
+
           if (response.status >= 400 && response.status < 500) {
-            console.error(`Client error for ${url}: ${errorMessage}`);
-            return { error: errorMessage };
+            return { error: userFriendlyError };
           }
           if (attempt < retries) {
-            console.warn(`Request to ${url} failed (attempt ${attempt + 1}/${retries + 1}): ${errorMessage}`);
+            if (IS_DEVELOPMENT) {
+              console.warn(`Request to ${url} failed (attempt ${attempt + 1}/${retries + 1})`);
+            }
             await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
             continue;
           }
-          console.error(`Max retries reached for ${url}: ${errorMessage}`);
-          return { error: errorMessage };
+          return { error: userFriendlyError };
         }
 
         return { data };
       } catch (error) {
         clearTimeout(timeoutId);
-        
+        logError(`API Request Failed [${endpoint}]`, error);
+
         if (error instanceof Error && error.name === 'AbortError') {
           if (attempt < retries) {
-            console.warn(`Request to ${url} aborted (attempt ${attempt + 1}/${retries + 1}): ${error.message}`);
+            if (IS_DEVELOPMENT) {
+              console.warn(`Request to ${url} timed out (attempt ${attempt + 1}/${retries + 1})`);
+            }
             await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
             continue;
           }
-          return { error: 'Request timed out after multiple attempts' };
+          return { error: getUserFriendlyError('timeout') };
         }
-        
-        const errorMessage = error instanceof Error ? error.message : 'Network error';
-        console.error(`Request to ${url} failed: ${errorMessage}`);
-        
+
         if (attempt < retries) {
-          console.warn(`Retrying request (attempt ${attempt + 2}/${retries + 1})...`);
+          if (IS_DEVELOPMENT) {
+            console.warn(`Retrying request (attempt ${attempt + 2}/${retries + 1})...`);
+          }
           await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
           continue;
         }
-        
-        return { error: errorMessage };
+
+        return { error: getUserFriendlyError(error) };
       }
     }
 
-    return { error: 'Request failed after all retries' };
+    return { error: getUserFriendlyError('Request failed after all retries') };
   }
 
   private setToken(token: string) {
@@ -393,7 +408,7 @@ class ApiService {
     // Get user role to determine correct endpoint
     const user = authStorage.getUser();
     const isAdmin = user?.role === 'admin';
-    
+
     if (isAdmin) {
       // Admin can see all bookings
       return this.request('/bookings');
@@ -480,14 +495,14 @@ class ApiService {
   }
 
   // Test drive booking methods
-  async createTestDriveBooking(data: { 
-    carId: string; 
-    date: string; 
-    time: string; 
-    fullName: string; 
-    phone: string; 
-    email?: string; 
-    notes?: string 
+  async createTestDriveBooking(data: {
+    carId: string;
+    date: string;
+    time: string;
+    fullName: string;
+    phone: string;
+    email?: string;
+    notes?: string
   }) {
     return this.request('/test-drives', {
       method: 'POST',

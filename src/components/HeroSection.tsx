@@ -8,13 +8,13 @@ const HeroSection = () => {
   return (
     <section className="relative min-h-screen flex items-center justify-center mt-[-2rem] overflow-hidden safe-area-top">
       {/* Background Image */}
-      <div 
+      <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
           backgroundImage: `url(${heroImage})`,
         }}
       >
-        <div className="absolute inset-0 bg-gradient-to-r from-primary-dark/80 via-primary/60 to-primary-dark/80" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[hsl(215,95%,15%)]/80 via-[hsl(215,85%,25%)]/60 to-[hsl(215,95%,15%)]/80" />
       </div>
 
       {/* Content */}
@@ -23,12 +23,12 @@ const HeroSection = () => {
           <div className="space-y-3 md:space-y-4">
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white leading-tight">
               Premium Cars
-              <span className="block bg-gradient-to-r from-accent to-primary-light bg-clip-text text-transparent">
+              <span className="block bg-gradient-to-r from-[hsl(220,70%,85%)] to-[hsl(215,75%,35%)] bg-clip-text text-transparent">
                 Await You
               </span>
             </h1>
             <p className="text-lg sm:text-xl md:text-2xl text-white/90 max-w-2xl mx-auto px-2">
-              Discover luxury vehicles from the world's most prestigious brands. 
+              Discover luxury vehicles from the world's most prestigious brands.
               Your perfect car is just a click away.
             </p>
           </div>

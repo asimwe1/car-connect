@@ -1,44 +1,58 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { Navigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, User, Heart, Calendar, Car, LogOut, Settings, MessageCircle, Sun, Moon } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 
-
-const { user, logout, isAuthenticated } = useAuth();
-const navigate = useNavigate();
-const menuItems = [
-    { icon: User, label: 'Dashboard', href: '/buyer-dashboard', active: true },
-    { icon: Heart, label: 'Wishlist', href: '/wishlist' },
-    { icon: Calendar, label: 'Bookings', href: '/bookings' },
-    { icon: Car, label: 'Buy Cars', href: '/buy-cars' },    
-    // { icon: Car, label: 'Rent Car', href: '/rent-cars' },
-];
-
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/signin');
-      return;
-    }
-    fetchDashboardData();
-  }, [isAuthenticated, navigate]);
-
-
 const BuyerSidebar = () => {
+    const { user, logout, isAuthenticated } = useAuth();
+    const { theme, toggleTheme } = useTheme();
+    const navigate = useNavigate();
+    const location = useLocation();
+
+    const menuItems = [
+        { icon: User, label: 'Dashboard', href: '/buyer-dashboard' },
+        { icon: Heart, label: 'Wishlist', href: '/wishlist' },
+        { icon: Calendar, label: 'Bookings', href: '/bookings' },
+        { icon: Car, label: 'Buy Cars', href: '/buy-cars' },
+        // { icon: Car, label: 'Rent Car', href: '/rent-cars' },
+    ];
+
+    const isActive = (path: string) => location.pathname === path;
+
+    const handleSignOut = async () => {
+        await logout();
+        navigate('/');
+    };
+
+    // Placeholder for dashboard data fetch if needed, or remove if logic belongs elsewhere
+    const fetchDashboardData = () => {
+        // Logic to fetch dashboard data
+        console.log("Fetching dashboard data...");
+    };
+
+    useEffect(() => {
+        if (!isAuthenticated) {
+            navigate('/signin');
+            return;
+        }
+        fetchDashboardData();
+    }, [isAuthenticated, navigate]);
+
     return (
-        <div className="hidden top-0 md:block w-64 bg-card/80 backdrop-blur-sm border-r border-border max-h-screen relative">
+        <div className="hidden top-0 md:block w-64 bg-card/80 backdrop-blur-sm border-r border-border max-h-screen relative h-screen flex flex-col">
             <div className="p-6">
                 <div className="flex items-center gap-2 mb-4">
                     <button
@@ -55,14 +69,14 @@ const BuyerSidebar = () => {
                 <p className="text-sm text-muted-foreground mt-1">Buyer Dashboard</p>
             </div>
 
-            <nav className="px-4 space-y-1">
+            <nav className="px-4 space-y-1 flex-1">
                 {menuItems.map((item) => (
                     <Link
                         key={item.label}
                         to={item.href}
-                        className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${item.active
-                                ? 'bg-primary/10 text-primary border border-primary/20'
-                                : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+                        className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${isActive(item.href)
+                            ? 'bg-primary/10 text-primary border border-primary/20'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
                             }`}
                     >
                         <item.icon className="w-4 h-4" />
@@ -71,21 +85,16 @@ const BuyerSidebar = () => {
                 ))}
             </nav>
 
-            <div className="absolute bottom-4 left-4 right-4 space-y-2">
-                {/* <Link
-                      to="/settings"
-                      className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent/50"
-                    >
-                      <Settings className="w-4 h-4" />
-                      Settings
-                    </Link> */}
-                {/* <Link
-                      to="/support"
-                      className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent/50"
-                    >
-                      <MessageCircle className="w-4 h-4" />
-                      Support
-                    </Link> */}
+            <div className="p-4 space-y-2 border-t border-border">
+                <Button
+                    variant="ghost"
+                    className="w-full justify-start text-muted-foreground hover:text-foreground"
+                    onClick={toggleTheme}
+                >
+                    {theme === 'light' ? <Sun className="w-5 h-5 mr-3" /> : <Moon className="w-5 h-5 mr-3" />}
+                    {theme === 'light' ? 'Light Mode' : 'Dark Mode'}
+                </Button>
+
                 <AlertDialog>
                     <AlertDialogTrigger asChild>
                         <Button
@@ -111,7 +120,6 @@ const BuyerSidebar = () => {
                 </AlertDialog>
             </div>
         </div>
-
     )
 }
 

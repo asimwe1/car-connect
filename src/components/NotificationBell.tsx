@@ -72,7 +72,7 @@ const NotificationBell: React.FC = () => {
 
   const handleNotificationClick = (notification: Notification) => {
     notificationService.markAsRead(notification.id);
-    
+
     // Handle different notification types
     if (notification.category === 'car_listing') {
       navigate('/admin/car-review');
@@ -91,8 +91,8 @@ const NotificationBell: React.FC = () => {
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-5 w-5" />
           {notificationState.unreadCount > 0 && (
-            <Badge 
-              variant="destructive" 
+            <Badge
+              variant="destructive"
               className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
             >
               {notificationState.unreadCount > 99 ? '99+' : notificationState.unreadCount}
@@ -122,7 +122,7 @@ const NotificationBell: React.FC = () => {
             )}
           </div>
         </div>
-        
+
         <div className="max-h-96 overflow-y-auto">
           {notificationState.notifications.length === 0 ? (
             <div className="p-4 text-center text-muted-foreground">
@@ -141,8 +141,8 @@ const NotificationBell: React.FC = () => {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <h4 className="text-sm font-medium truncate">{notification.title}</h4>
-                      <Badge 
-                        variant="secondary" 
+                      <Badge
+                        variant="secondary"
                         className={`text-xs ${getCategoryColor(notification.category)}`}
                       >
                         {notification.category}
@@ -171,7 +171,7 @@ const NotificationBell: React.FC = () => {
             ))
           )}
         </div>
-        
+
         {notificationState.notifications.length > 0 && (
           <>
             <DropdownMenuSeparator />

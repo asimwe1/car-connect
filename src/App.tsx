@@ -55,182 +55,186 @@ import AdminOrderDetails from "./pages/AdminOrderDetails";
 import ResetPasswordVerify from "./pages/ResetPasswordVerify";
 import ResetPasswordFinal from "./pages/ResetPasswordFinal";
 
+import { ThemeProvider } from "./contexts/ThemeContext";
+
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <ChatProvider>
-        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-          <AuthPromptProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <ErrorBoundary>
-                <Helmet>
-                  <meta charSet="utf-8" />
-                  <meta name="viewport" content="width=device-width, initial-scale=1" />
-                  <title>connectify Rwanda – Buy, Sell, Rent Premium Cars</title>
-                  <meta name="description" content="Find, buy, sell, or rent premium cars in Rwanda. Browse verified listings with financing options and test drives." />
-                  <link rel="canonical" href="https://carhubconnect.onrender.com/" />
-                </Helmet>
-                <SessionWarning />
-                <ScrollToTop />
-                <FloatingSocialIcons />
-                <Routes>
-                  <Route element={<Layout />}>
-                    {/* Public routes */}
-                    <Route path="/" element={<Index />} />
-                    <Route path="/about" element={<About />} />
-                    <Route path="/contact" element={<Contact />} />
-                    <Route path="/buy-cars" element={<BuyCars />} />
-                    <Route path="/rent-car" element={<RentCar />} />
-                    <Route path="/rent-cars" element={<RentCar />} />
-                    <Route path="/car/:id" element={<CarDetails />} />
-                    <Route path="/terms" element={<Terms />} />
-                    <Route path="/faq" element={<FAQ />} />
-                    <Route path="/blog" element={<Blog />} />
-                    <Route path="/services" element={<Services />} />
-                    <Route path="/how-it-works" element={<HowItWorks />} />
-                    <Route path="/reset-password-verify" element={<ResetPasswordVerify />} />
-                    <Route path="/reset-password-final" element={<ResetPasswordFinal />} />
+    <ThemeProvider>
+      <AuthProvider>
+        <ChatProvider>
+          <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+            <AuthPromptProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <ErrorBoundary>
+                  <Helmet>
+                    <meta charSet="utf-8" />
+                    <meta name="viewport" content="width=device-width, initial-scale=1" />
+                    <title>connectify Rwanda – Buy, Sell, Rent Premium Cars</title>
+                    <meta name="description" content="Find, buy, sell, or rent premium cars in Rwanda. Browse verified listings with financing options and test drives." />
+                    <link rel="canonical" href="https://carhubconnect.onrender.com/" />
+                  </Helmet>
+                  <SessionWarning />
+                  <ScrollToTop />
+                  <FloatingSocialIcons />
+                  <Routes>
+                    <Route element={<Layout />}>
+                      {/* Public routes */}
+                      <Route path="/" element={<Index />} />
+                      <Route path="/about" element={<About />} />
+                      <Route path="/contact" element={<Contact />} />
+                      <Route path="/buy-cars" element={<BuyCars />} />
+                      <Route path="/rent-car" element={<RentCar />} />
+                      <Route path="/rent-cars" element={<RentCar />} />
+                      <Route path="/car/:id" element={<CarDetails />} />
+                      <Route path="/terms" element={<Terms />} />
+                      <Route path="/faq" element={<FAQ />} />
+                      <Route path="/blog" element={<Blog />} />
+                      <Route path="/services" element={<Services />} />
+                      <Route path="/how-it-works" element={<HowItWorks />} />
+                      <Route path="/reset-password-verify" element={<ResetPasswordVerify />} />
+                      <Route path="/reset-password-final" element={<ResetPasswordFinal />} />
 
-                    {/* Auth routes - redirect if already authenticated */}
-                    <Route path="/signup" element={
-                      <ProtectedRoute requireAuth={false}>
-                        <SignUp />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/signin" element={
-                      <ProtectedRoute requireAuth={false}>
-                        <SignIn />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/verify-otp" element={
-                      <ProtectedRoute requireAuth={false}>
-                        <VerifyOTP />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/forgot-password" element={
-                      <ProtectedRoute requireAuth={false}>
-                        <ForgotPassword />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/reset-password" element={
-                      <ProtectedRoute requireAuth={false}>
-                        <ResetPassword />
-                      </ProtectedRoute>
-                    } />
+                      {/* Auth routes - redirect if already authenticated */}
+                      <Route path="/signup" element={
+                        <ProtectedRoute requireAuth={false}>
+                          <SignUp />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/signin" element={
+                        <ProtectedRoute requireAuth={false}>
+                          <SignIn />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/verify-otp" element={
+                        <ProtectedRoute requireAuth={false}>
+                          <VerifyOTP />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/forgot-password" element={
+                        <ProtectedRoute requireAuth={false}>
+                          <ForgotPassword />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/reset-password" element={
+                        <ProtectedRoute requireAuth={false}>
+                          <ResetPassword />
+                        </ProtectedRoute>
+                      } />
 
-                    {/* Protected user routes */}
-                    <Route path="/buyer-dashboard" element={
-                      <ProtectedRoute>
-                        <BuyerDashboard />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/admin/add-car" element={
-                      <ProtectedRoute>
-                        <AddCar />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/list-car" element={
-                      <ProtectedRoute>
-                        <ListCar />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/buyer/wishlist" element={
-                      <ProtectedRoute>
-                        <Wishlist />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/buyer/bookings" element={
-                      <ProtectedRoute>
-                        <Bookings />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/orders" element={
-                      <ProtectedRoute>
-                        <Orders />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/support" element={
-                      <ProtectedRoute>
-                        <Support />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/settings" element={
-                      <ProtectedRoute>
-                        <Settings />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/test-drive/:id" element={
-                      <ProtectedRoute>
-                        <TestDriveBooking />
-                      </ProtectedRoute>
-                    } />
+                      {/* Protected user routes */}
+                      <Route path="/buyer-dashboard" element={
+                        <ProtectedRoute>
+                          <BuyerDashboard />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/admin/add-car" element={
+                        <ProtectedRoute>
+                          <AddCar />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/list-car" element={
+                        <ProtectedRoute>
+                          <ListCar />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/buyer/wishlist" element={
+                        <ProtectedRoute>
+                          <Wishlist />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/buyer/bookings" element={
+                        <ProtectedRoute>
+                          <Bookings />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/orders" element={
+                        <ProtectedRoute>
+                          <Orders />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/support" element={
+                        <ProtectedRoute>
+                          <Support />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/settings" element={
+                        <ProtectedRoute>
+                          <Settings />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/test-drive/:id" element={
+                        <ProtectedRoute>
+                          <TestDriveBooking />
+                        </ProtectedRoute>
+                      } />
 
-                    {/* Admin-only routes */}
-                    <Route path="/admin-dashboard" element={
-                      <ProtectedRoute adminOnly>
-                        <AdminDashboard />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/admin/cars" element={
-                      <ProtectedRoute adminOnly>
-                        <AdminCars />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/admin/support-chat" element={
-                      <ProtectedRoute adminOnly>
-                        <AdminSupportChat />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/admin/customer-chat" element={
-                      <ProtectedRoute adminOnly>
-                        <AdminCustomerChatDashboard />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/admin/manage-users" element={
-                      <ProtectedRoute adminOnly>
-                        <AdminManageUsers />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/admin/brand-management" element={
-                      <ProtectedRoute adminOnly>
-                        <AdminBrandManagement />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/admin/car-review" element={
-                      <ProtectedRoute adminOnly>
-                        <AdminCarReview />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/admin/orders" element={
-                      <ProtectedRoute adminOnly>
-                        <AdminOrders />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/admin/edit-car/:id" element={
-                      <ProtectedRoute adminOnly>
-                        <EditCar />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/admin/order/:id" element={
-                      <ProtectedRoute adminOnly>
-                        <AdminOrderDetails />
-                      </ProtectedRoute>
-                    } />
+                      {/* Admin-only routes */}
+                      <Route path="/admin-dashboard" element={
+                        <ProtectedRoute adminOnly>
+                          <AdminDashboard />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/admin/cars" element={
+                        <ProtectedRoute adminOnly>
+                          <AdminCars />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/admin/support-chat" element={
+                        <ProtectedRoute adminOnly>
+                          <AdminSupportChat />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/admin/customer-chat" element={
+                        <ProtectedRoute adminOnly>
+                          <AdminCustomerChatDashboard />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/admin/manage-users" element={
+                        <ProtectedRoute adminOnly>
+                          <AdminManageUsers />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/admin/brand-management" element={
+                        <ProtectedRoute adminOnly>
+                          <AdminBrandManagement />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/admin/car-review" element={
+                        <ProtectedRoute adminOnly>
+                          <AdminCarReview />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/admin/orders" element={
+                        <ProtectedRoute adminOnly>
+                          <AdminOrders />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/admin/edit-car/:id" element={
+                        <ProtectedRoute adminOnly>
+                          <EditCar />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/admin/order/:id" element={
+                        <ProtectedRoute adminOnly>
+                          <AdminOrderDetails />
+                        </ProtectedRoute>
+                      } />
 
-                    {/* Catch-all route */}
-                    <Route path="*" element={<NotFound />} />
-                  </Route>
-                </Routes>
-              </ErrorBoundary>
-            </TooltipProvider>
-          </AuthPromptProvider>
-        </BrowserRouter>
-      </ChatProvider>
-    </AuthProvider>
+                      {/* Catch-all route */}
+                      <Route path="*" element={<NotFound />} />
+                    </Route>
+                  </Routes>
+                </ErrorBoundary>
+              </TooltipProvider>
+            </AuthPromptProvider>
+          </BrowserRouter>
+        </ChatProvider>
+      </AuthProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 

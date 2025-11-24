@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Menu, X, User, Settings } from 'lucide-react';
+import { Menu, X, User, Settings, Sun, Moon } from 'lucide-react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthPrompt } from '@/contexts/AuthPromptContext';
 import { useAuth } from '@/contexts/AuthContext';
 import NotificationBell from '@/components/NotificationBell';
+import { useTheme } from '@/contexts/ThemeContext';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -12,6 +13,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const authPrompt = useAuthPrompt();
   const { user, isAuthenticated } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   const navLinks: Array<{ name: string; path: string; tab?: 'sell' | 'rent'; protected?: boolean }> = [
     { name: 'Home', path: '/' },
@@ -71,11 +73,13 @@ const Navbar = () => {
                 onClick={(e) => handleProtectedClick(e, link.path, link.protected)}
                 className={() => {
                   const active = isActiveLink(link);
-                  return `relative text-sm font-medium transition-colors duration-200 ${
-                    active ? 'text-primary' : 'text-muted-foreground hover:text-primary'
-                  } ${link.name === 'Home' ? 'hidden lg:inline-block' : ''} after:content-[''] after:absolute after:left-0 after:-bottom-2 after:h-[2px] after:bg-primary after:transition-all after:duration-300 after:origin-left ${
-                    active ? 'after:w-full after:scale-x-100 after:opacity-100' : 'after:w-0 after:scale-x-0 after:opacity-0 hover:after:w-full hover:after:scale-x-100 hover:after:opacity-100'
-                  }`;
+                  const baseClasses = "relative text-sm font-medium transition-colors duration-200";
+                  const activeClasses = active ? "text-primary" : "text-muted-foreground hover:text-primary";
+                  const homeClasses = link.name === 'Home' ? "hidden lg:inline-block" : "";
+                  const underlineBase = "after:content-[''] after:absolute after:left-0 after:-bottom-2 after:h-[2px] after:bg-primary after:transition-all after:duration-300 after:origin-left";
+                  const underlineActive = active ? "after:w-full after:scale-x-100 after:opacity-100" : "after:w-0 after:scale-x-0 after:opacity-0 hover:after:w-full hover:after:scale-x-100 hover:after:opacity-100";
+
+                  return `${baseClasses} ${activeClasses} ${homeClasses} ${underlineBase} ${underlineActive}`;
                 }}
               >
                 {link.name}
@@ -85,17 +89,30 @@ const Navbar = () => {
 
           {/* Desktop Auth Buttons */}
           <div className="hidden md:flex items-center space-x-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              className="rounded-full w-9 h-9"
+              aria-label="Toggle theme"
+            >
+              {theme === 'light' ? (
+                <Sun className="h-4 w-4 text-yellow-500 transition-all" />
+              ) : (
+                <Moon className="h-4 w-4 text-blue-400 transition-all" />
+              )}
+            </Button>
             {isAuthenticated ? (
               <>
                 <NotificationBell />
                 {user?.role === 'user' && (
                   <Link to="/buyer-dashboard">
-                  <Button variant="ghost" size="sm">
-                    <User className="w-4 h-4 mr-2" />
-                    Dashboard
-                  </Button>
-                </Link>
-              )}
+                    <Button variant="ghost" size="sm">
+                      <User className="w-4 h-4 mr-2" />
+                      Dashboard
+                    </Button>
+                  </Link>
+                )}
                 {user?.role === 'admin' && (
                   <Link to="/admin-dashboard">
                     <Button variant="ghost" size="sm">
@@ -122,19 +139,34 @@ const Navbar = () => {
           </div>
 
           {/* Mobile menu button */}
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden p-3 rounded-lg hover:bg-accent transition-colors touch-action-manipulation mobile-tap-highlight-transparent"
-            aria-label={isOpen ? "Close menu" : "Open menu"}
-          >
-            {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
-        </div>  
+          <div className="flex md:hidden items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              className="rounded-full w-9 h-9"
+              aria-label="Toggle theme"
+            >
+              {theme === 'light' ? (
+                <Sun className="h-4 w-4 text-yellow-500 transition-all" />
+              ) : (
+                <Moon className="h-4 w-4 text-blue-400 transition-all" />
+              )}
+            </Button>
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className="md:hidden p-3 rounded-lg hover:bg-accent transition-colors touch-action-manipulation mobile-tap-highlight-transparent"
+              aria-label={isOpen ? "Close menu" : "Open menu"}
+            >
+              {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+          </div>
+        </div>
 
         {/* Mobile Navigation moved below for full-width background */}
       </div>
       {isOpen && (
-        <div className="md:hidden text-center bg-white w-full w-100% rounded-b-lg border-t border-border safe-area-bottom">
+        <div className="md:hidden text-center bg-background w-full w-100% rounded-b-lg border-t border-border safe-area-bottom shadow-lg">
           <div className="flex flex-col space-y-1 pt-4 px-4">
             {navLinks.map((link) => (
               <NavLink
@@ -146,11 +178,12 @@ const Navbar = () => {
                 }}
                 className={() => {
                   const active = isActiveLink(link);
-                  return `relative px-4 py-3 rounded-lg text-sm font-medium transition-colors touch-action-manipulation mobile-tap-highlight-transparent ${
-                    active ? 'text-primary bg-primary/5' : 'text-muted-foreground hover:text-primary hover:bg-accent'
-                  } after:content-[''] after:absolute after:left-4 after:bottom-2 after:h-0.5 after:bg-primary after:transition-transform after:duration-300 after:origin-left ${
-                    active ? 'after:w-8 after:scale-x-100' : 'after:w-8 after:scale-x-0 group-hover:after:scale-x-100'
-                  }`;
+                  const baseClasses = "relative px-4 py-3 rounded-lg text-sm font-medium transition-colors touch-action-manipulation mobile-tap-highlight-transparent";
+                  const activeClasses = active ? "text-primary bg-primary/5" : "text-muted-foreground hover:text-primary hover:bg-accent";
+                  const underlineBase = "after:content-[''] after:absolute after:left-4 after:bottom-2 after:h-0.5 after:bg-primary after:transition-transform after:duration-300 after:origin-left";
+                  const underlineActive = active ? "after:w-8 after:scale-x-100" : "after:w-8 after:scale-x-0 group-hover:after:scale-x-100";
+
+                  return `${baseClasses} ${activeClasses} ${underlineBase} ${underlineActive}`;
                 }}
               >
                 {link.name}

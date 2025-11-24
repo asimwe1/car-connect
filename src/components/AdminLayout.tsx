@@ -2,13 +2,15 @@ import React from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BarChart3, Car, Plus, DollarSign, MessageCircle, Settings, LogOut } from 'lucide-react';
+import { BarChart3, Car, Plus, DollarSign, MessageCircle, Settings, LogOut, Sun, Moon } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 
 const AdminLayout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   const isActive = (href: string) => location.pathname === href;
 
@@ -21,14 +23,14 @@ const AdminLayout: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-background via-accent/20 to-primary/10">
       <div className="flex">
         {/* Sidebar */}
-        <aside className="hidden md:block w-64 bg-card/80 backdrop-blur-sm border-r border-border min-h-screen">
+        <aside className="hidden md:block w-64 bg-card/80 backdrop-blur-sm border-r border-border min-h-screen flex flex-col">
           <div className="p-6">
             <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary-light bg-clip-text text-transparent">
               connectify
             </h1>
             <p className="text-sm text-muted-foreground mt-1">Admin</p>
           </div>
-          <nav className="px-4 space-y-1">
+          <nav className="px-4 space-y-1 flex-1">
             <Link to="/admin-dashboard" className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${isActive('/admin-dashboard') ? 'bg-primary/10 text-primary border border-primary/20' : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'}`}>
               <BarChart3 className="w-4 h-4" /> Dashboard
             </Link>
@@ -48,7 +50,11 @@ const AdminLayout: React.FC = () => {
               <MessageCircle className="w-4 h-4" /> Manage Users
             </Link>
           </nav>
-          <div className="absolute bottom-4 left-4 right-4 space-y-2">
+          <div className="p-4 space-y-2 border-t border-border">
+            <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:text-foreground" onClick={toggleTheme}>
+              {theme === 'light' ? <Sun className="w-4 h-4 mr-2" /> : <Moon className="w-4 h-4 mr-2" />}
+              {theme === 'light' ? 'Light Mode' : 'Dark Mode'}
+            </Button>
             <Link to="/settings" className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent/50">
               <Settings className="w-4 h-4" /> Settings
             </Link>

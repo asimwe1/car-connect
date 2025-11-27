@@ -38,7 +38,7 @@ const AboutSection = () => {
             
             <div className={`relative transition-all duration-700 delay-400 ${inView ? 'animate-zoom-in' : 'opacity-0'}`}>
               <div className="flex justify-center items-center">
-                <div className="relative bg-gradient-to-br from-gray-800 to-gray-900 p-8 rounded-2xl shadow-2xl">
+                <div className="relative bg-gradient-to-br from-gray-800 to-gray-900 p-8 rounded-2xl">
                   <img
                     src={connectifyImg}
                     alt="Car Connect Logo"

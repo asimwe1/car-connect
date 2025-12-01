@@ -178,16 +178,6 @@ const Contact = () => {
                       </li>
                       <li>
                         <a 
-                          href="https://wa.me/250788781073" 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-blue-400 hover:text-blue-300 transition-colors"
-                        >
-                          +250 788 781 073
-                        </a>
-                      </li>
-                      <li>
-                        <a 
                           href="https://wa.me/250788572481" 
                           target="_blank" 
                           rel="noopener noreferrer"

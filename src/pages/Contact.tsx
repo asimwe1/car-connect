@@ -204,18 +204,18 @@ const Contact = () => {
                     <ul className="text-muted-foreground space-y-1">
                       <li>
                         <a 
-                          href="mailto:customer@connectify.rw" 
+                          href="mailto:customers@connectify.rw" 
                           className="text-blue-400 hover:text-blue-300 transition-colors"
                         >
-                          customer@connectify.rw
+                          customers@connectify.rw
                         </a>
                       </li>
                       <li>
                         <a 
-                          href="mailto:support@connectify.rw" 
+                          href="mailto:supports@connectify.rw" 
                           className="text-blue-400 hover:text-blue-300 transition-colors"
                         >
-                          support@connectify.rw
+                          supports@connectify.rw
                         </a>
                       </li>
                     </ul>
